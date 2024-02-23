@@ -33,16 +33,21 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Capabilities, System::Object, std::ve
         std::span<const std::string> GetRegisteredCapabilities() const;
         __declspec(property(get=GetRegisteredCapabilities)) std::span<const std::string> RegisteredCapabilities;
 
-        /// @brief provides access to an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! cleared on soft restart.
-        UnorderedEventCallback<std::string_view>& GetCapabilitiesUpdatedEvent();
+        enum CapabilityEventKind {
+            Registered = 0,
+            Unregistered = 1,
+        };
 
-        /// @brief an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! cleared on soft restart.
-        __declspec(property(get=GetCapabilitiesUpdatedEvent)) UnorderedEventCallback<std::string_view>& CapabilitiesUpdatedEvent;
+        /// @brief provides access to an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! cleared on soft restart.
+        UnorderedEventCallback<std::string_view, CapabilityEventKind>& GetCapabilitiesUpdatedEvent();
+
+        /// @brief an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! cleared on soft restart. Invoked after the particular capability is added to the list.
+        __declspec(property(get=GetCapabilitiesUpdatedEvent)) UnorderedEventCallback<std::string_view, CapabilityEventKind>& CapabilitiesUpdatedEvent;
 
         DECLARE_DEFAULT_CTOR();
     private:
         static Capabilities* _instance;
 
-        UnorderedEventCallback<std::string_view> _capabilitiesUpdated;
+        UnorderedEventCallback<std::string_view, CapabilityEventKind> _capabilitiesUpdated;
         static std::vector<std::string> _registeredCapabilities;
 )

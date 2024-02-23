@@ -24,6 +24,7 @@ namespace SongCore {
 
         if (itr == _registeredCapabilities.end()) {
             _registeredCapabilities.emplace_back(capability);
+            _capabilitiesUpdated.invoke(capability, CapabilityEventKind::Registered);
         } else {
             WARNING("Capability '{}' was registered more than once! not registering again", capability);
         }
@@ -38,6 +39,7 @@ namespace SongCore {
 
         if (itr != _registeredCapabilities.end()) {
             _registeredCapabilities.erase(itr);
+            _capabilitiesUpdated.invoke(capability, CapabilityEventKind::Unregistered);
         } else {
             WARNING("Capability '{}' was unregistered more than once! not unregistering again", capability);
         }
@@ -58,7 +60,7 @@ namespace SongCore {
         return _registeredCapabilities;
     }
 
-    UnorderedEventCallback<std::string_view>& Capabilities::GetCapabilitiesUpdatedEvent() {
+    UnorderedEventCallback<std::string_view, Capabilities::CapabilityEventKind>& Capabilities::GetCapabilitiesUpdatedEvent() {
         return _capabilitiesUpdated;
     }
 }

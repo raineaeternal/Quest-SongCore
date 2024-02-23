@@ -41,9 +41,9 @@ namespace SongCore {
         return instance->GetRegisteredCapabilities();
     }
 
-    /// @brief provides access to an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! cleared on soft restart.
+    /// @brief provides access to an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! cleared on soft restart. Invoked after the particular capability is added to the list.
     /// @throws std::runtime_error if SongCore::Capabilities::get_instance() returns nullptr
-    inline UnorderedEventCallback<std::string_view>& GetCapabilitiesUpdatedEvent() {
+    inline UnorderedEventCallback<std::string_view, Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent() {
         auto instance = SongCore::Capabilities::get_instance();
         if (!instance) [[unlikely]] throw std::runtime_error("SongCore::Capabilities static instance was null in SongCore::GetCapabilitiesUpdatedEvent!");
         return instance->GetCapabilitiesUpdatedEvent();
