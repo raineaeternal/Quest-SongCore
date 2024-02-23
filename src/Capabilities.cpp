@@ -7,6 +7,14 @@ namespace SongCore {
     Capabilities* Capabilities::_instance = nullptr;
     std::vector<std::string> Capabilities::_registeredCapabilities = {};
 
+    void Capabilities::Initialize() {
+        _instance = this;
+    }
+
+    void Capabilities::Dispose() {
+        _instance = nullptr;
+    }
+
     void Capabilities::RegisterCapability(std::string_view capability) {
         auto itr = std::find_if(
             _registeredCapabilities.begin(),

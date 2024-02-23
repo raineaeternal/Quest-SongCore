@@ -10,6 +10,8 @@
 #include <ranges>
 
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Capabilities, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
+        DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &Zenject::IInitializable::Initialize);
+        DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);
     public:
         /// @brief provides access to the zenjected instance
         static inline Capabilities* get_instance() { return _instance; }
