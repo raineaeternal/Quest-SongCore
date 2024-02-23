@@ -1,6 +1,18 @@
+#include "SongLoader/SongLoader.hpp"
+#include "_config.h"
 #include "main.hpp"
+#include "lapiz/shared/zenject/Zenjector.hpp"
+#include "bsml/shared/BSML.hpp"
+#include "custom-types/shared/register.hpp"
+#include "logging.hpp"
+#include "assets.hpp"
+#include "Zenject/FromBinderNonGeneric.hpp"
+#include "Zenject/ConcreteBinderGeneric_1.hpp"
+#include "Lapiz/shared/utilities/ZenjectExtensions.hpp"
 
-static ModInfo modInfo; // Stores the ID and version of our mod, and is sent to the modloader upon startup
+#include "include/Installers/MenuInstaller.hpp"
+
+static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
 // Loads the config from disk using our modInfo, then returns it for use
 // other config tools such as config-utils don't use this config, so it can be removed if those are in use
@@ -9,26 +21,27 @@ Configuration& getConfig() {
     return config;
 }
 
-// Returns a logger, useful for printing debug messages
-Logger& getLogger() {
-    static Logger* logger = new Logger(modInfo);
-    return *logger;
-}
-
 // Called at the early stages of game loading
-extern "C" void setup(ModInfo& info) {
-    info.id = MOD_ID;
-    info.version = VERSION;
-    modInfo = info;
+SONGCORE_EXPORT_FUNC void setup(CModInfo* info) {
+    info->id = MOD_ID;
+    info->version = VERSION;
 	
     getConfig().Load();
-    getLogger().info("Completed setup!");
+    INFO("Completed setup!");
 }
 
 // Called later on in the game loading - a good time to install function hooks
-extern "C" void load() {
+SONGCORE_EXPORT_FUNC void late_load() {
     il2cpp_functions::Init();
+    auto z = Lapiz::Zenject::Zenjector::Get();
+    BSML::Init();
+    custom_types::Register::AutoRegister();
 
-    getLogger().info("Installing hooks...");
-    
+    z->Install(Lapiz::Zenject::Location::App, [](::Zenject::DiContainer* container){
+        INFO("Installing RSL to location App from SongCore");
+        Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->Bind<SongCore::SongLoader::RuntimeSongLoader*>())->AsSingle()->NonLazy();
+    });
+    z->Install<SongCore::Installers::MenuInstaller*>(Lapiz::Zenject::Location::Menu);
+
+    INFO("SongCore loaded and initialized.");
 }

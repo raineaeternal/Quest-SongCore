@@ -1,15 +1,16 @@
 # include some defines automatically made by qpm
 include(qpm_defines.cmake)
+include(${EXTERN_DIR}/includes/kaleb/shared/cmake/assets.cmake)
 
 # override mod id
-set(MOD_ID "#{id}")
+set(MOD_ID "songcore")
 
 # Enable link time optimization
 # In my experience, this can be highly unstable but it nets a huge size optimization and likely performance
 # However, the instability was seen using Android.mk/ndk-build builds. With Ninja + CMake, this problem seems to have been solved.
 # As always, test thoroughly
 # - Fern
-# set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 cmake_minimum_required(VERSION 3.21)
 project(${COMPILE_ID})
@@ -26,7 +27,7 @@ set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # compile options used
-add_compile_options(-frtti -fexceptions)
+add_compile_options(-frtti -fexceptions -fdeclspec -Wunknown-warning-option)
 add_compile_options(-O3)
 # compile definitions used
 add_compile_definitions(VERSION=\"${MOD_VERSION}\")
@@ -44,6 +45,9 @@ add_library(
         ${c_file_list}
 )
 
+# Add any assets
+add_assets(assets_${COMPILE_ID} STATIC ${CMAKE_CURRENT_LIST_DIR}/assets ${INCLUDE_DIR}/assets.hpp)
+
 target_include_directories(${COMPILE_ID} PRIVATE .)
 
 # add src dir as include dir
@@ -55,7 +59,9 @@ target_include_directories(${COMPILE_ID} PUBLIC ${SHARED_DIR})
 # codegen includes 
 target_include_directories(${COMPILE_ID} PRIVATE ${EXTERN_DIR}/includes/${CODEGEN_ID}/include)
 
+
 target_link_libraries(${COMPILE_ID} PRIVATE -llog)
+target_link_libraries(${COMPILE_ID} PRIVATE assets_${COMPILE_ID})
 # add extern stuff like libs and other includes
 include(extern.cmake)
 
