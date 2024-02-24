@@ -5,6 +5,7 @@
 #include "bsml/shared/BSML.hpp"
 #include "custom-types/shared/register.hpp"
 #include "logging.hpp"
+#include "hooking.hpp"
 #include "assets.hpp"
 #include "Zenject/FromBinderNonGeneric.hpp"
 #include "Zenject/ConcreteBinderGeneric_1.hpp"
@@ -14,6 +15,11 @@
 #include "include/Installers/MenuInstaller.hpp"
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
+
+Logger& getLogger() {
+    static auto logger = new Logger(modInfo, LoggerOptions(false, true));
+    return *logger;
+}
 
 // Loads the config from disk using our modInfo, then returns it for use
 // other config tools such as config-utils don't use this config, so it can be removed if those are in use
@@ -37,6 +43,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
     auto z = Lapiz::Zenject::Zenjector::Get();
     BSML::Init();
     custom_types::Register::AutoRegister();
+    SongCore::Hooking::InstallHooks(getLogger());
 
     z->Install(Lapiz::Zenject::Location::App, [](::Zenject::DiContainer* container){
         INFO("Installing RSL to location App from SongCore");
