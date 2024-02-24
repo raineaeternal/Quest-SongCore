@@ -11,6 +11,8 @@
 #include "Lapiz/shared/utilities/ZenjectExtensions.hpp"
 
 #include "Capabilities.hpp"
+#include "Characteristics.hpp"
+
 #include "include/Installers/MenuInstaller.hpp"
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
@@ -41,6 +43,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
     z->Install(Lapiz::Zenject::Location::App, [](::Zenject::DiContainer* container){
         INFO("Installing RSL to location App from SongCore");
         container->Bind<SongCore::Capabilities*>()->ToSelf()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::Characteristics*>()->AsSingle()->NonLazy();
         Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->Bind<SongCore::SongLoader::RuntimeSongLoader*>())->AsSingle()->NonLazy();
     });
     z->Install<SongCore::Installers::MenuInstaller*>(Lapiz::Zenject::Location::Menu);
