@@ -4,9 +4,12 @@
 namespace SongCore::API {
     namespace Capabilities {
         static UnorderedEventCallback<std::string_view, Capabilities::CapabilityEventKind> _capabilitiesUpdated;
+        std::mutex _registeredCapabilitiesMutex;
         static std::vector<std::string> _registeredCapabilities;
 
         void RegisterCapability(std::string_view capability) {
+            std::lock_guard<std::mutex> lock(_registeredCapabilitiesMutex);
+
             auto itr = std::find_if(
                 _registeredCapabilities.begin(),
                 _registeredCapabilities.end(),
@@ -22,6 +25,8 @@ namespace SongCore::API {
         }
 
         void UnregisterCapability(std::string_view capability) {
+            std::lock_guard<std::mutex> lock(_registeredCapabilitiesMutex);
+
             auto itr = std::find_if(
                 _registeredCapabilities.begin(),
                 _registeredCapabilities.end(),
@@ -37,6 +42,8 @@ namespace SongCore::API {
         }
 
         bool IsCapabilityRegistered(std::string_view capability) {
+            std::lock_guard<std::mutex> lock(_registeredCapabilitiesMutex);
+
             auto itr = std::find_if(
                 _registeredCapabilities.begin(),
                 _registeredCapabilities.end(),
