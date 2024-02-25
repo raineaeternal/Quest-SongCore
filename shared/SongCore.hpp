@@ -58,5 +58,8 @@ namespace SongCore::API {
 
         /// @brief provides access to an event that gets invoked when the custom characteristics are updated. not guaranteed to run on main thread! not cleared on soft restart. Invoked after the particular characteristic is added to the list.
         SONGCORE_EXPORT UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent();
+
+        /// @brief creates a characteristic to register, it's your responsibility to manage the lifetime of it
+        SONGCORE_EXPORT GlobalNamespace::BeatmapCharacteristicSO* CreateCharacteristic(UnityEngine::Sprite* icon, StringW characteristicName, StringW hintText, StringW serializedName, StringW compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder);
     }
 }

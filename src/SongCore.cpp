@@ -2,6 +2,10 @@
 #include "logging.hpp"
 
 #include "UnityEngine/HideFlags.hpp"
+#include "UnityEngine/Sprite.hpp"
+#include "UnityEngine/Texture.hpp"
+#include "UnityEngine/Texture2D.hpp"
+#include "UnityEngine/TextureWrapMode.hpp"
 
 static inline UnityEngine::HideFlags operator |(UnityEngine::HideFlags a, UnityEngine::HideFlags b) {
     return UnityEngine::HideFlags(a.value__ | b.value__);
@@ -112,6 +116,23 @@ namespace SongCore::API {
 
         UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent() {
             return _characteristicsUpdatedEvent;
+        }
+
+        GlobalNamespace::BeatmapCharacteristicSO* CreateCharacteristic(UnityEngine::Sprite* icon, StringW characteristicName, StringW hintText, StringW serializedName, StringW compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder) {
+            icon->texture->wrapMode = UnityEngine::TextureWrapMode::Clamp;
+
+            auto characteristic = UnityEngine::ScriptableObject::CreateInstance<GlobalNamespace::BeatmapCharacteristicSO*>();
+            characteristic->hideFlags = characteristic->hideFlags | UnityEngine::HideFlags::DontUnloadUnusedAsset;
+            characteristic->_icon = icon;
+            characteristic->_descriptionLocalizationKey = hintText;
+            characteristic->_serializedName = serializedName;
+            characteristic->_characteristicNameLocalizationKey = characteristicName;
+            characteristic->_compoundIdPartName = compoundIdPartName;
+            characteristic->_requires360Movement = requires360Movement;
+            characteristic->_containsRotationEvents = containsRotationEvents;
+            characteristic->_sortingOrder = sortingOrder;
+
+            return characteristic;
         }
     }
 }
