@@ -67,8 +67,7 @@ namespace SongCore {
     void Characteristics::AddCharacteristicToCollection(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
         std::lock_guard<std::mutex> lock(_collectionMutex);
         if (characteristic->requires360Movement && !_appStaticSettings->enable360DegreeLevels) {
-            // FIXME: Future proofing for 1.34.6+
-            // _disabledBeatmapCharacteristics->Add(characteristic);
+            _disabledBeatmapCharacteristics->Add(characteristic);
         } else {
             _beatmapCharacteristicCollection->_beatmapCharacteristicsBySerializedName->Add(characteristic->serializedName, characteristic);
             _beatmapCharacteristics->Add(characteristic);
