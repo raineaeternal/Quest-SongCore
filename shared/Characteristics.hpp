@@ -34,6 +34,14 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Characteristics, System::Object, std:
         /// @brief provides access to an event that gets invoked when the custom characteristics are updated. not guaranteed to run on main thread! cleared on soft restart. Invoked after the particular characteristic is added to the list.
         UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent();
         __declspec(property(get=GetCharacteristicsUpdatedEvent)) UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& CharacteristicsUpdatedEvent;
+
+        /// @brief provides access to enabled characteristics
+        std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> GetEnabledCharacteristics();
+        __declspec(property(get=GetEnabledCharacteristics)) std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> EnabledCharacteristics;
+
+        /// @brief provides access to disabled characteristics (require 360 while the app settings say no 360)
+        std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> GetDisabledCharacteristics();
+        __declspec(property(get=GetDisabledCharacteristics)) std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> DisabledCharacteristics;
     private:
         /// @brief adds the characteristic to the relevant collections
         void AddCharacteristicToCollection(GlobalNamespace::BeatmapCharacteristicSO* characteristic);

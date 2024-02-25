@@ -46,6 +46,15 @@ namespace SongCore {
         return SongCore::API::Characteristics::GetRegisteredCharacteristics();
     }
 
+    std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> Characteristics::GetEnabledCharacteristics() {
+        return _beatmapCharacteristics.ref_to();
+    }
+
+    std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> Characteristics::GetDisabledCharacteristics() {
+        return _disabledBeatmapCharacteristics.ref_to();
+    }
+
+
     UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& Characteristics::GetCharacteristicsUpdatedEvent() {
         return _characteristicsUpdated;
     }
