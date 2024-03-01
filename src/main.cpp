@@ -1,3 +1,4 @@
+#include "SongCore.hpp"
 #include "SongLoader/SongLoader.hpp"
 #include "_config.h"
 #include "main.hpp"
@@ -12,7 +13,11 @@
 #include "Lapiz/shared/utilities/ZenjectExtensions.hpp"
 
 #include "Capabilities.hpp"
+#include "Characteristics.hpp"
+
 #include "include/Installers/MenuInstaller.hpp"
+
+void RegisterDefaultCharacteristics();
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
@@ -48,9 +53,51 @@ SONGCORE_EXPORT_FUNC void late_load() {
     z->Install(Lapiz::Zenject::Location::App, [](::Zenject::DiContainer* container){
         INFO("Installing RSL to location App from SongCore");
         container->Bind<SongCore::Capabilities*>()->ToSelf()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::Characteristics*>()->AsSingle()->NonLazy();
         Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->Bind<SongCore::SongLoader::RuntimeSongLoader*>())->AsSingle()->NonLazy();
     });
     z->Install<SongCore::Installers::MenuInstaller*>(Lapiz::Zenject::Location::Menu);
 
+    RegisterDefaultCharacteristics();
+
     INFO("SongCore loaded and initialized.");
+}
+
+void RegisterDefaultCharacteristics() {
+    static SafePtrUnity<GlobalNamespace::BeatmapCharacteristicSO> missingCharacteristic = SongCore::API::Characteristics::CreateCharacteristic(
+        BSML::Lite::ArrayToSprite(Assets::Resources::MissingChar_png),
+        "Missing Characteristic",
+        "Missing Characteristic",
+        "MissingCharacteristic",
+        "MissingCharacteristic",
+        false,
+        false,
+        1000
+    );
+
+    static SafePtrUnity<GlobalNamespace::BeatmapCharacteristicSO> lightshow = SongCore::API::Characteristics::CreateCharacteristic(
+        BSML::Lite::ArrayToSprite(Assets::Resources::Lightshow_png),
+        "Lightshow",
+        "Lightshow",
+        "Lightshow",
+        "Lightshow",
+        false,
+        false,
+        100
+    );
+
+    static SafePtrUnity<GlobalNamespace::BeatmapCharacteristicSO> lawless = SongCore::API::Characteristics::CreateCharacteristic(
+        BSML::Lite::ArrayToSprite(Assets::Resources::Lawless_png),
+        "Lawless",
+        "Lawless - Anything Goes",
+        "Lawless",
+        "Lawless",
+        false,
+        false,
+        101
+    );
+
+    SongCore::API::Characteristics::RegisterCustomCharacteristic(missingCharacteristic.ptr());
+    SongCore::API::Characteristics::RegisterCustomCharacteristic(lightshow.ptr());
+    SongCore::API::Characteristics::RegisterCustomCharacteristic(lawless.ptr());
 }
