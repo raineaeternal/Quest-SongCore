@@ -63,6 +63,7 @@ qpm_defines.cmake
 [Bb]uild/
 cmake-build-*/
 extern.cmake
+.cache/
 
 # QMOD Schema
 mod.json.schema
