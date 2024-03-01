@@ -33,7 +33,7 @@ namespace SongCore::SongLoader {
             if (!fileexists(dataPath)) {
                 dataPath = folderPath + "/Info.dat";
             }
-            auto text = Utils::ReadText16(dataPath);
+            auto text = Utils::ReadText(dataPath);
 
             DEBUG("{}", dataPath);
             DEBUG("info.dat contents: {}", utf8::utf16to8(text));
