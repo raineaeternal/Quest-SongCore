@@ -68,7 +68,8 @@ namespace SongCore::Utils {
     }
 
     float GetLengthFromOggVorbis(std::filesystem::path path) {
-        std::ifstream reader(path, std::ios::in | std::ios::binary);
+        std::ifstream reader(path, std::ios::in | std::ios::binary | std::ios::ate);
+        size_t fileLen = reader.tellg();
 
         int32_t rate = -1;
         int64_t lastSample = -1;
@@ -85,7 +86,35 @@ namespace SongCore::Utils {
             return -1;
         }
 
-        // TODO: extract lastSample
+        /**
+         * This code will search in blocks from the end of the file to find the last sample
+         * it reads in blocks of size SEEK_BLOCK_SIZE
+         */
+        static constexpr int SEEK_BLOCK_SIZE = 6144;
+        static constexpr int SEEK_TRIES = 10;
+
+        for (int i = 0; i < SEEK_TRIES; i++) {
+            // calculate the position from the end to start reading
+            int64_t seekPos = (i + 1) * SEEK_BLOCK_SIZE * -1;
+            auto overshoot = std::max((int64_t)(-seekPos - fileLen), 0l);
+            if (overshoot >= SEEK_BLOCK_SIZE) break;
+
+            // set the reader at end - seekPos + overshoot
+            reader.seekg(seekPos + overshoot, std::ios::seekdir::end);
+
+            // check to find the OGG bytes
+            auto foundOggS = FindBytes(reader, OGG, SEEK_BLOCK_SIZE - overshoot);
+            if (foundOggS) {
+                // TODO: check that this reads the int64 correctly, endianness??
+                lastSample = reader.readsome((char*)&lastSample, sizeof(int64_t));
+                break;
+            }
+        }
+
+        if (lastSample == -1) {
+            WARNING("Could not find last sample for {}", path.string());
+            return -1;
+        }
 
         return (float) lastSample / (float) rate;
     }
