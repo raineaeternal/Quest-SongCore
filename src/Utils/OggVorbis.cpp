@@ -95,12 +95,12 @@ namespace SongCore::Utils {
 
         for (int i = 0; i < SEEK_TRIES; i++) {
             // calculate the position from the end to start reading
-            int64_t seekPos = (i + 1) * SEEK_BLOCK_SIZE * -1;
-            auto overshoot = std::max((int64_t)(-seekPos - fileLen), 0l);
+            int64_t seekPos = (i + 1) * SEEK_BLOCK_SIZE;
+            auto overshoot = std::max((int64_t)(seekPos - fileLen), 0l);
             if (overshoot >= SEEK_BLOCK_SIZE) break;
 
             // set the reader at end - seekPos + overshoot
-            reader.seekg(seekPos + overshoot, std::ios::seekdir::end);
+            reader.seekg(overshoot - seekPos, std::ios::seekdir::end);
 
             // check to find the OGG bytes
             auto foundOggS = FindBytes(reader, OGG, SEEK_BLOCK_SIZE - overshoot);
