@@ -7,7 +7,7 @@
 
 #include "SongCoreCustomLevelPack.hpp"
 
-#include "System/Collections/Generic/Dictionary_2.hpp"
+#include "System/Collections/Concurrent/ConcurrentDictionary_2.hpp"
 #include "System/Collections/Generic/List_1.hpp"
 
 #include "custom-types/shared/macros.hpp"
@@ -24,7 +24,7 @@
 #include "lapiz/shared/macros.hpp"
 
 namespace SongCore::SongLoader {
-    using SongDict = ::System::Collections::Generic::Dictionary_2<StringW, ::GlobalNamespace::CustomPreviewBeatmapLevel*>;
+    using SongDict = ::System::Collections::Concurrent::ConcurrentDictionary_2<StringW, ::GlobalNamespace::CustomPreviewBeatmapLevel*>;
 }
 
 
@@ -38,24 +38,51 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, RuntimeSongLoader, UnityEngine::Mono
     DECLARE_INSTANCE_FIELD_PRIVATE(SongDict*, _customWIPLevels);
 
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapDataLoader*, _beatmapDataLoader);
-    RuntimeSongLoader* _instance;
 
     std::filesystem::path _songPath, _wipSongPath;
     std::vector<GlobalNamespace::CustomPreviewBeatmapLevel*> _loadedLevels;
     std::vector<GlobalNamespace::BeatmapLevelData*> _song;
 
 public:
-    RuntimeSongLoader* get_instance() { return _instance; };
-    std::vector<GlobalNamespace::CustomPreviewBeatmapLevel*> get_loadedLevels() { return _loadedLevels; };
-    std::filesystem::path get_songPath() { return _songPath; };
-    void set_songPath(std::string path);
-    std::filesystem::path get_wipSongPath() { return _wipSongPath; };
-    int get_songCount() { return _songCount; };
-    SongDict* get_customLevels() { return _customLevels; };
-    SongDict* get_customWIPLevels() { return _customWIPLevels; };
 
-    void LoadCustomPreviewLevel(std::string_view path);
-    void LoadSongs(std::string_view path);
-    void CreateSongDirectoryIfNotExist();
+    /// @brief Returns an instance of the songloader
+    RuntimeSongLoader* get_instance() { return _instance; };
+    RuntimeSongLoader* _instance = nullptr;
+
+    /// @brief Returns the current song path.
+    std::filesystem::path get_songPath() { return _songPath; };
+
+    /// @brief brief description
+    /// @param path Path to set the song directory to
+    void set_songPath(std::string path);
+    __declspec(property(get = get_songPath, put = set_songPath)) std::filesystem::path songPath;
+
+    /// @brief Returns the current WIP song path.
+    std::filesystem::path get_wipSongPath() { return _wipSongPath; };
+    __declspec(property(get = get_wipSongPath)) std::filesystem::path wipSongPath;
+
+    __declspec(property(get = get_songs)) ListW<GlobalNamespace::BeatmapData*> _songs[];
+
+    /// @brief Returns the current song count
+    int get_songCount() { return _songCount; };
+    __declspec(property(get = get_songCount)) int songCount;
+
+    /// @brief Returns a key value pair of songs
+    SongDict* get_customLevels() { return _customLevels; };
+    __declspec(property(get = get_customLevels)) SongLoader::SongDict* CustomLevels;
+
+    /// @brief Returns a key value pair of the WIP songs
+    SongDict* get_customWIPLevels() { return _customWIPLevels; };
+    __declspec(property(get = get_customWIPLevels)) SongLoader::SongDict* CustomWIPLevels;
+
+    /// @brief Returns a vector of currently loaded levels
+    std::vector<GlobalNamespace::CustomPreviewBeatmapLevel*> get_loadedLevels() { return _loadedLevels; };
+
+    /// @brief Loads songs at given path given
+    /// @param path 
+    void LoadCustomLevels(std::string_view path);
+
+    /// @brief Creates the CustomLevels directory if it doesn't exist
+    void CreateCustomLevelsDirectoryIfNotExist();
 
 )
