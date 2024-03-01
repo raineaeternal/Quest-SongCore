@@ -34,14 +34,14 @@ namespace SongCore::Utils {
         for (int i = 0; i < searchLength; i++) {
             // get byte
             uint8_t b;
-            reader.readsome((char*)&b, sizeof(uint8_t));
+            reader.read((char*)&b, sizeof(uint8_t));
 
             // if the first byte doesn't match, we can already just continue
             if (b != searchBytes[0]) continue;
 
             // read the next searchBytes.size() - 1 bytes
             std::vector<uint8_t> by(searchBytes.size() - 1);
-            reader.readsome((char*)by.data(), by.size() * sizeof(uint8_t));
+            reader.read((char*)by.data(), by.size() * sizeof(uint8_t));
 
             // compare the read bytes with the rest of the bytes
             if (by[0] == searchBytes[1]
@@ -56,7 +56,7 @@ namespace SongCore::Utils {
             int idx = IndexOf(by, searchBytes[0]);
 
             if (idx != -1) {
-                reader.seekg((int)reader.tellg() + (idx - (by.size())));
+                reader.seekg((size_t)reader.tellg() + (idx - (by.size())), std::ios::beg);
                 i += idx;
             } else {
                 i += by.size();
@@ -74,13 +74,13 @@ namespace SongCore::Utils {
         int32_t rate = -1;
         int64_t lastSample = -1;
 
-        reader.seekg(24);
+        reader.seekg(24, std::ios::beg);
 
         auto foundVorbis = FindBytes(reader, VORBIS, 256);
         if (foundVorbis) {
-            reader.seekg((size_t)reader.tellg() + 5);
+            reader.seekg((size_t)reader.tellg() + 5, std::ios::beg);
             // TODO: check that this reads the int correctly, endianness??
-            reader.readsome((char*)&rate, sizeof(int32_t));
+            reader.read((char*)&rate, sizeof(int32_t));
         } else {
             WARNING("Could not find rate for {}", path.string());
             return -1;
@@ -106,7 +106,7 @@ namespace SongCore::Utils {
             auto foundOggS = FindBytes(reader, OGG, SEEK_BLOCK_SIZE - overshoot);
             if (foundOggS) {
                 // TODO: check that this reads the int64 correctly, endianness??
-                lastSample = reader.readsome((char*)&lastSample, sizeof(int64_t));
+                reader.read((char*)&lastSample, sizeof(int64_t));
                 break;
             }
         }
