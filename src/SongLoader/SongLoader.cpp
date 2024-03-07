@@ -111,7 +111,7 @@ namespace SongCore::SongLoader {
             }
         };
 
-        while (levelsItr != levelsEnd) {
+        while (*levelsItr != *levelsEnd) {
             auto [levelPath, isWip] = NextLevel(*levelsItrMutex, *levelsItr, *levelsEnd);
 
             // we got an invalid levelPath
