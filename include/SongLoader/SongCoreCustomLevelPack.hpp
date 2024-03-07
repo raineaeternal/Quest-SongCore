@@ -1,14 +1,17 @@
 #pragma once
 
 #include "custom-types/shared/macros.hpp"
-#include "GlobalNamespace/CustomBeatmapLevelCollection.hpp"
+#include "GlobalNamespace/CustomBeatmapLevelPack.hpp"
 #include <string>
 
-// DECLARE_CLASS_CODEGEN(SongCore::SongLoader, SongCoreCustomLevelPack, GlobalNamespace::CustomBeatmapLevelCollection*,
-//     DECLARE_CTOR(ctor, StringW packId, StringW packName, UnityEngine::Sprite* coverImage = nullptr);
+DECLARE_CLASS_CODEGEN(SongCore::SongLoader, SongCoreCustomLevelPack, GlobalNamespace::CustomBeatmapLevelPack,
+    DECLARE_CTOR(ctor, StringW packId, StringW packName, UnityEngine::Sprite* coverImage);
 
-// public:
-//     static SongCoreCustomLevelPack* New(std::string const& packId, std::string_view packName, UnityEngine::Sprite* coverImage = nullptr);
+    public:
+        static SongCoreCustomLevelPack* New(std::string_view packId, std::string_view packName, UnityEngine::Sprite* coverImage = nullptr);
 
-//     void SortLevels();
-// )
+        /// @brief sorts the levels in the collection
+        void SortLevels();
+
+        /* TODO: sort method to sort based on an input std::function? */
+)

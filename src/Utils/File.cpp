@@ -12,6 +12,24 @@
 #include <fstream>
 
 namespace SongCore::Utils {
+    std::vector<std::filesystem::path> GetFolders(std::filesystem::path path) {
+        std::vector<std::filesystem::path> dirs;
+        if (!std::filesystem::is_directory(path)) {
+            return {};
+        }
+
+        std::error_code error;
+        auto directory_iter = std::filesystem::directory_iterator(path, std::filesystem::directory_options::none, error);
+
+        for (auto const& entry : directory_iter) {
+            if (entry.is_directory()) {
+                dirs.emplace_back(entry);
+            }
+        }
+
+        return dirs;
+    }
+
     std::vector<std::string> GetFolders(std::string_view path) {
         std::vector<std::string> dirs;
         if (!std::filesystem::is_directory(path)) {
