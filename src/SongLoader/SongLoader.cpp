@@ -81,10 +81,6 @@ namespace SongCore::SongLoader {
         std::vector<il2cpp_utils::il2cpp_aware_thread> workerThreads;
         workerThreads.reserve(MAX_THREAD_COUNT);
 
-        auto worker = [this, &levelsItrMutex, &levelsItr, &levelsEnd](){
-
-        };
-
         for (int i = 0; i < MAX_THREAD_COUNT; i++) {
             workerThreads.emplace_back(
                 &RuntimeSongLoader::RefreshSongWorkerThread,
