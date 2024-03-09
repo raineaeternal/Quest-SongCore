@@ -12,6 +12,8 @@
 #include "GlobalNamespace/PlayerSaveData.hpp"
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
 #include "GlobalNamespace/PreviewDifficultyBeatmapSet.hpp"
+#include "GlobalNamespace/BeatmapLevelColorSchemeSaveData.hpp"
+#include "GlobalNamespace/EnvironmentsListSO.hpp"
 
 #include <chrono>
 #include <clocale>
