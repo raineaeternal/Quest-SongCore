@@ -9,6 +9,7 @@
 #include <set>
 
 #include "CustomJSONData.hpp"
+#include "Characteristics.hpp"
 #include "SongCoreCustomLevelPack.hpp"
 
 #include "System/Collections/Concurrent/ConcurrentDictionary_2.hpp"
@@ -24,6 +25,10 @@
 #include "GlobalNamespace/BeatmapLevelData.hpp"
 #include "GlobalNamespace/BeatmapDataLoader.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
+#include "GlobalNamespace/CustomLevelLoader.hpp"
+#include "GlobalNamespace/CachedMediaAsyncLoader.hpp"
+#include "GlobalNamespace/BeatmapLevelsModel.hpp"
+#include "GlobalNamespace/BeatmapCharacteristicCollection.hpp"
 
 #include "UnityEngine/MonoBehaviour.hpp"
 #include "Zenject/IInitializable.hpp"
@@ -40,6 +45,12 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, RuntimeSongLoader, UnityEngine::Mono
 
     DECLARE_INSTANCE_METHOD(void, Awake);
     DECLARE_INSTANCE_METHOD(void, Update);
+
+    DECLARE_INJECT_METHOD(void, Inject, GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* _beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection);
+    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::CustomLevelLoader*, _customLevelLoader);
+    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapLevelsModel*, _beatmapLevelsModel);
+    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::CachedMediaAsyncLoader*, _cachedMediaAsyncLoader);
+    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapCharacteristicCollection*, _beatmapCharacteristicCollection);
 
     DECLARE_INSTANCE_FIELD_PRIVATE(SongCoreCustomLevelPack*, _customLevelPack);
     DECLARE_INSTANCE_FIELD_PRIVATE(SongCoreCustomLevelPack*, _customWIPLevelPack);
@@ -88,16 +99,6 @@ public:
     /// @brief Returns a vector of currently loaded levels
     std::vector<GlobalNamespace::CustomPreviewBeatmapLevel*> get_loadedLevels() { return _loadedLevels; };
 
-    GlobalNamespace::EnvironmentInfoSO* LoadEnvironmentInfo(StringW environmentName, bool allDirections);
-
-    ArrayW<GlobalNamespace::EnvironmentInfoSO*> LoadEnvironmentInfos(ArrayW<StringW> environmentNames);
-
-    ArrayW<GlobalNamespace::ColorScheme*> LoadColorScheme(ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*> colorSchemeDatas);
-
-    /// @brief Loads songs at given path given
-    /// @param path
-    GlobalNamespace::CustomPreviewBeatmapLevel* LoadCustomPreviewBeatmapLevel(std::string_view path, bool wip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& out);
-
     /// @brief Creates the CustomLevels directory if it doesn't exist
     void CreateCustomLevelsDirectoryIfNotExist();
 
@@ -116,8 +117,34 @@ public:
             }
         };
 
-        void CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out);
+        /// @brief gets the environment info with environmentName, or default if not found
+        /// @param environmentName the name to look for
+        /// @param allDirections if the env was not found, use the default for alldirections or not
+        /// @return environmentinfo
+        GlobalNamespace::EnvironmentInfoSO* GetEnvironmentInfo(StringW environmentName, bool allDirections);
 
+        /// @brief gets all the environment infos with environmentNames
+        /// @param environmentsNames the names to look for
+        /// @return environmentinfo array
+        ArrayW<GlobalNamespace::EnvironmentInfoSO*> GetEnvironmentInfos(std::span<StringW const> environmentsNames);
+
+        /// @brief constructs the color schemes from the savedata
+        /// @param colorSchemeDatas the save data color schemes
+        /// @return constructed color schemes
+        ArrayW<GlobalNamespace::ColorScheme*> GetColorSchemes(std::span<GlobalNamespace::BeatmapLevelColorSchemeSaveData* const> colorSchemeDatas);
+
+        /// @brief fixes up the difficulty beatmap sets from the game
+        ListW<GlobalNamespace::PreviewDifficultyBeatmapSet*> GetDifficultyBeatmapSets(std::span<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet* const> difficultyBeatmapSetDatas);
+
+        /// @brief Loads songs at given path given
+        /// @param path the path to the song
+        /// @param isWip is this a wip song
+        /// @param saveData the level save data, for custom levels this is always a custom level info savedata
+        /// @param outHash output for the hash of this level, might be unneeded though
+        /// @return loaded preview beatmap level, or nullptr if failed
+        GlobalNamespace::CustomPreviewBeatmapLevel* LoadCustomPreviewBeatmapLevel(std::filesystem::path levelPath, bool isWip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& outHash);
+
+        void CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out);
 
         void LoadCustomLevelsFromPaths(std::span<const std::filesystem::path> paths, bool wip = false);
         void RefreshSongs_internal(bool refreshSongs);
