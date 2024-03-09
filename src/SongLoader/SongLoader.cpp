@@ -1,4 +1,5 @@
 #include "SongLoader/SongLoader.hpp"
+#include "CustomJSONData.hpp"
 #include "SongLoader/SongCoreCustomLevelPack.hpp"
 #include "main.hpp"
 #include "shared/SongCore.hpp"
@@ -8,10 +9,12 @@
 
 #include "Utils/File.hpp"
 
+#include <chrono>
 #include <clocale>
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <mutex>
 #include <ostream>
 #include <string.h>
 #include <string>
@@ -19,6 +22,8 @@
 DEFINE_TYPE(SongCore::SongLoader, RuntimeSongLoader);
 
 #define MAX_THREAD_COUNT 8
+
+using namespace std::chrono;
 
 namespace SongCore::SongLoader {
     void RuntimeSongLoader::ctor() {
@@ -118,12 +123,29 @@ namespace SongCore::SongLoader {
             if (levelPath.empty()) continue;
 
             try {
-                // TODO: get current time before loading
-                // TODO: check whether this songpath lives in existing collections
+                time_point<high_resolution_clock> start = high_resolution_clock::now();
+                GlobalNamespace::CustomPreviewBeatmapLevel* level = nullptr;
+                auto targetDict = isWip ? _customWIPLevels : _customLevels;
+                bool containsKey = targetDict->ContainsKey(levelPath.string());
+                auto customData = nullptr;
+                if (containsKey) {
+                    DEBUG("Level path {} exists in existing collection. WIP: {}", levelPath.string(), isWip);
+                    level = reinterpret_cast<GlobalNamespace::CustomPreviewBeatmapLevel*>(targetDict->get_Item(levelPath.string()));
+                } 
+                
                 // TODO: if not, attempt loading levelinfosavedata from the song path, then load custom preview beatmap level from that
+                if (!level) {
+                    auto saveData = GetStandardSaveData(levelPath.string());
+                }
+                
                 // TODO: make sure that the custom data section is loaded by default, since it's always used anyway for things like requirements and custom diff names
-                // TODO: after level loaded, add to relevant collections if not already added
-                // TODO: get current time after loading, log load time
+
+
+                if (level) {
+                    targetDict->TryAdd(levelPath.string(), level);
+                }
+
+                INFO("Time elapsed: {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - start).count());
             } catch (std::exception const& e) {
                 ERROR("Caught exception of type {} while loading song @ path '{}', song will be skipped!", typeid(e).name(), levelPath.string());
                 ERROR("Exception what: {}", e.what());
@@ -131,6 +153,114 @@ namespace SongCore::SongLoader {
                 ERROR("Caught exception of unknown type (current_exception typeid: {}) while loading song @ path '{}', song will be skipped!", typeid(std::current_exception()).name(), levelPath.string());
             }
         }
+    }
+
+    SongCore::CustomJSONData::CustomLevelInfoSaveData* RuntimeSongLoader::GetStandardSaveData(std::filesystem::path path) {
+        if (path.empty()) {
+            ERROR("Provided path was empty!");
+            return nullptr; 
+        }
+
+        auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(path.string()));
+
+        if (!standardSaveData) {
+            ERROR("Cannot load file from path: {}!", path.string());
+            return nullptr;
+        }
+
+        auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveData>(standardSaveData);
+        if (!opt.has_value()) {
+            ERROR("Cannot load file {} as CustomLevelInfoSaveData!", path.string());
+        }
+
+        return opt.value();
+
+        return nullptr;
+    }
+
+    GlobalNamespace::EnvironmentInfoSO* RuntimeSongLoader::LoadEnvironmentInfo(StringW environmentName, bool allDirections) {
+        auto customLevelLoader = nullptr;
+    }
+
+    ArrayW<GlobalNamespace::EnvironmentInfoSO*> RuntimeSongLoader::LoadEnvironmentInfos(ArrayW<StringW> environmentName) {
+        
+    }
+
+    ArrayW<GlobalNamespace::ColorScheme*> RuntimeSongLoader::LoadColorScheme(ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*> colorSchemeDatas) {
+        if (!colorSchemeDatas) return ArrayW<GlobalNamespace::ColorScheme*>::Empty();
+
+        ListW<GlobalNamespace::ColorScheme*> colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
+        for (auto saveData : colorSchemeDatas) {
+            auto colorScheme = reinterpret_cast<GlobalNamespace::ColorScheme*>(saveData->colorScheme);
+            if (colorScheme) {
+                colorSchemes->Add(
+                    GlobalNamespace::ColorScheme::New_ctor(
+                        colorScheme->colorSchemeId,
+                        "",
+                        false,
+                        "",
+                        false,
+                        colorScheme->saberAColor,
+                        colorScheme->saberBColor,
+                        colorScheme->environmentColor0,
+                        colorScheme->environmentColor1,
+                        {1, 1, 1, 1},
+                        true,
+                        colorScheme->environmentColor0Boost,
+                        colorScheme->environmentColor1Boost,
+                        {1, 1, 1, 1},
+                        colorScheme->obstaclesColor
+                    )
+                );
+            }
+        }
+        return colorSchemes->ToArray();
+    }
+    
+    GlobalNamespace::CustomPreviewBeatmapLevel* RuntimeSongLoader::LoadCustomPreviewBeatmapLevel(std::string_view path, bool wip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& out) {
+
+        std::string levelId = CUSTOM_LEVEL_PREFIX_ID + out;
+        if (wip) {
+            levelId += " WIP";
+        }
+
+        StringW songName = saveData->songName;
+        StringW songSubName = saveData->songSubName;
+        StringW songAuthorName = saveData->songAuthorName;
+        StringW levelAuthorName = saveData->levelAuthorName;
+        float bpm = saveData->beatsPerMinute;
+        float songTimeOffset = saveData->songTimeOffset;
+        float shuffle = saveData->shuffle;
+        float shufflePeriod = saveData->shufflePeriod;
+        float previewStartTime = saveData->previewStartTime;
+        float previewDuration = saveData->previewDuration;
+
+
+        auto result = GlobalNamespace::CustomPreviewBeatmapLevel::New_ctor(
+            // LevelPackCover
+            saveData,
+            path,
+            // MediaLoader
+            levelId,
+            songName,
+            songSubName,
+            songAuthorName,
+            levelAuthorName,
+            bpm,
+            songTimeOffset,
+            shuffle,
+            shufflePeriod,
+            previewStartTime,
+            previewDuration,
+            // EnvInfo
+            // AllDirectionsEnvInfo
+            // EnvInfos
+            // Colorscheme
+            ::GlobalNamespace::PlayerSensitivityFlag::Unknown,
+            //reinterpret_cast<IReadOnlyList_1<PreviewDifficultyBeatmapSet*>*>(list.convert());
+        );
+
+        return result;
     }
 
     void RuntimeSongLoader::Update() {

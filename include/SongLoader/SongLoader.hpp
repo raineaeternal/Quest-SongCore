@@ -8,6 +8,7 @@
 #include <mutex>
 #include <set>
 
+#include "CustomJSONData.hpp"
 #include "SongCoreCustomLevelPack.hpp"
 
 #include "System/Collections/Concurrent/ConcurrentDictionary_2.hpp"
@@ -86,9 +87,15 @@ public:
     /// @brief Returns a vector of currently loaded levels
     std::vector<GlobalNamespace::CustomPreviewBeatmapLevel*> get_loadedLevels() { return _loadedLevels; };
 
+    GlobalNamespace::EnvironmentInfoSO* LoadEnvironmentInfo(StringW environmentName, bool allDirections);
+
+    ArrayW<GlobalNamespace::EnvironmentInfoSO*> LoadEnvironmentInfos(ArrayW<StringW> environmentNames);
+    
+    ArrayW<GlobalNamespace::ColorScheme*> LoadColorScheme(ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*> colorSchemeDatas);
+
     /// @brief Loads songs at given path given
     /// @param path
-    void LoadCustomLevels(std::string_view path);
+    GlobalNamespace::CustomPreviewBeatmapLevel* LoadCustomPreviewBeatmapLevel(std::string_view path, bool wip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& out);
 
     /// @brief Creates the CustomLevels directory if it doesn't exist
     void CreateCustomLevelsDirectoryIfNotExist();
@@ -110,9 +117,11 @@ public:
 
         void CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out);
 
+
         void LoadCustomLevelsFromPaths(std::span<const std::filesystem::path> paths, bool wip = false);
         void RefreshSongs_internal(bool refreshSongs);
         void RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd);
+        SongCore::CustomJSONData::CustomLevelInfoSaveData* GetStandardSaveData(std::filesystem::path path);
 
         std::shared_future<void> _currentlyLoadingFuture;
 )
