@@ -23,6 +23,7 @@
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/BeatmapLevelData.hpp"
 #include "GlobalNamespace/BeatmapDataLoader.hpp"
+#include "GlobalNamespace/ColorScheme.hpp"
 
 #include "UnityEngine/MonoBehaviour.hpp"
 #include "Zenject/IInitializable.hpp"
@@ -90,7 +91,7 @@ public:
     GlobalNamespace::EnvironmentInfoSO* LoadEnvironmentInfo(StringW environmentName, bool allDirections);
 
     ArrayW<GlobalNamespace::EnvironmentInfoSO*> LoadEnvironmentInfos(ArrayW<StringW> environmentNames);
-    
+
     ArrayW<GlobalNamespace::ColorScheme*> LoadColorScheme(ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*> colorSchemeDatas);
 
     /// @brief Loads songs at given path given

@@ -16,6 +16,7 @@
 #include <iostream>
 #include <mutex>
 #include <ostream>
+#include <stdexcept>
 #include <string.h>
 #include <string>
 
@@ -161,19 +162,23 @@ namespace SongCore::SongLoader {
             return nullptr; 
         }
 
-        auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(path.string()));
+        try {
+            auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(path.string()));
 
-        if (!standardSaveData) {
-            ERROR("Cannot load file from path: {}!", path.string());
-            return nullptr;
+            if (!standardSaveData) {
+                ERROR("Cannot load file from path: {}!", path.string());
+                return nullptr;
+            }
+
+            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveData>(standardSaveData);
+            if (!opt.has_value()) {
+                ERROR("Cannot load file {} as CustomLevelInfoSaveData!", path.string());
+            }
+
+            return opt.value();
+        } catch(std::runtime_error& e) {
+            ERROR("GetStandardSaveData can't Load File {}: {}!", path.string(), e.what());
         }
-
-        auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveData>(standardSaveData);
-        if (!opt.has_value()) {
-            ERROR("Cannot load file {} as CustomLevelInfoSaveData!", path.string());
-        }
-
-        return opt.value();
 
         return nullptr;
     }
@@ -234,6 +239,7 @@ namespace SongCore::SongLoader {
         float shufflePeriod = saveData->shufflePeriod;
         float previewStartTime = saveData->previewStartTime;
         float previewDuration = saveData->previewDuration;
+        auto colorSchemes = LoadColorScheme(saveData->colorSchemes);
 
 
         auto result = GlobalNamespace::CustomPreviewBeatmapLevel::New_ctor(
@@ -255,7 +261,7 @@ namespace SongCore::SongLoader {
             // EnvInfo
             // AllDirectionsEnvInfo
             // EnvInfos
-            // Colorscheme
+            colorSchemes,
             ::GlobalNamespace::PlayerSensitivityFlag::Unknown,
             //reinterpret_cast<IReadOnlyList_1<PreviewDifficultyBeatmapSet*>*>(list.convert());
         );
