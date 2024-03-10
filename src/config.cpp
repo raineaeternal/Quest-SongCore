@@ -21,19 +21,23 @@ void SaveConfig() {
     doc.SetObject();
     auto& allocator = doc.GetAllocator();
 
-    doc.AddMember("PreferredCustomLevelPath", rapidjson::StringRef(config.PreferredCustomLevelPath.string()), allocator);
+    auto preferredCustomLevelPath = config.PreferredCustomLevelPath.string();
+    doc.AddMember("PreferredCustomLevelPath", rapidjson::Value(preferredCustomLevelPath.c_str(), preferredCustomLevelPath.length(), allocator), allocator);
     rapidjson::Value rootCustomLevelPaths;
     rootCustomLevelPaths.SetArray();
     for (auto& path : config.RootCustomLevelPaths) {
-        rootCustomLevelPaths.PushBack(rapidjson::StringRef(path.string()), allocator);
+        auto pathString = path.string();
+        rootCustomLevelPaths.PushBack(rapidjson::Value(pathString.c_str(), pathString.length(), allocator), allocator);
     }
     doc.AddMember("RootCustomLevelPaths", rootCustomLevelPaths, allocator);
 
-    doc.AddMember("PreferredCustomWIPLevelPath", rapidjson::StringRef(config.PreferredCustomWIPLevelPath.string()), allocator);
+    auto preferredCustomWIPLevelPath = config.PreferredCustomWIPLevelPath.string();
+    doc.AddMember("PreferredCustomWIPLevelPath", rapidjson::Value(preferredCustomWIPLevelPath.c_str(), preferredCustomWIPLevelPath.length(), allocator), allocator);
     rapidjson::Value rootCustomWIPLevelPaths;
     rootCustomWIPLevelPaths.SetArray();
     for (auto& path : config.RootCustomWIPLevelPaths) {
-        rootCustomWIPLevelPaths.PushBack(rapidjson::StringRef(path.string()), allocator);
+        auto pathString = path.string();
+        rootCustomWIPLevelPaths.PushBack(rapidjson::Value(pathString.c_str(), pathString.length(), allocator), allocator);
     }
     doc.AddMember("RootCustomWIPLevelPaths", rootCustomWIPLevelPaths, allocator);
 
