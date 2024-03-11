@@ -22,7 +22,14 @@ namespace SongCore::SongLoader {
 
     void SongCoreCustomBeatmapLevelPackCollection::AddPack(SongCoreCustomLevelPack* levelPack, bool addIfEmpty) {
         // if we don't want to force the add, and the pack has 0 levels, don't add it
-        if (!addIfEmpty && levelPack->beatmapLevelCollection->beatmapLevels->i___System__Collections__Generic__IReadOnlyCollection_1_T_()->Count == 0) return;
+        if (!addIfEmpty) { // dumb check for the levels because the interface method call can fail somehow
+            auto beatmapLevels = levelPack->beatmapLevelCollection->beatmapLevels;
+            auto get_Count_minfo = il2cpp_utils::FindMethod(levelPack->beatmapLevelCollection->beatmapLevels, "get_Count");
+            if (get_Count_minfo) {
+                auto count = il2cpp_utils::RunMethodRethrow<int32_t, false>(beatmapLevels, get_Count_minfo);
+                if (count == 0) return;
+            }
+        }
 
         auto newArray = ArrayW<GlobalNamespace::IBeatmapLevelPack*>(_beatmapLevelPacks.size() + 1);
         std::copy_n(_beatmapLevelPacks->begin(), _beatmapLevelPacks.size(), newArray->begin());
