@@ -4,8 +4,30 @@
 
 #include "shared/CustomJSONData.hpp"
 #include "UnityEngine/Object.hpp"
+#include "System/Version.hpp"
+#include "GlobalNamespace/BeatmapSaveDataHelpers.hpp"
 
 #include <regex>
+
+MAKE_AUTO_HOOK_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
+    DEBUG("BeatmapSaveDataHelpers_GetVersion");
+    auto truncatedText = data.operator std::string().substr(0, 50);
+    static const std::regex versionRegex (R"("_?version"\s*:\s*"[0-9]+\.[0-9]+\.?[0-9]?")", std::regex_constants::optimize);
+    std::smatch matches;
+    if(std::regex_search(truncatedText, matches, versionRegex)) {
+        if(!matches.empty()) {
+            auto version = matches[0].str();
+            version = version.substr(0, version.length()-1);
+            version = version.substr(version.find_last_of('\"')+1, version.length());
+            try {
+                return System::Version::New_ctor(version);
+            } catch(const std::runtime_error& e) {
+                INFO("BeatmapSaveDataHelpers_GetVersion Invalid version: \"%s\"!", version.c_str());
+            }
+        }
+    }
+    return System::Version::New_ctor("2.0.0");
+}
 
 MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString, GlobalNamespace::StandardLevelInfoSaveData *, StringW stringData) {
     DEBUG("StandardLevelInfoSaveData_DeserializeFromJSONString");
@@ -137,6 +159,6 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
             customBeatmaps
         );
     }
-
+    DEBUG("{}", customSaveData->ToString());
     return customSaveData;
 }

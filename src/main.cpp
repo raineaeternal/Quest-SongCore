@@ -2,6 +2,7 @@
 #include "SongLoader/SongLoader.hpp"
 #include "UI/ProgressBar.hpp"
 #include "_config.h"
+#include "config.hpp"
 #include "main.hpp"
 #include "lapiz/shared/zenject/Zenjector.hpp"
 #include "bsml/shared/BSML.hpp"
@@ -11,11 +12,14 @@
 #include "assets.hpp"
 #include "Zenject/FromBinderNonGeneric.hpp"
 #include "Zenject/ConcreteBinderGeneric_1.hpp"
-#include "Lapiz/shared/utilities/ZenjectExtensions.hpp"
+#include "lapiz/shared/utilities/ZenjectExtensions.hpp"
+#include "lapiz/shared/AttributeRegistration.hpp"
 
 #include "Capabilities.hpp"
 #include "Characteristics.hpp"
 #include "include/UI/ProgressBar.hpp"
+#include "config.hpp"
+#include <filesystem>
 
 void RegisterDefaultCharacteristics();
 
@@ -56,11 +60,16 @@ SONGCORE_EXPORT_FUNC void late_load() {
     BSML::Init();
     custom_types::Register::AutoRegister();
     SongCore::Hooking::InstallHooks(getLogger());
+    Lapiz::Attributes::AutoRegister();
 
     auto libc = dlopen("libc.so", RTLD_NOW);
     auto abrt = dlsym(libc, "abort");
 
     INSTALL_HOOK_DIRECT(getLogger(), abort_hook, abrt);
+
+    if (!LoadConfig()) SaveConfig();
+    if (!config.PreferredCustomLevelPath.empty() && !std::filesystem::exists(config.PreferredCustomLevelPath)) std::filesystem::create_directories(config.PreferredCustomLevelPath);
+    if (!config.PreferredCustomWIPLevelPath.empty() && !std::filesystem::exists(config.PreferredCustomWIPLevelPath)) std::filesystem::create_directory(config.PreferredCustomWIPLevelPath);
 
     z->Install(Lapiz::Zenject::Location::App, [](::Zenject::DiContainer* container){
         INFO("Installing RSL to location App from SongCore");
@@ -69,9 +78,9 @@ SONGCORE_EXPORT_FUNC void late_load() {
         Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->Bind<SongCore::SongLoader::RuntimeSongLoader*>())->AsSingle()->NonLazy();
     });
 
-    z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
-        container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle();
-    });
+    // z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
+    //     container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle();
+    // });
 
     RegisterDefaultCharacteristics();
 

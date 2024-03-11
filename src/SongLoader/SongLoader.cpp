@@ -45,6 +45,7 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::Inject(GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection) {
+        DEBUG("RuntimeSongLoader::Inject");
         _beatmapLevelsModel = beatmapLevelsModel;
         _customLevelLoader = customLevelLoader;
         _cachedMediaAsyncLoader = cachedMediaAsyncLoader;
@@ -52,10 +53,12 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::Awake() {
+        DEBUG("RuntimeSongLoader::Awake");
         RefreshSongs(true);
     }
 
     void RuntimeSongLoader::CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out) {
+        DEBUG("RefreshSongWorkerThread::CollectLevels");
         for (auto& rootPath : roots) {
             if (!std::filesystem::exists(rootPath)) {
                 WARNING("Attempted to load songs from folder '{}' but it did not exist! skipping...", rootPath.string());
@@ -65,9 +68,13 @@ namespace SongCore::SongLoader {
             auto songPaths = Utils::GetFolders(rootPath);
             for (auto& songPath : songPaths) {
                 auto dataPath = songPath / "info.dat";
-                if (!std::filesystem::exists(dataPath)) dataPath = songPath / "Info.dat";
                 if (!std::filesystem::exists(dataPath)) {
-                    WARNING("Song path '{}' had no info.dat folder! skipping...", songPath.string());
+                    DEBUG("old: dataPath: {}", dataPath.string());
+                    dataPath = songPath / "Info.dat";
+                    DEBUG("new: dataPath: {}", dataPath.string());
+                } 
+                if (!std::filesystem::exists(dataPath)) {
+                    WARNING("Song path '{}' had no info.dat! skipping...", songPath.string());
                     continue;
                 }
 
@@ -119,18 +126,26 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd) {
+        DEBUG("RuntimeSongLoader::RefreshSongWorkerThread");
         auto NextLevel = [](std::mutex& levelsItrMutex, std::set<LevelPathAndWip>::const_iterator& levelsItr, std::set<LevelPathAndWip>::const_iterator& levelsEnd) -> LevelPathAndWip {
             std::lock_guard<std::mutex> lock(levelsItrMutex);
             if (levelsItr != levelsEnd) {
+                DEBUG("1");
                 auto v = *levelsItr;
+                DEBUG("levelsItr->levelPath: {}", levelsItr->levelPath.string());
+                DEBUG("levelsItr->isWip: {}", levelsItr->isWip);
                 levelsItr++;
                 return v;
             } else {
+                DEBUG("2");
                 return {};
             }
         };
 
+        DEBUG("RefreshSongWorkerThread after NextLevel");
+
         while (*levelsItr != *levelsEnd) {
+            DEBUG("RuntimeSongLoader::RefreshSongWorkerThread while loop");
             auto [levelPath, isWip] = NextLevel(*levelsItrMutex, *levelsItr, *levelsEnd);
 
             // we got an invalid levelPath
@@ -139,7 +154,18 @@ namespace SongCore::SongLoader {
             try {
                 time_point<high_resolution_clock> start = high_resolution_clock::now();
                 GlobalNamespace::CustomPreviewBeatmapLevel* level = nullptr;
+
                 StringW csLevelPath(levelPath.string());
+
+                DEBUG("levelPath: {}", levelPath.string());
+                DEBUG("csLevelPath: {}", csLevelPath);
+
+                levelPath / "info.dat";
+                if (!std::filesystem::exists(levelPath)) levelPath / "Info.dat";
+                if (!std::filesystem::exists(levelPath)) {
+                    ERROR("Info.dat didn't exist! Skipping..");
+                    continue;
+                }
 
                 // pick the dictionary we need to add / check from based on whether this song is WIP
                 auto targetDict = isWip ? _customWIPLevels : _customLevels;
@@ -153,7 +179,10 @@ namespace SongCore::SongLoader {
 
                 // if the level is not yet set, attempt loading levelinfosavedata from the song path, then load custom preview beatmap level from that
                 if (!level) {
-                    auto saveData = GetStandardSaveData(levelPath);
+                    CustomJSONData::CustomLevelInfoSaveData* saveData = GetStandardSaveData(levelPath / "info.dat");
+
+                    DEBUG("saveData: {}", saveData->ToString());
+
                     std::string hash;
                     level = LoadCustomPreviewBeatmapLevel(levelPath.string(), isWip, saveData, hash);
                 }
@@ -173,30 +202,39 @@ namespace SongCore::SongLoader {
                 ERROR("Caught exception of unknown type (current_exception typeid: {}) while loading song @ path '{}', song will be skipped!", typeid(std::current_exception()).name(), levelPath.string());
             }
         }
+
+        DEBUG("RuntimeSongLoader::RefreshSongWorkerThread end");
     }
 
     SongCore::CustomJSONData::CustomLevelInfoSaveData* RuntimeSongLoader::GetStandardSaveData(std::filesystem::path path) {
+        DEBUG("RuntimeSongLoader::GetStandardSaveData");
         if (path.empty()) {
             ERROR("Provided path was empty!");
             return nullptr;
         }
 
-        try {
-            auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(path.string()));
+        if (std::filesystem::exists(path)) {
+            try {
+                auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(path.string()));
+                DEBUG("standardSaveData: {}", standardSaveData->ToString());
 
-            if (!standardSaveData) {
-                ERROR("Cannot load file from path: {}!", path.string());
-                return nullptr;
+                if (!standardSaveData) {
+                    ERROR("Cannot load file from path: {}!", path.string());
+                    return nullptr;
+                }
+
+                auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveData>(standardSaveData);
+                if (!opt.has_value()) {
+                    ERROR("Cannot load file {} as CustomLevelInfoSaveData!", path.string());
+                    return nullptr;
+                }
+
+                return opt.value();
+            } catch(std::runtime_error& e) {
+                ERROR("GetStandardSaveData can't Load File {}: {}!", path.string(), e.what());
             }
-
-            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveData>(standardSaveData);
-            if (!opt.has_value()) {
-                ERROR("Cannot load file {} as CustomLevelInfoSaveData!", path.string());
-            }
-
-            return opt.value();
-        } catch(std::runtime_error& e) {
-            ERROR("GetStandardSaveData can't Load File {}: {}!", path.string(), e.what());
+        } else {
+            ERROR("File {} doesn't exist!", path.string());
         }
 
         return nullptr;
@@ -283,6 +321,12 @@ namespace SongCore::SongLoader {
         return difficultyBeatmapSets;
     }
 
+    #define FixEmptyString(name) \
+    if(!name) { \
+        WARNING("Fixed nullptr string \"{}\"! THIS SHOULDN'T HAPPEN!", #name); \
+        name = ""; \
+    }
+
     GlobalNamespace::CustomPreviewBeatmapLevel* RuntimeSongLoader::LoadCustomPreviewBeatmapLevel(std::filesystem::path levelPath, bool wip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& hashOut) {
 
         auto hashOpt = Utils::GetCustomLevelHash(levelPath, saveData);
@@ -291,13 +335,17 @@ namespace SongCore::SongLoader {
         std::string levelId = fmt::format("{}{}{}", CUSTOM_LEVEL_PREFIX_ID, hashOut, wip ? "" : " WIP");
 
         auto songName = saveData->songName;
-        if (!songName) songName = System::String::getStaticF_Empty();
+        DEBUG("songName: {}", songName);
+        FixEmptyString(songName)
         auto songSubName = saveData->songSubName;
-        if (!songSubName) songSubName = System::String::getStaticF_Empty();
+        DEBUG("songSubName: {}", songSubName);
+        FixEmptyString(songSubName);
         auto songAuthorName = saveData->songAuthorName;
-        if (!songAuthorName) songAuthorName = System::String::getStaticF_Empty();
+        DEBUG("songAuthorName: {}", songAuthorName);
+        FixEmptyString(songAuthorName);
         auto levelAuthorName = saveData->levelAuthorName;
-        if (!levelAuthorName) levelAuthorName = System::String::getStaticF_Empty();
+        DEBUG("levelAuthorName: {}", levelAuthorName);
+        FixEmptyString(levelAuthorName);
 
         auto bpm = saveData->beatsPerMinute;
         auto songTimeOffset = saveData->songTimeOffset;

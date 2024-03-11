@@ -10,7 +10,7 @@
 
 #include "SongLoader/SongLoader.hpp"
 
-DECLARE_CLASS_CODEGEN(SongCore::UI, ProgressBar, UnityEngine::MonoBehaviour, 
-    DECLARE_INJECT_FIELD(SongCore::SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
-    DECLARE_PRIVATE_METHOD(void, Awake);
-)
+// DECLARE_CLASS_CODEGEN(SongCore::UI, ProgressBar, UnityEngine::MonoBehaviour, 
+//     DECLARE_INJECT_FIELD(SongCore::SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
+//     DECLARE_PRIVATE_METHOD(void, Awake);
+// )

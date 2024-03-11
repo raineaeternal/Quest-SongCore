@@ -12,7 +12,7 @@ struct Config {
     };
 
     /// @brief path to the preferred folder where to store WIP songs. This is exposed to people consuming the api as a getter
-    std::filesystem::path PreferredCustomWIPLevelPath;
+    std::filesystem::path PreferredCustomWIPLevelPath = "/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/CustomWIPLevels";
     /// @brief multiple paths to folders to load WIP songs from, in case user has multiple folders. Not exposed
     std::vector<std::filesystem::path> RootCustomWIPLevelPaths {
         "/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/CustomWIPLevels",

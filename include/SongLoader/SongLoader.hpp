@@ -99,9 +99,6 @@ public:
     /// @brief Returns a vector of currently loaded levels
     std::vector<GlobalNamespace::CustomPreviewBeatmapLevel*> get_loadedLevels() { return _loadedLevels; };
 
-    /// @brief Creates the CustomLevels directory if it doesn't exist
-    void CreateCustomLevelsDirectoryIfNotExist();
-
     /// @brief refreshes the loaded songs, loading any new ones
     /// @param fullRefresh whether to reload every song or only new ones
     std::shared_future<void> RefreshSongs(bool fullRefresh);
