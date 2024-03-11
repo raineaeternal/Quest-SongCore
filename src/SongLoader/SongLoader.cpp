@@ -24,6 +24,7 @@
 #include "System/IDisposable.hpp"
 
 #include "bsml/shared/Helpers/utilities.hpp"
+#include "Utils/OggVorbis.hpp"
 
 #include <chrono>
 #include <clocale>
@@ -480,6 +481,14 @@ namespace SongCore::SongLoader {
             ::GlobalNamespace::PlayerSensitivityFlag::Unknown,
             difficultyBeatmapSets->i___System__Collections__Generic__IReadOnlyList_1_T_()
         );
+
+        // TODO: the whole length from map / caching spiel
+        std::string songFilePath = levelPath / static_cast<std::string>(saveData->get_songFilename());
+        if (std::filesystem::exists(songFilePath)) { // only do this if the file exists
+            float len = Utils::GetLengthFromOggVorbis(songFilePath);
+            if (len <= 0 || len == std::numeric_limits<float>::infinity()) len = 0.0f;
+            result->_songDuration_k__BackingField = len;
+        }
 
         DEBUG("result: {}", fmt::ptr(result));
         return result;
