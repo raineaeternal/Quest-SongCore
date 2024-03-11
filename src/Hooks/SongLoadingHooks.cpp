@@ -6,6 +6,7 @@
 #include "UnityEngine/Object.hpp"
 #include "System/Version.hpp"
 #include "GlobalNamespace/BeatmapSaveDataHelpers.hpp"
+#include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
 
 #include <regex>
 
