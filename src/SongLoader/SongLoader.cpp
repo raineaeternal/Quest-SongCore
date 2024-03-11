@@ -132,13 +132,14 @@ namespace SongCore::SongLoader {
         using namespace std::chrono;
         auto startTime = high_resolution_clock::now();
 
+        auto workerThreadCount = std::clamp<size_t>(levels.size(), 1, MAX_THREAD_COUNT);
         std::vector<il2cpp_utils::il2cpp_aware_thread> workerThreads;
-        workerThreads.reserve(MAX_THREAD_COUNT);
+        workerThreads.reserve(workerThreadCount);
 
         _totalSongs = levels.size();
         _loadProgress = 0;
 
-        for (int i = 0; i < MAX_THREAD_COUNT; i++) {
+        for (int i = 0; i < workerThreadCount; i++) {
             workerThreads.emplace_back(
                 &RuntimeSongLoader::RefreshSongWorkerThread,
                 this,
