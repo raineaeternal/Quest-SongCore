@@ -8,6 +8,15 @@
 #include "GlobalNamespace/BeatmapSaveDataHelpers.hpp"
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
 
+#include "GlobalNamespace/AdditionalContentModel.hpp"
+#include "GlobalNamespace/BeatmapLevelsModel.hpp"
+#include "GlobalNamespace/BeatmapLevelPackCollection.hpp"
+#include "GlobalNamespace/BeatmapLevelPackCollectionSO.hpp"
+#include "GlobalNamespace/BeatmapLevelPackCollectionContainerSO.hpp"
+#include "GlobalNamespace/FileHelpers.hpp"
+#include "System/Threading/Tasks/Task_1.hpp"
+#include "UnityEngine/Networking/UnityWebRequest.hpp"
+
 #include <regex>
 
 MAKE_AUTO_HOOK_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
@@ -167,4 +176,48 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
 MAKE_AUTO_HOOK_ORIG_MATCH(SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels, &GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator::get_enableCustomLevels, bool, GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator* self) {
     DEBUG("SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels override returning true");
     return true;
+}
+
+using namespace GlobalNamespace;
+using namespace System::Threading;
+using namespace System::Threading::Tasks;
+using namespace System::Collections::Generic;
+
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_UpdateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::UpdateAllLoadedBeatmapLevelPacks, void, BeatmapLevelsModel* self) {
+    auto list = ListW<IBeatmapLevelPack*>::New();
+    if(self->ostAndExtrasPackCollection)
+        list->AddRange(reinterpret_cast<IEnumerable_1<IBeatmapLevelPack*>*>(self->ostAndExtrasPackCollection->get_beatmapLevelPacks().convert()));
+    if(self->_dlcLevelPackCollectionContainer && self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection)
+        list->AddRange(reinterpret_cast<IEnumerable_1<IBeatmapLevelPack*>*>(self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection->get_beatmapLevelPacks().convert()));
+    self->_allLoadedBeatmapLevelWithoutCustomLevelPackCollection = reinterpret_cast<IBeatmapLevelPackCollection*>(BeatmapLevelPackCollection::New_ctor(list->ToArray()));
+    if(self->customLevelPackCollection)
+        list->AddRange(reinterpret_cast<IEnumerable_1<IBeatmapLevelPack*>*>(self->customLevelPackCollection->get_beatmapLevelPacks().convert()));
+    self->_allLoadedBeatmapLevelPackCollection = reinterpret_cast<IBeatmapLevelPackCollection*>(BeatmapLevelPackCollection::New_ctor(list->ToArray()));
+}
+
+MAKE_AUTO_HOOK_MATCH(AdditionalContentModel_GetLevelEntitlementStatusAsync, &AdditionalContentModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
+    if(levelId.starts_with("custom_level_"))
+        return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
+    return AdditionalContentModel_GetLevelEntitlementStatusAsync(self, levelId, cancellationToken);
+}
+
+MAKE_AUTO_HOOK_MATCH(AdditionalContentModel_GetPackEntitlementStatusAsync, &AdditionalContentModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
+    if(levelPackId.starts_with("custom_levelPack_"))
+        return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
+    return AdditionalContentModel_GetPackEntitlementStatusAsync(self, levelPackId, cancellationToken);
+}
+
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<IBeatmapLevelPackCollection*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
+    DEBUG("BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync");
+    return Task_1<IBeatmapLevelPackCollection*>::FromResult(self->customLevelPackCollection);
+}
+
+MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
+    DEBUG("FileHelpers_GetEscapedURLForFilePath");
+    std::u16string str = filePath;
+    int index = str.find_last_of('/') + 1;
+    StringW dir = str.substr(0, index);
+    StringW fileName = UnityEngine::Networking::UnityWebRequest::EscapeURL(str.substr(index, str.size()));
+    std::replace(fileName.begin(), fileName.end(), u'+', u' '); // '+' breaks stuff even though it's supposed to be valid encoding ¯\_(ツ)_/¯
+    return u"file://" + dir + fileName;
 }

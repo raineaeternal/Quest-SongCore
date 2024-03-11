@@ -5,6 +5,7 @@
 #include "shared/SongCore.hpp"
 #include "logging.hpp"
 #include "config.hpp"
+#include "assets.hpp"
 #include "paper/shared/utfcpp/source/utf8.h"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 
@@ -21,6 +22,8 @@
 #include "System/Collections/IEnumerator.hpp"
 #include "System/Collections/Generic/HashSet_1.hpp"
 #include "System/IDisposable.hpp"
+
+#include "bsml/shared/Helpers/utilities.hpp"
 
 #include <chrono>
 #include <clocale>
@@ -60,6 +63,14 @@ namespace SongCore::SongLoader {
         auto alwaysOwnedPackIds = _additionalContentModel->_alwaysOwnedPacksIds;
         if (!alwaysOwnedPackIds->Contains(customLevelPackID)) alwaysOwnedPackIds->Add(customLevelPackID);
         if (!alwaysOwnedPackIds->Contains(customWIPLevelPackID)) alwaysOwnedPackIds->Add(customWIPLevelPackID);
+
+        // set default pack covers on custom levels
+        _customLevelPack->_coverImage_k__BackingField = _customLevelLoader->_defaultPackCover;
+        _customLevelPack->_smallCoverImage_k__BackingField = _customLevelLoader->_smallDefaultPackCover;
+
+        // set custom pack cover for regular levels
+        _customWIPLevelPack->_coverImage_k__BackingField = BSML::Utilities::LoadSpriteRaw(Assets::Resources::CustomWIPLevelsCover_png);
+        _customWIPLevelPack->_smallCoverImage_k__BackingField = _customWIPLevelPack->_coverImage_k__BackingField;
 
         RefreshSongs(true);
     }
@@ -163,7 +174,10 @@ namespace SongCore::SongLoader {
         auto customWIPLevelValues = GetValues(_customWIPLevels);
 
         _customLevelPack->SetLevels(customLevelValues);
+        _customLevelPack->SortLevels();
+
         _customWIPLevelPack->SetLevels(customWIPLevelValues);
+        _customWIPLevelPack->SortLevels();
 
         _allLoadedLevels.clear();
         _allLoadedLevels.reserve(actualCount);
@@ -276,7 +290,7 @@ namespace SongCore::SongLoader {
         }
 
         try {
-            auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(infoPath.string()));
+            auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(infoPath));
             DEBUG("standardSaveData: {}", standardSaveData->ToString());
 
             if (!standardSaveData) {
@@ -301,7 +315,6 @@ namespace SongCore::SongLoader {
 
     void RuntimeSongLoader::RefreshLevelPacks() {
         _customLevelPackCollection->ClearPacks();
-
 
         _customLevelPackCollection->AddPack(_customLevelPack);
         _customLevelPackCollection->AddPack(_customWIPLevelPack);

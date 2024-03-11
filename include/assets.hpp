@@ -2,6 +2,7 @@
 #include "kaleb/shared/kaleb.hpp"
 
 DECLARE_FILE(_binary_Resources_Colors_png, Assets::Resources, Colors_png);
+DECLARE_FILE(_binary_Resources_CustomWIPLevelsCover_png, Assets::Resources, CustomWIPLevelsCover_png);
 DECLARE_FILE(_binary_Resources_Environment_png, Assets::Resources, Environment_png);
 DECLARE_FILE(_binary_Resources_ExtraDiffsIcon_png, Assets::Resources, ExtraDiffsIcon_png);
 DECLARE_FILE(_binary_Resources_FolderIcon_png, Assets::Resources, FolderIcon_png);
