@@ -1,5 +1,7 @@
 #include "SongCore.hpp"
 #include "SongLoader/SongLoader.hpp"
+#include "SongLoader/NavigationControllerUpdater.hpp"
+
 #include "UI/ProgressBar.hpp"
 #include "_config.h"
 #include "config.hpp"
@@ -56,11 +58,11 @@ MAKE_HOOK(abort_hook, nullptr, void) {
 // Called later on in the game loading - a good time to install function hooks
 SONGCORE_EXPORT_FUNC void late_load() {
     il2cpp_functions::Init();
-    auto z = Lapiz::Zenject::Zenjector::Get();
     BSML::Init();
+
     custom_types::Register::AutoRegister();
     SongCore::Hooking::InstallHooks(getLogger());
-    Lapiz::Attributes::AutoRegister();
+    auto z = Lapiz::Zenject::Zenjector::Get();
 
     auto libc = dlopen("libc.so", RTLD_NOW);
     auto abrt = dlsym(libc, "abort");
@@ -78,9 +80,10 @@ SONGCORE_EXPORT_FUNC void late_load() {
         Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->Bind<SongCore::SongLoader::RuntimeSongLoader*>())->AsSingle()->NonLazy();
     });
 
-    // z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
-    //     container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle();
-    // });
+    z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
+        container->BindInterfacesAndSelfTo<SongCore::SongLoader::NavigationControllerUpdater*>()->AsSingle()->NonLazy();
+        // container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle();
+    });
 
     RegisterDefaultCharacteristics();
 

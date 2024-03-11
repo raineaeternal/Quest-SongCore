@@ -5,4 +5,7 @@
 
 DECLARE_CLASS_CODEGEN(SongCore::SongLoader, SongCoreCustomBeatmapLevelCollection, GlobalNamespace::CustomBeatmapLevelCollection,
     DECLARE_CTOR(ctor);
+
+    public:
+        static SongCoreCustomBeatmapLevelCollection* New();
 )
