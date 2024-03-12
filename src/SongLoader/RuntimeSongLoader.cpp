@@ -172,8 +172,7 @@ namespace SongCore::SongLoader {
         workerThreads.reserve(workerThreadCount);
 
         _totalSongs = levels.size();
-
-        // TODO: Double check this actually returns correct value
+        _loadedSongs = 0;
         _loadProgress = 0.0f;
 
         for (int i = 0; i < workerThreadCount; i++) {
