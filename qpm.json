@@ -1,4 +1,5 @@
 {
+  "version": "0.1.0",
   "sharedDir": "shared",
   "dependenciesDir": "extern",
   "info": {
@@ -8,6 +9,27 @@
     "url": null,
     "additionalData": {
       "overrideSoName": "libsongcore.so"
+    }
+  },
+  "workspace": {
+    "scripts": {
+      "build": [
+        "pwsh ./scripts/build.ps1"
+      ],
+      "clean": [
+        "pwsh ./scripts/build.ps1 -clean"
+      ],
+      "copy": [
+        "pwsh ./scripts/copy.ps1"
+      ],
+      "qmod": [
+        "pwsh ./scripts/build.ps1",
+        "qpm qmod build",
+        "pwsh ./scripts/createqmod.ps1 SongCore"
+      ],
+      "restart": [
+        "pwsh ./scripts/restart-game.ps1"
+      ]
     }
   },
   "dependencies": [
@@ -54,27 +76,11 @@
       "id": "kaleb",
       "versionRange": "^0.1.9",
       "additionalData": {}
+    },
+    {
+      "id": "libcryptopp",
+      "versionRange": "^8.5.0",
+      "additionalData": {}
     }
-  ],
-  "workspace": {
-    "scripts": {
-      "build": [
-        "pwsh ./scripts/build.ps1"
-      ],
-      "clean": [
-        "pwsh ./scripts/build.ps1 -clean"
-      ],
-      "copy": [
-        "pwsh ./scripts/copy.ps1"
-      ],
-      "restart": [
-        "pwsh ./scripts/restart-game.ps1"
-      ],
-      "qmod": [
-        "pwsh ./scripts/build.ps1",
-        "qpm qmod build",
-        "pwsh ./scripts/createqmod.ps1 SongCore"
-      ]
-    }
-  }
+  ]
 }
