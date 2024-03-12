@@ -1,0 +1,59 @@
+#pragma once
+
+#include <functional>
+#include <memory>
+#include <optional>
+
+#include "custom-types/shared/macros.hpp"
+#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
+#include "beatsaber-hook/shared/rapidjson/include/rapidjson/document.h"
+
+#include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
+
+namespace SongCore::CustomJSONData {
+using ValueUTF16 = rapidjson::GenericValue<rapidjson::UTF16<char16_t>>;
+using DocumentUTF16 = rapidjson::GenericDocument<rapidjson::UTF16<char16_t>>;
+}
+
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveData, GlobalNamespace::StandardLevelInfoSaveData, 
+    DECLARE_CTOR(ctor,
+        StringW songName,
+		StringW songSubName,
+		StringW songAuthorName,
+		StringW levelAuthorName,
+		float beatsPerMinute,
+		float songTimeOffset,
+		float shuffle,
+		float shufflePeriod,
+		float previewStartTime,
+		float previewDuration,
+		StringW songFilename,
+		StringW coverImageFilename,
+		StringW environmentName,
+		StringW allDirectionsEnvironmentName,
+		ArrayW<::StringW> environmentNames,
+		ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*> colorSchemes,
+		ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*> difficultyBeatmapSets
+    );
+    DECLARE_SIMPLE_DTOR();
+    
+public:
+    std::shared_ptr<DocumentUTF16> doc;
+    std::optional<std::reference_wrapper<const ValueUTF16>> customData;
+)
+
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap,
+
+	DECLARE_CTOR(ctor,
+		StringW difficultyName,
+		int difficultyRank,
+		StringW beatmapFilename,
+		float noteJumpMovementSpeed,
+		float noteJumpStartBeatOffset,
+		int beatmapColorSchemeIdx,
+		int environmentNameIdx
+	);
+
+public:
+	std::optional<std::reference_wrapper<const ValueUTF16>> customData;
+)

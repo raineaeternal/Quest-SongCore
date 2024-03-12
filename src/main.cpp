@@ -1,6 +1,11 @@
 #include "SongCore.hpp"
-#include "SongLoader/SongLoader.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
+#include "SongLoader/NavigationControllerUpdater.hpp"
+#include "Utils/Cache.hpp"
+
+#include "UI/ProgressBar.hpp"
 #include "_config.h"
+#include "config.hpp"
 #include "main.hpp"
 #include "lapiz/shared/zenject/Zenjector.hpp"
 #include "bsml/shared/BSML.hpp"
@@ -10,14 +15,18 @@
 #include "assets.hpp"
 #include "Zenject/FromBinderNonGeneric.hpp"
 #include "Zenject/ConcreteBinderGeneric_1.hpp"
-#include "Lapiz/shared/utilities/ZenjectExtensions.hpp"
+#include "lapiz/shared/utilities/ZenjectExtensions.hpp"
+#include "lapiz/shared/AttributeRegistration.hpp"
 
 #include "Capabilities.hpp"
 #include "Characteristics.hpp"
-
-#include "include/Installers/MenuInstaller.hpp"
+#include "include/UI/ProgressBar.hpp"
+#include "config.hpp"
+#include <filesystem>
+#include <fstream>
 
 void RegisterDefaultCharacteristics();
+void EnsureNoMedia();
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
@@ -42,21 +51,47 @@ SONGCORE_EXPORT_FUNC void setup(CModInfo* info) {
     INFO("Completed setup!");
 }
 
+MAKE_HOOK(abort_hook, nullptr, void) {
+    getLogger().info("abort called");
+    getLogger().Backtrace(40);
+
+    abort_hook();
+}
+
 // Called later on in the game loading - a good time to install function hooks
 SONGCORE_EXPORT_FUNC void late_load() {
     il2cpp_functions::Init();
-    auto z = Lapiz::Zenject::Zenjector::Get();
-    BSML::Init();
+
     custom_types::Register::AutoRegister();
     SongCore::Hooking::InstallHooks(getLogger());
+    BSML::Init();
+    auto z = Lapiz::Zenject::Zenjector::Get();
+
+    auto libc = dlopen("libc.so", RTLD_NOW);
+    auto abrt = dlsym(libc, "abort");
+
+    INSTALL_HOOK_DIRECT(getLogger(), abort_hook, abrt);
+
+    // load cached hashes n stuff
+    if (!SongCore::Utils::LoadSongInfoCache()) SongCore::Utils::SaveSongInfoCache();
+
+    EnsureNoMedia();
+
+    if (!LoadConfig()) SaveConfig();
+    if (!config.PreferredCustomLevelPath.empty() && !std::filesystem::exists(config.PreferredCustomLevelPath)) std::filesystem::create_directories(config.PreferredCustomLevelPath);
+    if (!config.PreferredCustomWIPLevelPath.empty() && !std::filesystem::exists(config.PreferredCustomWIPLevelPath)) std::filesystem::create_directory(config.PreferredCustomWIPLevelPath);
 
     z->Install(Lapiz::Zenject::Location::App, [](::Zenject::DiContainer* container){
         INFO("Installing RSL to location App from SongCore");
         container->BindInterfacesAndSelfTo<SongCore::Capabilities*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::Characteristics*>()->AsSingle()->NonLazy();
-        Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->Bind<SongCore::SongLoader::RuntimeSongLoader*>())->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::SongLoader::RuntimeSongLoader*>()->AsSingle()->NonLazy();
     });
-    z->Install<SongCore::Installers::MenuInstaller*>(Lapiz::Zenject::Location::Menu);
+
+    z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
+        container->BindInterfacesAndSelfTo<SongCore::SongLoader::NavigationControllerUpdater*>()->AsSingle()->NonLazy();
+        Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>())->AsSingle()->NonLazy();
+    });
 
     RegisterDefaultCharacteristics();
 
@@ -100,4 +135,14 @@ void RegisterDefaultCharacteristics() {
     SongCore::API::Characteristics::RegisterCustomCharacteristic(missingCharacteristic.ptr());
     SongCore::API::Characteristics::RegisterCustomCharacteristic(lightshow.ptr());
     SongCore::API::Characteristics::RegisterCustomCharacteristic(lawless.ptr());
+}
+
+void EnsureNoMedia() {
+    // make sure songcore folder contains a .nomedia file to prevent icons and images absolutely decimating the images apps
+    auto noMediaFilePath = std::filesystem::path("/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/.nomedia");
+    if (!std::filesystem::exists(noMediaFilePath)) {
+        std::filesystem::create_directories(noMediaFilePath.parent_path());
+        std::ofstream file(noMediaFilePath);
+        file << '\0';
+    }
 }

@@ -1,5 +1,7 @@
 #include "SongCore.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "logging.hpp"
+#include "config.hpp"
 
 #include "UnityEngine/HideFlags.hpp"
 #include "UnityEngine/Sprite.hpp"
@@ -133,6 +135,168 @@ namespace SongCore::API {
             characteristic->_sortingOrder = sortingOrder;
 
             return characteristic;
+        }
+    }
+
+    namespace Loading {
+        static UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>> _songsLoadedEvent;
+        static UnorderedEventCallback<> _songsWillRefreshEvent;
+        static UnorderedEventCallback<SongCore::SongLoader::SongCoreCustomBeatmapLevelPackCollection*> _customLevelPacksWillRefreshEvent;
+        static UnorderedEventCallback<SongCore::SongLoader::SongCoreCustomBeatmapLevelPackCollection*> _customLevelPacksRefreshedEvent;
+        static UnorderedEventCallback<GlobalNamespace::CustomPreviewBeatmapLevel*> _songWillBeDeletedEvent;
+        static UnorderedEventCallback<> _songDeletedEvent;
+
+        std::shared_future<void> RefreshSongs(bool fullRefresh) {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return std::future<void>();
+            return instance->RefreshSongs(fullRefresh);
+        }
+
+        void RefreshLevelPacks() {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return;
+            return instance->RefreshLevelPacks();
+        }
+
+        std::future<void> DeleteSong(std::filesystem::path const& levelPath) {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return std::future<void>();
+            return instance->DeleteSong(levelPath);
+        }
+
+        std::future<void> DeleteSong(GlobalNamespace::CustomPreviewBeatmapLevel* beatmapLevel) {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return std::future<void>();
+            return instance->DeleteSong(beatmapLevel);
+        }
+
+        UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>>& GetSongsLoadedEvent() {
+            return _songsLoadedEvent;
+        }
+
+        UnorderedEventCallback<>& GetSongsWillRefreshEvent() {
+            return _songsWillRefreshEvent;
+        }
+
+        UnorderedEventCallback<SongCore::SongLoader::SongCoreCustomBeatmapLevelPackCollection*>& GetCustomLevelPacksWillRefreshEvent() {
+            return _customLevelPacksWillRefreshEvent;
+        }
+
+        UnorderedEventCallback<SongCore::SongLoader::SongCoreCustomBeatmapLevelPackCollection*>& GetCustomLevelPacksRefreshedEvent() {
+            return _customLevelPacksRefreshedEvent;
+        }
+
+        UnorderedEventCallback<GlobalNamespace::CustomPreviewBeatmapLevel*>& GetSongWillBeDeletedEvent() {
+            return _songWillBeDeletedEvent;
+        }
+
+        UnorderedEventCallback<>& GetSongDeletedEvent() {
+            return _songDeletedEvent;
+        }
+
+        std::filesystem::path GetPreferredCustomLevelPath() {
+            return config.PreferredCustomLevelPath;
+        }
+
+        std::span<std::filesystem::path const> GetRootCustomLevelPaths() {
+            return config.RootCustomLevelPaths;
+        }
+
+        std::filesystem::path GetPreferredCustomWIPLevelPath() {
+            return config.PreferredCustomWIPLevelPath;
+        }
+
+        std::span<std::filesystem::path const> GetRootCustomWIPLevelPaths() {
+            return config.RootCustomWIPLevelPaths;
+        }
+
+        void AddLevelPath(std::filesystem::path const& path, bool wipPath) {
+            auto& targetPaths = wipPath ? config.RootCustomWIPLevelPaths : config.RootCustomLevelPaths;
+            auto itr = std::find(targetPaths.begin(), targetPaths.end(), path);
+            if (itr == targetPaths.end()) {
+                targetPaths.emplace_back(path);
+                SaveConfig();
+            } else {
+                INFO("Path {} was already in the target collection, not adding again", path.string());
+            }
+        }
+
+        void RemoveLevelPath(std::filesystem::path const& path, bool wipPath) {
+            auto& targetPaths = wipPath ? config.RootCustomWIPLevelPaths : config.RootCustomLevelPaths;
+            auto itr = std::find(targetPaths.begin(), targetPaths.end(), path);
+            if (itr != targetPaths.end()) {
+                targetPaths.erase(itr);
+                SaveConfig();
+            } else {
+                INFO("Path {} wasn't in the target collection, nothing will happen", path.string());
+            }
+        }
+
+        bool AreSongsRefreshing() {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return false;
+            return instance->AreSongsRefreshing;
+        }
+
+        bool AreSongsLoaded() {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return false;
+            return instance->AreSongsLoaded;
+        }
+
+        float LoadProgress() {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return 0.0f;
+            return instance->Progress;
+        }
+
+        std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> GetAllLevels() {
+            static std::array<GlobalNamespace::CustomPreviewBeatmapLevel*, 0x0> emptyArray;
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return emptyArray;
+            return instance->AllLevels;
+        }
+
+        SongLoader::SongCoreCustomLevelPack* GetCustomLevelPack() {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return nullptr;
+            return instance->CustomLevelPack;
+        }
+
+        SongLoader::SongCoreCustomLevelPack* GetCustomWIPLevelPack() {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return nullptr;
+            return instance->CustomWIPLevelPack;
+        }
+
+        SongLoader::SongCoreCustomBeatmapLevelPackCollection* GetCustomLevelPackCollection() {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return nullptr;
+            return instance->CustomBeatmapLevelPackCollection;
+        }
+
+        GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByPath(std::filesystem::path const& levelPath) {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return nullptr;
+            return instance->GetLevelByPath(levelPath);
+        }
+
+        GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByLevelID(std::string_view levelID) {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return nullptr;
+            return instance->GetLevelByLevelID(levelID);
+        }
+
+        GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByHash(std::string_view hash) {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return nullptr;
+            return instance->GetLevelByHash(hash);
+        }
+
+        GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByFunction(std::function<bool(GlobalNamespace::CustomPreviewBeatmapLevel*)> searchFunction) {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return nullptr;
+            return instance->GetLevelByFunction(searchFunction);
         }
     }
 }

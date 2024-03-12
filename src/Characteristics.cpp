@@ -15,7 +15,7 @@ namespace SongCore {
         _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
         _appStaticSettings = appStaticSettings;
 
-        auto characteristics = il2cpp_utils::cast<System::Collections::Generic::List_1<GlobalNamespace::BeatmapCharacteristicSO*>*>(_beatmapCharacteristicCollection->beatmapCharacteristics);
+        auto characteristics = il2cpp_utils::cast<System::Collections::Generic::List_1<GlobalNamespace::BeatmapCharacteristicSO*>>(_beatmapCharacteristicCollection->beatmapCharacteristics);
         _beatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(characteristics);
         // FIXME: future proofing for 1.34.6
         // _disabledBeatmapCharacteristics = il2cpp_utils::cast<ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>>(_beatmapCharacteristicCollection->_disabledBeatmapCharacteristics);
