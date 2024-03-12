@@ -1,6 +1,5 @@
 #pragma once
 
-#include <compare>
 #include <string>
 #include <string_view>
 #include <filesystem>
@@ -8,15 +7,14 @@
 #include <mutex>
 #include <set>
 
-#include "CustomJSONData.hpp"
-#include "Characteristics.hpp"
-#include "SongCoreCustomLevelPack.hpp"
+#include "custom-types/shared/macros.hpp"
 
-#include "SongLoader/SongCoreCustomBeatmapLevelPackCollection.hpp"
+#include "../CustomJSONData.hpp"
+#include "SongCoreCustomLevelPack.hpp"
+#include "SongCoreCustomBeatmapLevelPackCollection.hpp"
+
 #include "System/Collections/Concurrent/ConcurrentDictionary_2.hpp"
 #include "System/Collections/Generic/List_1.hpp"
-
-#include "custom-types/shared/macros.hpp"
 
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 #include "GlobalNamespace/CustomBeatmapLevelCollection.hpp"
@@ -36,9 +34,6 @@
 #include "UnityEngine/MonoBehaviour.hpp"
 #include "Zenject/IInitializable.hpp"
 #include "lapiz/shared/macros.hpp"
-
-#include "SongCoreCustomLevelPack.hpp"
-#include "SongCoreCustomBeatmapLevelPackCollection.hpp"
 
 namespace SongCore::SongLoader {
     using SongDict = ::System::Collections::Concurrent::ConcurrentDictionary_2<StringW, ::GlobalNamespace::CustomPreviewBeatmapLevel*>;
