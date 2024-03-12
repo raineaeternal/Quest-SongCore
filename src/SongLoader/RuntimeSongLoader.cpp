@@ -45,6 +45,8 @@ DEFINE_TYPE(SongCore::SongLoader, RuntimeSongLoader);
 using namespace std::chrono;
 
 namespace SongCore::SongLoader {
+    RuntimeSongLoader* RuntimeSongLoader::_instance = nullptr;
+
     void RuntimeSongLoader::ctor() {
         INVOKE_BASE_CTOR(classof(UnityEngine::MonoBehaviour*));
         INVOKE_CTOR();
@@ -58,6 +60,13 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::Awake() {
+        if (_instance) {
+            UnityEngine::Object::DestroyImmediate(this);
+            return;
+        }
+
+        _instance = this;
+
         auto customLevelPackID = _customLevelPack->get_packID();
         auto customWIPLevelPackID = _customWIPLevelPack->get_packID();
 
@@ -76,6 +85,10 @@ namespace SongCore::SongLoader {
         RefreshSongs(true);
     }
 
+    void RuntimeSongLoader::OnDestroy() {
+        if (_instance == this) _instance = nullptr;
+    }
+
     void RuntimeSongLoader::Inject(GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel) {
         DEBUG("RuntimeSongLoader::Inject");
         _beatmapLevelsModel = beatmapLevelsModel;
@@ -85,6 +98,20 @@ namespace SongCore::SongLoader {
         _additionalContentModel = il2cpp_utils::cast<GlobalNamespace::AdditionalContentModel>(additionalContentModel);
     }
 
+    void RuntimeSongLoader::CollectLevels(std::filesystem::path const& root, bool isWip, std::set<LevelPathAndWip>& out) {
+        auto songPaths = Utils::GetFolders(root);
+        for (auto& songPath : songPaths) {
+            auto dataPath = songPath / "info.dat";
+            if (!std::filesystem::exists(dataPath)) dataPath = songPath / "Info.dat";
+            if (!std::filesystem::exists(dataPath)) {
+                WARNING("Song path '{}' had no info.dat! skipping...", songPath.string());
+                continue;
+            }
+
+            out.emplace(songPath, isWip);
+        }
+    }
+
     void RuntimeSongLoader::CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out) {
         for (auto& rootPath : roots) {
             if (!std::filesystem::exists(rootPath)) {
@@ -92,17 +119,7 @@ namespace SongCore::SongLoader {
                 continue;
             }
 
-            auto songPaths = Utils::GetFolders(rootPath);
-            for (auto& songPath : songPaths) {
-                auto dataPath = songPath / "info.dat";
-                if (!std::filesystem::exists(dataPath)) dataPath = songPath / "Info.dat";
-                if (!std::filesystem::exists(dataPath)) {
-                    WARNING("Song path '{}' had no info.dat! skipping...", songPath.string());
-                    continue;
-                }
-
-                out.emplace(songPath, isWip);
-            }
+            CollectLevels(rootPath, isWip, out);
         }
     }
 

@@ -43,6 +43,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, RuntimeSongLoader, UnityEngine::Mono
     DECLARE_CTOR(ctor);
 
     DECLARE_INSTANCE_METHOD(void, Awake);
+    DECLARE_INSTANCE_METHOD(void, OnDestroy);
 
     DECLARE_INJECT_METHOD(void, Inject, GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* _beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::CustomLevelLoader*, _customLevelLoader);
@@ -55,85 +56,76 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, RuntimeSongLoader, UnityEngine::Mono
     DECLARE_INSTANCE_FIELD_PRIVATE(SongCoreCustomLevelPack*, _customWIPLevelPack);
     DECLARE_INSTANCE_FIELD_PRIVATE(SongCoreCustomBeatmapLevelPackCollection*, _customLevelPackCollection);
 
-    DECLARE_INSTANCE_FIELD_PRIVATE(int, _songCount);
-
     DECLARE_INSTANCE_FIELD_PRIVATE(SongDict*, _customLevels);
     DECLARE_INSTANCE_FIELD_PRIVATE(SongDict*, _customWIPLevels);
 
-    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapDataLoader*, _beatmapDataLoader);
+    public:
+        static inline const std::string CUSTOM_LEVEL_PREFIX_ID = "custom_level_";
+        static inline const std::string CUSTOM_LEVEL_PACK_PREFIX_ID = "custom_levelPack_";
 
-    std::filesystem::path _songPath, _wipSongPath;
-public:
-    static inline const std::string CUSTOM_LEVEL_PREFIX_ID = "custom_level_";
-    static inline const std::string CUSTOM_LEVEL_PACK_PREFIX_ID = "custom_levelPack_";
+        /// @brief refreshes the loaded songs, loading any new ones
+        /// @param fullRefresh whether to reload every song or only new ones
+        /// @return shared future which you may await for when the songs are finished refreshing. if you want an onFinished use the `LevelsLoaded` event
+        std::shared_future<void> RefreshSongs(bool fullRefresh);
 
-    /// @brief Returns an instance of the songloader
-    RuntimeSongLoader* get_instance() { return _instance; };
-    RuntimeSongLoader* _instance = nullptr;
+        /// @brief Returns the instance of the songloader for people not using zenject. only valid when the app context is valid (soft restarts & game start have times when its not valid)
+        static RuntimeSongLoader* get_instance() { return _instance; };
 
-    /// @brief Returns the preferred song path.
-    std::filesystem::path get_SongPath() const;
-    __declspec(property(get = get_SongPath)) std::filesystem::path SongPath;
+        /// @brief Returns the preferred song path.
+        std::filesystem::path get_SongPath() const;
+        __declspec(property(get = get_SongPath)) std::filesystem::path SongPath;
 
-    /// @brief Returns the current WIP song path.
-    std::filesystem::path get_WIPSongPath() const;
-    __declspec(property(get = get_WIPSongPath)) std::filesystem::path WIPSongPath;
+        /// @brief Returns the current WIP song path.
+        std::filesystem::path get_WIPSongPath() const;
+        __declspec(property(get = get_WIPSongPath)) std::filesystem::path WIPSongPath;
 
-    __declspec(property(get = get_songs)) ListW<GlobalNamespace::BeatmapData*> _songs[];
+        /// @brief Returns the custom level dictionary
+        SongDict* get_customLevels() const { return _customLevels; };
+        __declspec(property(get = get_customLevels)) SongLoader::SongDict* CustomLevels;
 
-    /// @brief Returns the current song count
-    int get_songCount() { return _songCount; };
-    __declspec(property(get = get_songCount)) int songCount;
+        /// @brief Returns the custom wip level dictionary
+        SongDict* get_customWIPLevels() const { return _customWIPLevels; };
+        __declspec(property(get = get_customWIPLevels)) SongLoader::SongDict* CustomWIPLevels;
 
-    /// @brief Returns the custom level dict
-    SongDict* get_customLevels() { return _customLevels; };
-    __declspec(property(get = get_customLevels)) SongLoader::SongDict* CustomLevels;
+        /// @brief returns the levelpack songcore makes
+        SongCoreCustomLevelPack* get_CustomLevelPack() const { return _customLevelPack; }
+        __declspec(property(get = get_CustomLevelPack)) SongCoreCustomLevelPack* CustomLevelPack;
 
-    /// @brief Returns the custom wip level dict
-    SongDict* get_customWIPLevels() { return _customWIPLevels; };
-    __declspec(property(get = get_customWIPLevels)) SongLoader::SongDict* CustomWIPLevels;
+        /// @brief returns the wip levelpack songcore makes
+        SongCoreCustomLevelPack* get_CustomWIPLevelPack() const { return _customWIPLevelPack; }
+        __declspec(property(get = get_CustomWIPLevelPack)) SongCoreCustomLevelPack* CustomWIPLevelPack;
 
-    /// @brief returns the levelpack songcore makes
-    SongCoreCustomLevelPack* get_CustomLevelPack() const { return _customLevelPack; }
-    __declspec(property(get = get_CustomLevelPack)) SongCoreCustomLevelPack* CustomLevelPack;
+        /// @brief returns the beatmaplevelpackcollection songcore makes
+        SongCoreCustomBeatmapLevelPackCollection* get_CustomBeatmapLevelPackCollection() const { return _customLevelPackCollection; }
+        __declspec(property(get = get_CustomBeatmapLevelPackCollection)) SongCoreCustomBeatmapLevelPackCollection* CustomBeatmapLevelPackCollection;
 
-    /// @brief returns the wip levelpack songcore makes
-    SongCoreCustomLevelPack* get_CustomWIPLevelPack() const { return _customWIPLevelPack; }
-    __declspec(property(get = get_CustomWIPLevelPack)) SongCoreCustomLevelPack* CustomWIPLevelPack;
+        /// @brief lets you check whether songs are currently being refreshed
+        bool get_AreSongsRefreshing() const { return _currentlyLoadingFuture.valid(); }
+        __declspec(property(get=get_AreSongsRefreshing)) bool AreSongsRefreshing;
 
-    /// @brief returns the beatmaplevelpackcollection songcore makes
-    SongCoreCustomBeatmapLevelPackCollection* get_CustomBeatmapLevelPackCollection() const { return _customLevelPackCollection; }
-    __declspec(property(get = get_CustomBeatmapLevelPackCollection)) SongCoreCustomBeatmapLevelPackCollection* CustomBeatmapLevelPackCollection;
+        /// @brief lets you check whether songs loaded are valid right now
+        bool get_AreSongsLoaded() const { return _areSongsLoaded; }
+        __declspec(property(get=get_AreSongsLoaded)) bool AreSongsLoaded;
 
-    /// @brief refreshes the loaded songs, loading any new ones
-    /// @param fullRefresh whether to reload every song or only new ones
-    std::shared_future<void> RefreshSongs(bool fullRefresh);
+        /// @brief gets the current song loading progress
+        float get_Progress() const { return _loadProgress; }
+        __declspec(property(get=get_Progress)) float Progress;
 
-    __declspec(property(get=get_AreSongsRefreshing)) bool AreSongsRefreshing;
-    bool get_AreSongsRefreshing() const { return _currentlyLoadingFuture.valid(); }
+        /// @brief provides access into a span of all loaded levels
+        std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> get_AllLevels() const { return _allLoadedLevels; };
+        __declspec(property(get=get_AllLevels)) std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> AllLevels;
 
-    __declspec(property(get=get_AreSongsLoaded)) bool AreSongsLoaded;
-    bool get_AreSongsLoaded() const { return _areSongsLoaded; }
+        /// @brief event invoked when songs will be refreshed
+        UnorderedEventCallback<> SongsWillRefresh;
 
-    __declspec(property(get=get_Progress)) float Progress;
-    /// @brief gets the current song loading progress
-    float get_Progress() const { return _loadProgress; }
+        /// @brief event invoked after song loading has completed, ran on main thread. the provided span is a readonly reference to all levels
+        UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>> LevelsLoaded;
 
-    __declspec(property(get=get_AllLevels)) std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> AllLevels;
-    /// @brief provides access into a span of all loaded levels
-    std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> get_AllLevels() const { return _allLoadedLevels; };
+        /// @brief event invoked before the beatmaplevelsmodel is updated with the new collections
+        UnorderedEventCallback<SongCoreCustomBeatmapLevelPackCollection*> CustomLevelPacksWillRefresh;
 
-    /// @brief event invoked when songs will be refreshed
-    UnorderedEventCallback<> SongsWillRefresh;
-
-    /// @brief event invoked after song loading has completed, ran on main thread. the provided span is a readonly reference to all levels
-    UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>> LevelsLoaded;
-
-    /// @brief event invoked before the beatmaplevelsmodel is updated with the new collection
-    UnorderedEventCallback<SongCoreCustomBeatmapLevelPackCollection*> CustomLevelPacksWillRefresh;
-
-    /// @brief event invoked after the beatmaplevelsmodel was updated with the new collection
-    UnorderedEventCallback<SongCoreCustomBeatmapLevelPackCollection*> CustomLevelPacksRefreshed;
+        /// @brief event invoked after the beatmaplevelsmodel was updated with the new collection
+        UnorderedEventCallback<SongCoreCustomBeatmapLevelPackCollection*> CustomLevelPacksRefreshed;
 
     private:
         /// @brief internal struct to keep track of levelpath and wip status of a song before it got loaded
@@ -173,20 +165,37 @@ public:
         /// @return loaded preview beatmap level, or nullptr if failed
         GlobalNamespace::CustomPreviewBeatmapLevel* LoadCustomPreviewBeatmapLevel(std::filesystem::path levelPath, bool isWip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& outHash);
 
-        void CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out);
+        /// @brief collects levels from the root into the given set, and keeps the wip status
+        static void CollectLevels(std::filesystem::path const& root, bool isWip, std::set<LevelPathAndWip>& out);
 
-        void LoadCustomLevelsFromPaths(std::span<const std::filesystem::path> paths, bool wip = false);
+        /// @brief collects levels from the roots into the given set, and keeps the wip status
+        static void CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out);
+
+        /// @brief method kicked of by RefreshSongs on an il2cpp async
         void RefreshSongs_internal(bool refreshSongs);
+
+        /// @brief worker thread for loading songs from a set
         void RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd);
+
+        /// @brief refreshes the level packs in the beatmaplevelsmodel
         void RefreshLevelPacks();
 
+        /// @brief gets the savedata from the path
         SongCore::CustomJSONData::CustomLevelInfoSaveData* GetStandardSaveData(std::filesystem::path path);
 
+        /// @brief while songs are refreshing this future holds what is currently happening
         std::shared_future<void> _currentlyLoadingFuture;
 
+        /// @brief how many songs have already been loaded
         std::atomic<size_t> _loadedSongs;
+        /// @brief how many songs there are
         std::atomic<size_t> _totalSongs;
+        /// @brief how far along loading the progress is
         std::atomic<float> _loadProgress;
+        /// @brief are songs done loading
         std::atomic<bool> _areSongsLoaded;
+        /// @brief all loaded levels
         std::vector<GlobalNamespace::CustomPreviewBeatmapLevel*> _allLoadedLevels;
+
+        static RuntimeSongLoader* _instance;
 )
