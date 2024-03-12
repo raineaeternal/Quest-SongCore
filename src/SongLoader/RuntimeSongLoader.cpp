@@ -162,7 +162,6 @@ namespace SongCore::SongLoader {
 
         _totalSongs = levels.size();
         _loadedSongs = 0;
-        _loadProgress = 0.0f;
 
         for (int i = 0; i < workerThreadCount; i++) {
             workerThreads.emplace_back(
@@ -183,7 +182,6 @@ namespace SongCore::SongLoader {
 
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
         INFO("Loaded {} (actual: {}) songs in {}ms", (size_t)_totalSongs, actualCount, duration_cast<milliseconds>(high_resolution_clock::now() - startTime).count());
-        _loadProgress = 1.0f;
 
         // anonymous function to get the values from a songdict into a vector
         static auto GetValues = [](SongDict* dict){
