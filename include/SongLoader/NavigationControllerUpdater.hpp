@@ -5,7 +5,7 @@
 #include "System/IDisposable.hpp"
 #include "Zenject/IInitializable.hpp"
 #include "GlobalNamespace/LevelFilteringNavigationController.hpp"
-#include "SongLoader.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include <vector>
 
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdater, System::Object, std::vector<Il2CppClass*>({classof(System::IDisposable*), classof(Zenject::IInitializable*)}),
