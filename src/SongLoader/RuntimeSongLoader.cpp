@@ -2,7 +2,7 @@
 #include "CustomJSONData.hpp"
 #include "SongLoader/SongCoreCustomLevelPack.hpp"
 #include "main.hpp"
-#include "shared/SongCore.hpp"
+#include "SongCore.hpp"
 #include "logging.hpp"
 #include "config.hpp"
 #include "assets.hpp"
@@ -39,6 +39,7 @@
 #include <stdexcept>
 #include <string.h>
 #include <string>
+#include <thread>
 
 DEFINE_TYPE(SongCore::SongLoader, RuntimeSongLoader);
 
@@ -143,7 +144,7 @@ namespace SongCore::SongLoader {
             return _currentlyLoadingFuture;
         }
 
-        SongsWillRefresh.invoke();
+        InvokeSongsWillRefresh();
         _areSongsLoaded = false;
 
         _currentlyLoadingFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshSongs_internal, this, std::forward<bool>(fullRefresh));
@@ -240,7 +241,7 @@ namespace SongCore::SongLoader {
             INFO("Finishing up level loading on main thread");
             RefreshLevelPacks();
 
-            LevelsLoaded.invoke(_allLoadedLevels);
+            InvokeSongsLoaded(_allLoadedLevels);
 
             // clear current future
             _currentlyLoadingFuture = std::future<void>();
@@ -280,7 +281,7 @@ namespace SongCore::SongLoader {
                 bool containsKey = targetDict->ContainsKey(csLevelPath);
                 if (containsKey) {
                     DEBUG("Level path {} exists in existing collection. WIP: {}", levelPath.string(), isWip);
-                    level = reinterpret_cast<GlobalNamespace::CustomPreviewBeatmapLevel*>(targetDict->get_Item(levelPath.string()));
+                    level = targetDict->get_Item(levelPath.string());
                 }
 
                 // if the level is not yet set, attempt loading levelinfosavedata from the song path, then load custom preview beatmap level from that
@@ -360,12 +361,12 @@ namespace SongCore::SongLoader {
         _customLevelPackCollection->AddPack(_customLevelPack);
         _customLevelPackCollection->AddPack(_customWIPLevelPack);
 
-        CustomLevelPacksWillRefresh.invoke(_customLevelPackCollection);
+        InvokeCustomLevelPacksWillRefresh(_customLevelPackCollection);
 
         _beatmapLevelsModel->_customLevelPackCollection = _customLevelPackCollection->i___GlobalNamespace__IBeatmapLevelPackCollection();
         _beatmapLevelsModel->UpdateLoadedPreviewLevels();
 
-        CustomLevelPacksRefreshed.invoke(_customLevelPackCollection);
+        InvokeCustomLevelPacksRefreshed(_customLevelPackCollection);
     }
 
     GlobalNamespace::EnvironmentInfoSO* RuntimeSongLoader::GetEnvironmentInfo(StringW environmentName, bool allDirections) {
@@ -534,11 +535,138 @@ namespace SongCore::SongLoader {
         return result;
     }
 
+    void RuntimeSongLoader::DeleteSong_internal(std::filesystem::path levelPath) {
+        auto csPath = StringW(levelPath.string());
+        SongDict* targetDict = nullptr;
+
+        GlobalNamespace::CustomPreviewBeatmapLevel* level = nullptr;
+
+        if (CustomLevels->ContainsKey(csPath)) {
+            targetDict = CustomLevels;
+            level = CustomLevels->get_Item(csPath);
+        } else if (CustomWIPLevels->ContainsKey(csPath)) {
+            targetDict = CustomWIPLevels;
+            level = CustomWIPLevels->get_Item(csPath);
+        }
+
+        if (!level && !targetDict) {
+            WARNING("Level with path {} was attempted to be deleted, but it couldn't be found in the songloader dictionaries! returning...", levelPath.string());
+            return;
+        } else if(targetDict) {
+            WARNING("Somehow the stored beatmap level was null, just removing from the dictionary and nothing else...");
+            targetDict->TryRemove(csPath, byref(level));
+            return;
+        }
+
+        // let consumers of our api know a song will be deleted
+        bool willDeleteInvoked = false;
+        BSML::MainThreadScheduler::Schedule([this, &willDeleteInvoked, level](){
+            InvokeSongWillBeDeleted(level);
+            willDeleteInvoked = true;
+        });
+
+        while (!willDeleteInvoked) std::this_thread::yield();
+
+        std::error_code error_code;
+        std::filesystem::remove_all(levelPath, error_code);
+
+        if (error_code) WARNING("Error occurred during removal of {}: {}", levelPath.string(), error_code.message());
+        if (!targetDict->TryRemove(csPath, byref(level))) WARNING("Failed to remove beatmap for {} from dictionary!", levelPath.string());
+        // remove from loaded levels vector
+        auto itr = std::find(_allLoadedLevels.begin(), _allLoadedLevels.end(), level);
+        if (itr != _allLoadedLevels.end())
+            _allLoadedLevels.erase(itr);
+
+        bool deletedInvoked = false;
+        // let consumers of our api know a song was deleted
+        BSML::MainThreadScheduler::Schedule([this, &deletedInvoked](){
+            InvokeSongDeleted();
+            deletedInvoked = true;
+        });
+        while (!willDeleteInvoked) std::this_thread::yield();
+    }
+    std::future<void> RuntimeSongLoader::DeleteSong(std::filesystem::path const& levelPath) {
+        return il2cpp_utils::il2cpp_async(&RuntimeSongLoader::DeleteSong_internal, this, levelPath);
+    }
+
+    std::future<void> RuntimeSongLoader::DeleteSong(GlobalNamespace::CustomPreviewBeatmapLevel* beatmapLevel) {
+        if (!beatmapLevel) return std::future<void>();
+        return DeleteSong(static_cast<std::string>(beatmapLevel->customLevelPath));
+    }
+
+    GlobalNamespace::CustomPreviewBeatmapLevel* RuntimeSongLoader::GetLevelByPath(std::filesystem::path const& levelPath) {
+        auto csPath = StringW(levelPath.string());
+
+        GlobalNamespace::CustomPreviewBeatmapLevel* level = nullptr;
+        if (CustomLevels->TryGetValue(csPath, byref(level))) return level;
+        else if (CustomWIPLevels->TryGetValue(csPath, byref(level))) return level;
+
+        return GetLevelByFunction([path = levelPath.string()](auto level){ return level->customLevelPath == path; });
+    }
+
+    GlobalNamespace::CustomPreviewBeatmapLevel* RuntimeSongLoader::GetLevelByLevelID(std::string_view levelID) {
+        return GetLevelByFunction([levelID](auto level){ return level->levelID == levelID; });
+    }
+
+    GlobalNamespace::CustomPreviewBeatmapLevel* RuntimeSongLoader::GetLevelByHash(std::string_view hash) {
+        static auto LevelIDToHash = [](StringW levelID){
+            std::u16string_view hash(levelID);
+
+            // strip prefix
+            hash = hash.substr(CUSTOM_LEVEL_PREFIX_ID.size());
+
+            // if WIP, strip that off
+            if (levelID.ends_with(u" WIP")) {
+                hash = hash.substr(0, hash.size() - 4);
+            }
+
+            return utf8::utf16to8(hash);
+        };
+
+        return GetLevelByFunction([hash](auto level){ return LevelIDToHash(level->levelID) == hash; });
+    }
+
+    GlobalNamespace::CustomPreviewBeatmapLevel* RuntimeSongLoader::GetLevelByFunction(std::function<bool(GlobalNamespace::CustomPreviewBeatmapLevel*)> searchFunction) {
+        auto levelItr = std::find_if(AllLevels.begin(), AllLevels.end(), searchFunction);
+        if (levelItr == AllLevels.end()) return nullptr;
+        return *levelItr;
+    }
+
     std::filesystem::path RuntimeSongLoader::get_SongPath() const {
-        return config.PreferredCustomLevelPath;
+        return SongCore::API::Loading::GetPreferredCustomLevelPath();
     }
 
     std::filesystem::path RuntimeSongLoader::get_WIPSongPath() const {
-        return config.PreferredCustomWIPLevelPath;
+        return SongCore::API::Loading::GetPreferredCustomWIPLevelPath();
+    }
+
+    void RuntimeSongLoader::InvokeSongsWillRefresh() const {
+        SongsWillRefresh.invoke();
+        SongCore::API::Loading::GetSongsWillRefreshEvent().invoke();
+    }
+
+    void RuntimeSongLoader::InvokeSongsLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> levels) const {
+        SongsLoaded.invoke(levels);
+        SongCore::API::Loading::GetSongsLoadedEvent().invoke(levels);
+    }
+
+    void RuntimeSongLoader::InvokeCustomLevelPacksWillRefresh(SongCoreCustomBeatmapLevelPackCollection* levelPackCollection) const {
+        CustomLevelPacksWillRefresh.invoke(levelPackCollection);
+        SongCore::API::Loading::GetCustomLevelPacksWillRefreshEvent().invoke(levelPackCollection);
+    }
+
+    void RuntimeSongLoader::InvokeCustomLevelPacksRefreshed(SongCoreCustomBeatmapLevelPackCollection* levelPackCollection) const {
+        CustomLevelPacksRefreshed.invoke(levelPackCollection);
+        SongCore::API::Loading::GetCustomLevelPacksRefreshedEvent().invoke(levelPackCollection);
+    }
+
+    void RuntimeSongLoader::InvokeSongWillBeDeleted(GlobalNamespace::CustomPreviewBeatmapLevel* level) const {
+        SongWillBeDeleted.invoke(level);
+        SongCore::API::Loading::GetSongWillBeDeletedEvent().invoke(level);
+    }
+
+    void RuntimeSongLoader::InvokeSongDeleted() const {
+        SongDeleted.invoke();
+        SongCore::API::Loading::GetSongDeletedEvent().invoke();
     }
 }
