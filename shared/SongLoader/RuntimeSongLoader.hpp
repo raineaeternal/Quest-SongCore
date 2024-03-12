@@ -31,21 +31,20 @@
 #include "GlobalNamespace/AdditionalContentModel.hpp"
 #include "GlobalNamespace/IAdditionalContentModel.hpp"
 
-#include "UnityEngine/MonoBehaviour.hpp"
 #include "Zenject/IInitializable.hpp"
+#include "System/IDisposable.hpp"
 #include "lapiz/shared/macros.hpp"
 
 namespace SongCore::SongLoader {
     using SongDict = ::System::Collections::Concurrent::ConcurrentDictionary_2<StringW, ::GlobalNamespace::CustomPreviewBeatmapLevel*>;
 }
 
-DECLARE_CLASS_CODEGEN(SongCore::SongLoader, RuntimeSongLoader, UnityEngine::MonoBehaviour,
-    DECLARE_CTOR(ctor);
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
+    DECLARE_CTOR(ctor, GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* _beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel);
 
-    DECLARE_INSTANCE_METHOD(void, Awake);
-    DECLARE_INSTANCE_METHOD(void, OnDestroy);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &Zenject::IInitializable::Initialize);
+    DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);
 
-    DECLARE_INJECT_METHOD(void, Inject, GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* _beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::CustomLevelLoader*, _customLevelLoader);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapLevelsModel*, _beatmapLevelsModel);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::CachedMediaAsyncLoader*, _cachedMediaAsyncLoader);
@@ -117,7 +116,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, RuntimeSongLoader, UnityEngine::Mono
         __declspec(property(get=get_AreSongsLoaded)) bool AreSongsLoaded;
 
         /// @brief gets the current song loading progress
-        float get_Progress() const { return _loadProgress; }
+        float get_Progress() const { return (float)_loadedSongs / (float)_totalSongs; }
         __declspec(property(get=get_Progress)) float Progress;
 
         /// @brief provides access into a span of all loaded levels
@@ -221,8 +220,6 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, RuntimeSongLoader, UnityEngine::Mono
         std::atomic<size_t> _loadedSongs;
         /// @brief how many songs there are
         std::atomic<size_t> _totalSongs;
-        /// @brief how far along loading the progress is
-        std::atomic<float> _loadProgress;
         /// @brief are songs done loading
         std::atomic<bool> _areSongsLoaded;
         /// @brief all loaded levels

@@ -85,7 +85,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
         INFO("Installing RSL to location App from SongCore");
         container->BindInterfacesAndSelfTo<SongCore::Capabilities*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::Characteristics*>()->AsSingle()->NonLazy();
-        Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->Bind<SongCore::SongLoader::RuntimeSongLoader*>())->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::SongLoader::RuntimeSongLoader*>()->AsSingle()->NonLazy();
     });
 
     z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {

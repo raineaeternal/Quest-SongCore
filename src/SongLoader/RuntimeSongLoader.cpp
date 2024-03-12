@@ -50,24 +50,26 @@ using namespace std::chrono;
 namespace SongCore::SongLoader {
     RuntimeSongLoader* RuntimeSongLoader::_instance = nullptr;
 
-    void RuntimeSongLoader::ctor() {
-        INVOKE_BASE_CTOR(classof(UnityEngine::MonoBehaviour*));
+    void RuntimeSongLoader::ctor(GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel) {
         INVOKE_CTOR();
 
-        _customLevelPack = SongCoreCustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", nullptr);
-        _customWIPLevelPack = SongCoreCustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", nullptr);
+        _beatmapLevelsModel = beatmapLevelsModel;
+        _customLevelLoader = customLevelLoader;
+        _cachedMediaAsyncLoader = cachedMediaAsyncLoader;
+        _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
+        _additionalContentModel = il2cpp_utils::cast<GlobalNamespace::AdditionalContentModel>(additionalContentModel);
+
+        _customLevelPack = SongCoreCustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", customLevelLoader->_defaultPackCover);
+        _customWIPLevelPack = SongCoreCustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", BSML::Utilities::LoadSpriteRaw(Assets::Resources::CustomWIPLevelsCover_png));
         _customLevelPackCollection = SongCoreCustomBeatmapLevelPackCollection::New();
 
         _customLevels = SongDict::New_ctor();
         _customWIPLevels = SongDict::New_ctor();
     }
 
-    void RuntimeSongLoader::Awake() {
-        if (_instance) {
-            UnityEngine::Object::DestroyImmediate(this);
-            return;
-        }
-
+    void RuntimeSongLoader::Initialize() {
+        DEBUG("RuntimeSongLoader Initialize");
+        if (_instance) { return; }
         _instance = this;
 
         auto customLevelPackID = _customLevelPack->get_packID();
@@ -77,32 +79,18 @@ namespace SongCore::SongLoader {
         if (!alwaysOwnedPackIds->Contains(customLevelPackID)) alwaysOwnedPackIds->Add(customLevelPackID);
         if (!alwaysOwnedPackIds->Contains(customWIPLevelPackID)) alwaysOwnedPackIds->Add(customWIPLevelPackID);
 
-        // set default pack covers on custom levels
-        _customLevelPack->_coverImage_k__BackingField = _customLevelLoader->_defaultPackCover;
-        _customLevelPack->_smallCoverImage_k__BackingField = _customLevelLoader->_smallDefaultPackCover;
-
-        // set custom pack cover for regular levels
-        _customWIPLevelPack->_coverImage_k__BackingField = BSML::Utilities::LoadSpriteRaw(Assets::Resources::CustomWIPLevelsCover_png);
-        _customWIPLevelPack->_smallCoverImage_k__BackingField = _customWIPLevelPack->_coverImage_k__BackingField;
-
         RefreshSongs(true);
     }
 
-    void RuntimeSongLoader::OnDestroy() {
+    void RuntimeSongLoader::Dispose() {
+        DEBUG("RuntimeSongLoader Dispose, _instance: {}, this: {}", fmt::ptr(_instance), fmt::ptr(this));
         if (_instance == this) _instance = nullptr;
-    }
 
-    void RuntimeSongLoader::Inject(GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel) {
-        DEBUG("RuntimeSongLoader::Inject");
-        _beatmapLevelsModel = beatmapLevelsModel;
-        _customLevelLoader = customLevelLoader;
-        _cachedMediaAsyncLoader = cachedMediaAsyncLoader;
-        _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
-        _additionalContentModel = il2cpp_utils::cast<GlobalNamespace::AdditionalContentModel>(additionalContentModel);
+        _customLevels->Clear();
+        _customWIPLevels->Clear();
     }
 
     void RuntimeSongLoader::CollectLevels(std::filesystem::path const& root, bool isWip, std::set<LevelPathAndWip>& out) {
-
         // recursively find folders in this root folder to load songs from
         std::error_code error_code;
         auto iterator = std::filesystem::recursive_directory_iterator(root, error_code);
@@ -141,6 +129,7 @@ namespace SongCore::SongLoader {
 
     std::shared_future<void> RuntimeSongLoader::RefreshSongs(bool fullRefresh) {
         if (AreSongsRefreshing) {
+            WARNING("Refresh was requested while songs were refershing, returning the same future");
             return _currentlyLoadingFuture;
         }
 
@@ -279,7 +268,6 @@ namespace SongCore::SongLoader {
                 // preliminary check to see whether the song we are looking for already is in our dictionary
                 bool containsKey = targetDict->ContainsKey(csLevelPath);
                 if (containsKey) {
-                    DEBUG("Level path {} exists in existing collection. WIP: {}", levelPath.string(), isWip);
                     level = targetDict->get_Item(levelPath.string());
                 }
 
@@ -289,7 +277,6 @@ namespace SongCore::SongLoader {
                     if (saveData) {
                         std::string hash;
                         level = LoadCustomPreviewBeatmapLevel(levelPath.string(), isWip, saveData, hash);
-                        DEBUG("Loaded song with hash {}", hash);
                     }
                 }
 
@@ -304,7 +291,6 @@ namespace SongCore::SongLoader {
 
                 // update progress
                 _loadedSongs++;
-                _loadProgress = (float)_loadedSongs / (float)_totalSongs;
             } catch (std::exception const& e) {
                 ERROR("Caught exception of type {} while loading song @ path '{}', song will be skipped!", typeid(e).name(), levelPath.string());
                 ERROR("Exception what: {}", e.what());
@@ -317,7 +303,6 @@ namespace SongCore::SongLoader {
     }
 
     SongCore::CustomJSONData::CustomLevelInfoSaveData* RuntimeSongLoader::GetStandardSaveData(std::filesystem::path path) {
-        DEBUG("RuntimeSongLoader::GetStandardSaveData");
         if (path.empty()) {
             ERROR("Provided path was empty!");
             return nullptr;
@@ -332,7 +317,6 @@ namespace SongCore::SongLoader {
 
         try {
             auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(infoPath));
-            DEBUG("standardSaveData: {}", standardSaveData->ToString());
 
             if (!standardSaveData) {
                 ERROR("Cannot load file from path: {}!", path.string());
@@ -522,7 +506,6 @@ namespace SongCore::SongLoader {
             difficultyBeatmapSets->i___System__Collections__Generic__IReadOnlyList_1_T_()
         );
 
-        // TODO: the whole length from map / caching spiel
         std::string songFilePath = levelPath / static_cast<std::string>(saveData->get_songFilename());
         if (std::filesystem::exists(songFilePath)) { // only do this if the file exists
             float len = Utils::GetLengthFromOggVorbis(songFilePath);
@@ -530,7 +513,6 @@ namespace SongCore::SongLoader {
             result->_songDuration_k__BackingField = len;
         }
 
-        DEBUG("result: {}", fmt::ptr(result));
         return result;
     }
 
@@ -584,6 +566,7 @@ namespace SongCore::SongLoader {
         });
         while (!willDeleteInvoked) std::this_thread::yield();
     }
+
     std::future<void> RuntimeSongLoader::DeleteSong(std::filesystem::path const& levelPath) {
         return il2cpp_utils::il2cpp_async(&RuntimeSongLoader::DeleteSong_internal, this, levelPath);
     }

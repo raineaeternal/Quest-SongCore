@@ -30,13 +30,13 @@ namespace SongCore::UI {
     }
 
     void ProgressBar::Awake() {
-        INFO("Connected RSL instance: {}", _runtimeSongLoader->m_CachedPtr);
+        INFO("Connected RSL instance: {}", fmt::ptr(_runtimeSongLoader));
         StartCoroutine(custom_types::Helpers::CoroutineHelper::New([this]() -> custom_types::Helpers::Coroutine {
             co_yield nullptr;
             gameObject->transform->position = _pos;
             gameObject->transform->eulerAngles = _rot;
             gameObject->transform->localScale = _scale;
-            
+
             _canvas = gameObject->AddComponent<UnityEngine::Canvas *>();
             _canvas->renderMode = UnityEngine::RenderMode::WorldSpace;
             _canvas->enabled = true;
