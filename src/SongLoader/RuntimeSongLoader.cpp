@@ -11,6 +11,8 @@
 
 #include "Utils/Hashing.hpp"
 #include "Utils/File.hpp"
+#include "Utils/Cache.hpp"
+
 #include "GlobalNamespace/PlayerSaveData.hpp"
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
 #include "GlobalNamespace/PreviewDifficultyBeatmapSet.hpp"
@@ -99,13 +101,26 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::CollectLevels(std::filesystem::path const& root, bool isWip, std::set<LevelPathAndWip>& out) {
-        auto songPaths = Utils::GetFolders(root);
-        for (auto& songPath : songPaths) {
+
+        // recursively find folders in this root folder to load songs from
+        std::error_code error_code;
+        auto iterator = std::filesystem::recursive_directory_iterator(root, error_code);
+        if (error_code) {
+            WARNING("Failed to get iterator for directory {}: {}", root.string(), error_code.message());
+            return;
+        }
+
+        for (auto entry : iterator) {
+            if (!entry.is_directory()) continue;
+            auto songPath = entry.path();
+
             auto dataPath = songPath / "info.dat";
-            if (!std::filesystem::exists(dataPath)) dataPath = songPath / "Info.dat";
             if (!std::filesystem::exists(dataPath)) {
-                WARNING("Song path '{}' had no info.dat! skipping...", songPath.string());
-                continue;
+                dataPath = songPath / "Info.dat";
+                if (!std::filesystem::exists(dataPath)) {
+                    WARNING("Possible song folder '{}' had no info.dat file! skipping...", songPath.string());
+                    continue;
+                }
             }
 
             out.emplace(songPath, isWip);
@@ -173,6 +188,9 @@ namespace SongCore::SongLoader {
         for (auto& t : workerThreads) {
             t.join();
         }
+
+        // save cache to file after all songs are loaded
+        Utils::SaveSongInfoCache();
 
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
         INFO("Loaded {} (actual: {}) songs in {}ms", (size_t)_totalSongs, actualCount, duration_cast<milliseconds>(high_resolution_clock::now() - startTime).count());
@@ -271,6 +289,7 @@ namespace SongCore::SongLoader {
                     if (saveData) {
                         std::string hash;
                         level = LoadCustomPreviewBeatmapLevel(levelPath.string(), isWip, saveData, hash);
+                        DEBUG("Loaded song with hash {}", hash);
                     }
                 }
 
@@ -446,6 +465,7 @@ namespace SongCore::SongLoader {
             WARNING("saveData was null for level @ {}", levelPath.string());
             return nullptr;
         }
+
         auto hashOpt = Utils::GetCustomLevelHash(levelPath, saveData);
         hashOut = *hashOpt;
 

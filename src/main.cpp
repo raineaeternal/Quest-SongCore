@@ -1,6 +1,7 @@
 #include "SongCore.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "SongLoader/NavigationControllerUpdater.hpp"
+#include "Utils/Cache.hpp"
 
 #include "UI/ProgressBar.hpp"
 #include "_config.h"
@@ -70,6 +71,9 @@ SONGCORE_EXPORT_FUNC void late_load() {
     auto abrt = dlsym(libc, "abort");
 
     INSTALL_HOOK_DIRECT(getLogger(), abort_hook, abrt);
+
+    // load cached hashes n stuff
+    if (!SongCore::Utils::LoadSongInfoCache()) SongCore::Utils::SaveSongInfoCache();
 
     EnsureNoMedia();
 
