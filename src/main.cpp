@@ -1,5 +1,5 @@
 #include "SongCore.hpp"
-#include "SongLoader/SongLoader.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "SongLoader/NavigationControllerUpdater.hpp"
 
 #include "UI/ProgressBar.hpp"

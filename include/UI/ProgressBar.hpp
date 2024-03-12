@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SongLoader/SongLoader.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "lapiz/shared/macros.hpp"
 #include "bsml/shared/BSML.hpp"
@@ -17,7 +17,7 @@
 #include "UnityEngine/Sprite.hpp"
 #include "UnityEngine/RenderMode.hpp"
 
-#include "SongLoader/SongLoader.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 
 DECLARE_CLASS_CODEGEN(SongCore::UI, ProgressBar, UnityEngine::MonoBehaviour,
     DECLARE_CTOR(ctor);

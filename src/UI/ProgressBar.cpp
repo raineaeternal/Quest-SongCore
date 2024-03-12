@@ -1,5 +1,5 @@
 #include "UI/ProgressBar.hpp"
-#include "SongLoader/SongLoader.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "UnityEngine/Texture2D.hpp"
 #include "logging.hpp"

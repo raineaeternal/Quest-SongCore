@@ -1,4 +1,4 @@
-#include "SongLoader/SongLoader.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "CustomJSONData.hpp"
 #include "SongLoader/SongCoreCustomLevelPack.hpp"
 #include "main.hpp"
