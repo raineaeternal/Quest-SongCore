@@ -11,7 +11,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, SongCoreCustomBeatmapLevelPackCollec
         void ClearPacks();
 
         /// @brief adds a custom levelpack to the internal array
-        void AddPack(SongCoreCustomLevelPack* levelPack);
+        void AddPack(SongCoreCustomLevelPack* levelPack, bool addIfEmpty = false);
 
         static SongCoreCustomBeatmapLevelPackCollection* New();
 )

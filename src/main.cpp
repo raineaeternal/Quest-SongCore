@@ -22,8 +22,10 @@
 #include "include/UI/ProgressBar.hpp"
 #include "config.hpp"
 #include <filesystem>
+#include <fstream>
 
 void RegisterDefaultCharacteristics();
+void EnsureNoMedia();
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
@@ -68,6 +70,8 @@ SONGCORE_EXPORT_FUNC void late_load() {
     auto abrt = dlsym(libc, "abort");
 
     INSTALL_HOOK_DIRECT(getLogger(), abort_hook, abrt);
+
+    EnsureNoMedia();
 
     if (!LoadConfig()) SaveConfig();
     if (!config.PreferredCustomLevelPath.empty() && !std::filesystem::exists(config.PreferredCustomLevelPath)) std::filesystem::create_directories(config.PreferredCustomLevelPath);
@@ -127,4 +131,14 @@ void RegisterDefaultCharacteristics() {
     SongCore::API::Characteristics::RegisterCustomCharacteristic(missingCharacteristic.ptr());
     SongCore::API::Characteristics::RegisterCustomCharacteristic(lightshow.ptr());
     SongCore::API::Characteristics::RegisterCustomCharacteristic(lawless.ptr());
+}
+
+void EnsureNoMedia() {
+    // make sure songcore folder contains a .nomedia file to prevent icons and images absolutely decimating the images apps
+    auto noMediaFilePath = std::filesystem::path("/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/.nomedia");
+    if (!std::filesystem::exists(noMediaFilePath)) {
+        std::filesystem::create_directories(noMediaFilePath.parent_path());
+        std::ofstream file(noMediaFilePath);
+        file << '\0';
+    }
 }

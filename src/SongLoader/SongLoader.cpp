@@ -24,6 +24,7 @@
 #include "System/IDisposable.hpp"
 
 #include "bsml/shared/Helpers/utilities.hpp"
+#include "Utils/OggVorbis.hpp"
 
 #include <chrono>
 #include <clocale>
@@ -133,15 +134,16 @@ namespace SongCore::SongLoader {
         using namespace std::chrono;
         auto startTime = high_resolution_clock::now();
 
+        auto workerThreadCount = std::clamp<size_t>(levels.size(), 1, MAX_THREAD_COUNT);
         std::vector<il2cpp_utils::il2cpp_aware_thread> workerThreads;
-        workerThreads.reserve(MAX_THREAD_COUNT);
+        workerThreads.reserve(workerThreadCount);
 
         _totalSongs = levels.size();
 
         // TODO: Double check this actually returns correct value
-        _loadProgress = 0;
+        _loadProgress = 0.0f;
 
-        for (int i = 0; i < MAX_THREAD_COUNT; i++) {
+        for (int i = 0; i < workerThreadCount; i++) {
             workerThreads.emplace_back(
                 &RuntimeSongLoader::RefreshSongWorkerThread,
                 this,
@@ -157,7 +159,7 @@ namespace SongCore::SongLoader {
 
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
         INFO("Loaded {} (actual: {}) songs in {}ms", (size_t)_totalSongs, actualCount, duration_cast<milliseconds>(high_resolution_clock::now() - startTime).count());
-        _loadProgress = 0.0f;
+        _loadProgress = 1.0f;
 
         // anonymous function to get the values from a songdict into a vector
         static auto GetValues = [](SongDict* dict){
@@ -482,6 +484,14 @@ namespace SongCore::SongLoader {
             ::GlobalNamespace::PlayerSensitivityFlag::Unknown,
             difficultyBeatmapSets->i___System__Collections__Generic__IReadOnlyList_1_T_()
         );
+
+        // TODO: the whole length from map / caching spiel
+        std::string songFilePath = levelPath / static_cast<std::string>(saveData->get_songFilename());
+        if (std::filesystem::exists(songFilePath)) { // only do this if the file exists
+            float len = Utils::GetLengthFromOggVorbis(songFilePath);
+            if (len <= 0 || len == std::numeric_limits<float>::infinity()) len = 0.0f;
+            result->_songDuration_k__BackingField = len;
+        }
 
         DEBUG("result: {}", fmt::ptr(result));
         return result;
