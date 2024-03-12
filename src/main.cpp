@@ -58,10 +58,10 @@ MAKE_HOOK(abort_hook, nullptr, void) {
 // Called later on in the game loading - a good time to install function hooks
 SONGCORE_EXPORT_FUNC void late_load() {
     il2cpp_functions::Init();
-    BSML::Init();
 
     custom_types::Register::AutoRegister();
     SongCore::Hooking::InstallHooks(getLogger());
+    BSML::Init();
     auto z = Lapiz::Zenject::Zenjector::Get();
 
     auto libc = dlopen("libc.so", RTLD_NOW);
@@ -82,7 +82,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
 
     z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
         container->BindInterfacesAndSelfTo<SongCore::SongLoader::NavigationControllerUpdater*>()->AsSingle()->NonLazy();
-        // container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle();
+        Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>())->AsSingle()->NonLazy();
     });
 
     RegisterDefaultCharacteristics();

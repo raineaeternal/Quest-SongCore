@@ -76,6 +76,7 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::Inject(GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel) {
+        DEBUG("RuntimeSongLoader::Inject");
         _beatmapLevelsModel = beatmapLevelsModel;
         _customLevelLoader = customLevelLoader;
         _cachedMediaAsyncLoader = cachedMediaAsyncLoader;
@@ -136,6 +137,8 @@ namespace SongCore::SongLoader {
         workerThreads.reserve(MAX_THREAD_COUNT);
 
         _totalSongs = levels.size();
+
+        // TODO: Double check this actually returns correct value
         _loadProgress = 0;
 
         for (int i = 0; i < MAX_THREAD_COUNT; i++) {
