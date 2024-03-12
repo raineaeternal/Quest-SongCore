@@ -103,7 +103,7 @@ namespace SongCore::Utils {
             rapidjson::Value memberName(levelPath.c_str(), levelPath.size(), allocator);
             doc.AddMember(memberName, data.Serialize(allocator), allocator);
         }
-        _cacheMutex.unlock();
+        lock.unlock();
 
         rapidjson::StringBuffer buff;
         rapidjson::Writer writer(buff);
