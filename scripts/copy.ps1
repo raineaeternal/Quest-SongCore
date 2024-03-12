@@ -1,64 +1,27 @@
-Param(
+param (
     [Parameter(Mandatory=$false)]
-    [Switch] $clean,
-
+    [Switch]$debug_so,
     [Parameter(Mandatory=$false)]
-    [Switch] $log,
-
-    [Parameter(Mandatory=$false)]
-    [Switch] $useDebug,
-
-    [Parameter(Mandatory=$false)]
-    [Switch] $self,
-
-    [Parameter(Mandatory=$false)]
-    [Switch] $all,
-
-    [Parameter(Mandatory=$false)]
-    [String] $custom="",
-
-    [Parameter(Mandatory=$false)]
-    [String] $file="",
-
-    [Parameter(Mandatory=$false)]
-    [Switch] $help
+    [Switch]$log
 )
 
-if ($help -eq $true) {
-    Write-Output "`"Copy`" - Builds and copies your mod to your quest, and also starts Beat Saber with optional logging"
-    Write-Output "`n-- Arguments --`n"
+& $PSScriptRoot/build.ps1
 
-    Write-Output "-Clean `t`t Performs a clean build (equvilant to running `"build -clean`")"
-    Write-Output "-UseDebug `t Copies the debug version of the mod to your quest"
-    Write-Output "-Log `t`t Logs Beat Saber using the `"Start-Logging`" command"
-
-    Write-Output "`n-- Logging Arguments --`n"
-
-    & $PSScriptRoot/start-logging.ps1 -help -excludeHeader
-
-    exit
+if (-not ($LastExitCode -eq 0)) {
+    echo "build failed, not copying"
+    exit $LastExitCode
 }
 
-& $PSScriptRoot/build.ps1 -clean:$clean
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Output "Failed to build, exiting..."
-    exit $LASTEXITCODE
+if ($debug.IsPresent) {
+    & adb push build/debug/libsongcore.so /sdcard/ModData/com.beatgames.beatsaber/Modloader/mods/libsongcore.so
+} else {
+    & adb push build/libsongcore.so /sdcard/ModData/com.beatgames.beatsaber/Modloader/mods/libsongcore.so
 }
 
-$modFiles = $modJson.modFiles
-
-foreach ($fileName in $modFiles) {
-    if ($useDebug -eq $true) {
-        & adb push build/debug/$fileName /sdcard/ModData/com.beatgames.beatsaber/Modloader/mods/$fileName
-    } else {
-        & adb push build/$fileName /sdcard/ModData/com.beatgames.beatsaber/Modloader/mods/$fileName
-    }
-}
-
-& $PSScriptRoot/restart-game.ps1
-
-if ($log -eq $true) {
-    & adb logcat -c
-    & $PSScriptRoot/start-logging.ps1 -self:$self -all:$all -custom:$custom -file:$file
+& adb shell am force-stop com.beatgames.beatsaber
+& adb shell am start com.beatgames.beatsaber/com.unity3d.player.UnityPlayerActivity
+Start-Sleep -Seconds 1.0
+& adb shell am start com.beatgames.beatsaber/com.unity3d.player.UnityPlayerActivity
+if ($log.IsPresent) {
+    & $PSScriptRoot/log.ps1
 }
