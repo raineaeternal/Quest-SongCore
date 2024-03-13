@@ -19,9 +19,8 @@
 #include "GlobalNamespace/IDifficultyBeatmap.hpp"
 
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, PlayButtonsUpdater, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
-    DECLARE_CTOR(ctor, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, GlobalNamespace::LevelSelectionNavigationController* levelSelectionNavigationController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities);
+    DECLARE_CTOR(ctor, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
-    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::LevelSelectionNavigationController*, _levelSelectionNavigationController);
     DECLARE_INSTANCE_FIELD_PRIVATE(PlayButtonInteractable*, _playButtonInteractable);
     DECLARE_INSTANCE_FIELD_PRIVATE(Capabilities*, _capabilities);
 

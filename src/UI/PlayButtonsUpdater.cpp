@@ -12,9 +12,8 @@
 DEFINE_TYPE(SongCore::UI, PlayButtonsUpdater);
 
 namespace SongCore::UI {
-    void PlayButtonsUpdater::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController,  GlobalNamespace::LevelSelectionNavigationController* levelSelectionNavigationController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities) {
+    void PlayButtonsUpdater::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController,  PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities) {
         _levelDetailViewController = levelDetailViewController;
-        _levelSelectionNavigationController = levelSelectionNavigationController;
         _playButtonInteractable;
         _capabilities = capabilities;
     }
