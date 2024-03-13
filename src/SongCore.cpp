@@ -75,6 +75,39 @@ namespace SongCore::API {
         }
     }
 
+    namespace PlayButton {
+        static std::vector<PlayButtonDisablingModInfo> _disablingModInfos;
+        static UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>> _playButtonDisablingModsChangedEvent;
+
+        void DisablePlayButton(std::string modID, std::string reason) {
+            auto itr = std::find_if(_disablingModInfos.begin(), _disablingModInfos.end(), [&modID](auto& x){ return x.modID == modID; });
+            if (itr == _disablingModInfos.end()) {
+                _disablingModInfos.emplace_back(modID, reason);
+                _playButtonDisablingModsChangedEvent.invoke(_disablingModInfos);
+            } else {
+                WARNING("Mod {} tried disabling the play button twice, which is not supported! current reason: {}, new reason: {}", modID, itr->reason, reason);
+            }
+        }
+
+        void EnablePlayButton(std::string modID) {
+            auto itr = std::find_if(_disablingModInfos.begin(), _disablingModInfos.end(), [&modID](auto& x){ return x.modID == modID; });
+            if (itr != _disablingModInfos.end()) {
+                _disablingModInfos.erase(itr);
+                _playButtonDisablingModsChangedEvent.invoke(_disablingModInfos);
+            } else {
+                WARNING("Mod {} tried enabling the play button twice, which is not supported!", modID);
+            }
+        }
+
+        UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>>& GetPlayButtonDisablingModsChangedEvent() {
+            return _playButtonDisablingModsChangedEvent;
+        }
+
+        std::span<PlayButtonDisablingModInfo const> GetPlayButtonDisablingModInfos() {
+            return _disablingModInfos;
+        }
+    }
+
     namespace Characteristics {
         static SafePtr<System::Collections::Generic::List_1<GlobalNamespace::BeatmapCharacteristicSO*>> _registeredCharacteristics;
         static UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind> _characteristicsUpdatedEvent;

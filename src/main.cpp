@@ -1,6 +1,7 @@
 #include "SongCore.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "SongLoader/NavigationControllerUpdater.hpp"
+#include "UI/PlayButtonsUpdater.hpp"
 #include "Utils/Cache.hpp"
 
 #include "UI/ProgressBar.hpp"
@@ -20,6 +21,7 @@
 
 #include "Capabilities.hpp"
 #include "Characteristics.hpp"
+#include "PlayButtonInteractable.hpp"
 #include "include/UI/ProgressBar.hpp"
 #include "config.hpp"
 #include <filesystem>
@@ -85,11 +87,13 @@ SONGCORE_EXPORT_FUNC void late_load() {
         INFO("Installing RSL to location App from SongCore");
         container->BindInterfacesAndSelfTo<SongCore::Capabilities*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::Characteristics*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::PlayButtonInteractable*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::SongLoader::RuntimeSongLoader*>()->AsSingle()->NonLazy();
     });
 
     z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
         container->BindInterfacesAndSelfTo<SongCore::SongLoader::NavigationControllerUpdater*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::PlayButtonsUpdater*>()->AsSingle()->NonLazy();
         Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>())->AsSingle()->NonLazy();
     });
 
