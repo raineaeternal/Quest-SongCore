@@ -100,7 +100,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
         container->BindInterfacesAndSelfTo<SongCore::UI::PlayButtonsUpdater*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::RequirementsListManager*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::ColorsOptions*>()->AsSingle()->NonLazy();
-        Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>())->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle()->NonLazy();
     });
 
     RegisterDefaultCharacteristics();
