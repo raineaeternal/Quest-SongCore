@@ -160,8 +160,10 @@ namespace SongCore::UI {
 
     void ProgressBar::Dispose() {
         StopDisableCanvasRoutine();
-        UnityEngine::Object::Destroy(_canvas->gameObject);
-        BSML::SharedCoroutineStarter::StopCoroutine(_coroReturn);
+        if (_canvas && _canvas->m_CachedPtr) {
+            UnityEngine::Object::Destroy(_canvas->gameObject);
+        }
+        _canvas = nullptr;
 
         _runtimeSongLoader->SongsWillRefresh -= {&ProgressBar::RuntimeSongLoaderOnSongRefresh, this};
         _runtimeSongLoader->SongsLoaded -= {&ProgressBar::RuntimeSongLoaderOnSongLoaded, this};
