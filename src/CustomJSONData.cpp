@@ -210,14 +210,21 @@ namespace SongCore::CustomJSONData {
 
 	// this is the diff set -> difficulties
 	bool CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet::Deserialize(ValueUTF16 const& value) {
-		auto characteristicLabelItr = value.FindMember(u"_characteristicLabel");
-		if (characteristicLabelItr != value.MemberEnd()) characteristicLabel = utf8::utf16to8(characteristicLabelItr->value.Get<std::u16string>());
+		auto memberEnd = value.MemberEnd();
+		auto customDataItr = value.FindMember(u"_customData");
+		if (customDataItr != memberEnd && customDataItr->value.IsObject()) {
+			auto& customData = customDataItr->value;
+			auto memberEnd = customData.MemberEnd();
 
-		auto characteristicIconImageFileNameItr = value.FindMember(u"_characteristicIconImageFileName");
-		if (characteristicIconImageFileNameItr != value.MemberEnd()) characteristicIconImageFileName = utf8::utf16to8(characteristicIconImageFileNameItr->value.Get<std::u16string>());
+			auto characteristicLabelItr = customData.FindMember(u"_characteristicLabel");
+			if (characteristicLabelItr != memberEnd && characteristicLabelItr->value.IsString()) characteristicLabel = utf8::utf16to8(characteristicLabelItr->value.Get<std::u16string>());
+
+			auto characteristicIconImageFileNameItr = customData.FindMember(u"_characteristicIconImageFileName");
+			if (characteristicIconImageFileNameItr != memberEnd && characteristicIconImageFileNameItr->value.IsString()) characteristicIconImageFileName = utf8::utf16to8(characteristicIconImageFileNameItr->value.Get<std::u16string>());
+		}
 
 		auto difficultyBeatmapsItr = value.FindMember(u"_difficultyBeatmaps");
-		if (difficultyBeatmapsItr == value.MemberEnd() || !difficultyBeatmapsItr->value.IsArray()) return false;
+		if (difficultyBeatmapsItr == memberEnd || !difficultyBeatmapsItr->value.IsArray()) return false;
 
 		// check each beatmap
 		for (auto& beatmap : difficultyBeatmapsItr->value.GetArray()) {
@@ -230,7 +237,7 @@ namespace SongCore::CustomJSONData {
 			diffData.Deserialize(beatmap);
 		}
 
-		return false;
+		return true;
 	}
 
 	static void ParseSimpleStringArrayInto(ValueUTF16 const& customData, std::u16string_view valueName, std::vector<std::string>& out) {
@@ -247,6 +254,9 @@ namespace SongCore::CustomJSONData {
 		if (customDataItr == value.MemberEnd()) return false;
 		auto& customData = customDataItr->value;
 		auto memberEnd = customData.MemberEnd();
+
+		auto difficultyLabelItr = customData.FindMember(u"_difficultyLabel");
+		if (difficultyLabelItr != memberEnd) customDiffLabel = utf8::utf16to8(difficultyLabelItr->value.Get<std::u16string>());
 
 		auto environmentTypeItr = customData.FindMember(u"_environmentType");
 		if (environmentTypeItr != memberEnd) environmentType = utf8::utf16to8(environmentTypeItr->value.Get<std::u16string>());
