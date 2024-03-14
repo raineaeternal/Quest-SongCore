@@ -90,7 +90,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
 
     z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
         container->BindInterfacesAndSelfTo<SongCore::SongLoader::NavigationControllerUpdater*>()->AsSingle()->NonLazy();
-        Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>())->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle()->NonLazy();
     });
 
     RegisterDefaultCharacteristics();
