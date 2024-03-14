@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <vector>
 
 struct Config {
     /// @brief whether to apply note colors from diffs
