@@ -1,5 +1,6 @@
 {
   "config": {
+    "version": "0.1.0",
     "sharedDir": "shared",
     "dependenciesDir": "extern",
     "info": {
@@ -11,10 +12,31 @@
         "overrideSoName": "libsongcore.so"
       }
     },
+    "workspace": {
+      "scripts": {
+        "build": [
+          "pwsh ./scripts/build.ps1"
+        ],
+        "clean": [
+          "pwsh ./scripts/build.ps1 -clean"
+        ],
+        "copy": [
+          "pwsh ./scripts/copy.ps1"
+        ],
+        "qmod": [
+          "pwsh ./scripts/build.ps1",
+          "qpm qmod build",
+          "pwsh ./scripts/createqmod.ps1 SongCore"
+        ],
+        "restart": [
+          "pwsh ./scripts/restart-game.ps1"
+        ]
+      }
+    },
     "dependencies": [
       {
         "id": "beatsaber-hook",
-        "versionRange": "=5.0.9",
+        "versionRange": "^5.0.9",
         "additionalData": {
           "extraFiles": [
             "src/inline-hook"
@@ -61,28 +83,7 @@
         "versionRange": "^8.5.0",
         "additionalData": {}
       }
-    ],
-    "workspace": {
-      "scripts": {
-        "build": [
-          "pwsh ./scripts/build.ps1"
-        ],
-        "clean": [
-          "pwsh ./scripts/build.ps1 -clean"
-        ],
-        "copy": [
-          "pwsh ./scripts/copy.ps1"
-        ],
-        "qmod": [
-          "pwsh ./scripts/build.ps1",
-          "qpm qmod build",
-          "pwsh ./scripts/createqmod.ps1 SongCore"
-        ],
-        "restart": [
-          "pwsh ./scripts/restart-game.ps1"
-        ]
-      }
-    }
+    ]
   },
   "restoredDependencies": [
     {
@@ -136,7 +137,6 @@
         "versionRange": "=8.5.0",
         "additionalData": {
           "staticLinking": true,
-          "useRelease": true,
           "soLink": "https://github.com/darknight1050/cryptopp-qpm/releases/download/v8.5.0/libcryptopp.a",
           "overrideSoName": "libcryptopp.a",
           "branchName": "version-v8.5.0"

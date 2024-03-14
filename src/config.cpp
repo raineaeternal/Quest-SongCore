@@ -21,6 +21,11 @@ void SaveConfig() {
     doc.SetObject();
     auto& allocator = doc.GetAllocator();
 
+    SET(customSongNoteColors);
+    SET(customSongObstacleColors);
+    SET(customSongEnvironmentColors);
+    SET(disableOneSaberOverride);
+
     auto preferredCustomLevelPath = config.PreferredCustomLevelPath.string();
     doc.AddMember("PreferredCustomLevelPath", rapidjson::Value(preferredCustomLevelPath.c_str(), preferredCustomLevelPath.length(), allocator), allocator);
     rapidjson::Value rootCustomLevelPaths;
@@ -56,6 +61,11 @@ bool LoadConfig() {
     INFO("Loading Config...");
     bool foundEverything = true;
     rapidjson::Document& doc = get_config().config;
+
+    GET(customSongNoteColors);
+    GET(customSongObstacleColors);
+    GET(customSongEnvironmentColors);
+    GET(disableOneSaberOverride);
 
     if (auto PreferredCustomLevelPathItr = doc.FindMember("PreferredCustomLevelPath"); PreferredCustomLevelPathItr != doc.MemberEnd()) {
         config.PreferredCustomLevelPath = PreferredCustomLevelPathItr->value.Get<std::string>();

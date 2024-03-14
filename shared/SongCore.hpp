@@ -40,6 +40,41 @@ namespace SongCore::API {
         SONGCORE_EXPORT UnorderedEventCallback<std::string_view, Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent();
     }
 
+    namespace PlayButton {
+        struct SONGCORE_EXPORT PlayButtonDisablingModInfo {
+            std::string modID;
+            std::string reason;
+        };
+
+        #ifdef MOD_ID
+        /// @brief disallows the playbutton to be enabled by your mod
+        /// @param modInfo the modinfo for the mod disabling the play button
+        /// @param reason optional reason for why it was disabled
+        SONGCORE_EXPORT void DisablePlayButton(std::string modID = MOD_ID, std::string reason = "");
+
+        /// @brief allows the playbutton to be enabled by your mod
+        /// @param modInfo the modinfo for the mod disabling the play button
+        SONGCORE_EXPORT void EnablePlayButton(std::string modID = MOD_ID);
+
+        #else
+        /// @brief disallows the playbutton to be enabled by your mod
+        /// @param modInfo the modinfo for the mod disabling the play button
+        /// @param reason optional reason for why it was disabled
+        SONGCORE_EXPORT void DisablePlayButton(std::string modID, std::string reason = "");
+
+        /// @brief allows the playbutton to be enabled by your mod
+        /// @param modInfo the modinfo for the mod disabling the play button
+        SONGCORE_EXPORT void EnablePlayButton(std::string modID);
+
+        #endif
+
+        /// @brief event ran when the disabling mod infos change, like when Disable or Enable Play button is called from any mod, provides a span of the disabling mod ids and reasons
+        SONGCORE_EXPORT UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>>& GetPlayButtonDisablingModsChangedEvent();
+
+        /// @brief provides a span of the disabling mod infos
+        SONGCORE_EXPORT std::span<PlayButtonDisablingModInfo const> GetPlayButtonDisablingModInfos();
+    }
+
     namespace Characteristics {
         enum SONGCORE_EXPORT CharacteristicEventKind {
             Registered = 0,

@@ -18,3 +18,5 @@ DECLARE_FILE(_binary_Resources_Warning_png, Assets::Resources, Warning_png);
 DECLARE_FILE(_binary_Resources_YellowCheck_png, Assets::Resources, YellowCheck_png);
 DECLARE_FILE(_binary_Resources_YellowX_png, Assets::Resources, YellowX_png);
 DECLARE_FILE(_binary_Resources_pixel_png, Assets::Resources, pixel_png);
+DECLARE_FILE(_binary_colors_bsml, Assets, colors_bsml);
+DECLARE_FILE(_binary_requirements_bsml, Assets, requirements_bsml);

@@ -19,17 +19,28 @@ namespace SongCore::API {
         std::mutex _registeredCapabilitiesMutex;
         static std::vector<std::string> _registeredCapabilities;
 
+        static std::string sanitize(std::string_view capability) {
+            std::string sanitized;
+            sanitized.reserve(capability.size());
+            for (auto c : capability) {
+                if (c == ' ') continue;
+                sanitized.push_back(tolower(c));
+            }
+            return sanitized;
+        }
+
         void RegisterCapability(std::string_view capability) {
             std::lock_guard<std::mutex> lock(_registeredCapabilitiesMutex);
 
-            auto itr = std::find_if(
+            auto sanitized = sanitize(capability);
+            auto itr = std::find(
                 _registeredCapabilities.begin(),
                 _registeredCapabilities.end(),
-                [&capability](auto v){ return v == capability; }
+                sanitized
             );
 
             if (itr == _registeredCapabilities.end()) {
-                _registeredCapabilities.emplace_back(capability);
+                _registeredCapabilities.emplace_back(sanitized);
                 _capabilitiesUpdated.invoke(capability, CapabilityEventKind::Registered);
             } else {
                 WARNING("Capability '{}' was registered more than once! not registering again", capability);
@@ -39,10 +50,11 @@ namespace SongCore::API {
         void UnregisterCapability(std::string_view capability) {
             std::lock_guard<std::mutex> lock(_registeredCapabilitiesMutex);
 
-            auto itr = std::find_if(
+            auto sanitized = sanitize(capability);
+            auto itr = std::find(
                 _registeredCapabilities.begin(),
                 _registeredCapabilities.end(),
-                [&capability](auto v){ return v == capability; }
+                sanitized
             );
 
             if (itr != _registeredCapabilities.end()) {
@@ -56,10 +68,11 @@ namespace SongCore::API {
         bool IsCapabilityRegistered(std::string_view capability) {
             std::lock_guard<std::mutex> lock(_registeredCapabilitiesMutex);
 
-            auto itr = std::find_if(
+            auto sanitized = sanitize(capability);
+            auto itr = std::find(
                 _registeredCapabilities.begin(),
                 _registeredCapabilities.end(),
-                [&capability](auto v){ return v == capability; }
+                sanitized
             );
 
             // if itr != end, that means it was found in the vector
@@ -72,6 +85,39 @@ namespace SongCore::API {
 
         UnorderedEventCallback<std::string_view, Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent() {
             return _capabilitiesUpdated;
+        }
+    }
+
+    namespace PlayButton {
+        static std::vector<PlayButtonDisablingModInfo> _disablingModInfos;
+        static UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>> _playButtonDisablingModsChangedEvent;
+
+        void DisablePlayButton(std::string modID, std::string reason) {
+            auto itr = std::find_if(_disablingModInfos.begin(), _disablingModInfos.end(), [&modID](auto& x){ return x.modID == modID; });
+            if (itr == _disablingModInfos.end()) {
+                _disablingModInfos.emplace_back(modID, reason);
+                _playButtonDisablingModsChangedEvent.invoke(_disablingModInfos);
+            } else {
+                WARNING("Mod {} tried disabling the play button twice, which is not supported! current reason: {}, new reason: {}", modID, itr->reason, reason);
+            }
+        }
+
+        void EnablePlayButton(std::string modID) {
+            auto itr = std::find_if(_disablingModInfos.begin(), _disablingModInfos.end(), [&modID](auto& x){ return x.modID == modID; });
+            if (itr != _disablingModInfos.end()) {
+                _disablingModInfos.erase(itr);
+                _playButtonDisablingModsChangedEvent.invoke(_disablingModInfos);
+            } else {
+                WARNING("Mod {} tried enabling the play button twice, which is not supported!", modID);
+            }
+        }
+
+        UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>>& GetPlayButtonDisablingModsChangedEvent() {
+            return _playButtonDisablingModsChangedEvent;
+        }
+
+        std::span<PlayButtonDisablingModInfo const> GetPlayButtonDisablingModInfos() {
+            return _disablingModInfos;
         }
     }
 

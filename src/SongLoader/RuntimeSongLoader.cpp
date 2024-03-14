@@ -451,7 +451,7 @@ namespace SongCore::SongLoader {
         auto hashOpt = Utils::GetCustomLevelHash(levelPath, saveData);
         hashOut = *hashOpt;
 
-        std::string levelId = fmt::format("{}{}{}", CUSTOM_LEVEL_PREFIX_ID, hashOut, wip ? "" : " WIP");
+        std::string levelId = fmt::format("{}{}{}", CUSTOM_LEVEL_PREFIX_ID, hashOut, wip ? " WIP" : "");
 
         auto songName = saveData->songName;
         FixEmptyString(songName)
