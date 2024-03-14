@@ -5,6 +5,7 @@
 #include "UI/IconCache.hpp"
 #include "UI/RequirementsListManager.hpp"
 #include "UI/ColorsOptions.hpp"
+#include "Overrides/RotationSpawnLinesOverride.hpp"
 #include "Utils/Cache.hpp"
 
 #include "UI/ProgressBar.hpp"
@@ -102,6 +103,11 @@ SONGCORE_EXPORT_FUNC void late_load() {
         container->BindInterfacesAndSelfTo<SongCore::UI::ColorsOptions*>()->AsSingle()->NonLazy();
         Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>())->AsSingle()->NonLazy();
     });
+
+    z->Install(Lapiz::Zenject::Location::GameCore, [](::Zenject::DiContainer* container) {
+        container->BindInterfacesAndSelfTo<SongCore::Overrides::RotationSpawnLinesOverride*>()->AsSingle()->NonLazy();
+    });
+
 
     RegisterDefaultCharacteristics();
 
