@@ -1,2 +1,2 @@
 # Quest-SongCore
-POC for a PinkCore and Runtime SongLoader rewrite and combination.
+A library/mod for Quest Beat Saber that handles song loading, song requirements and capabilities.
