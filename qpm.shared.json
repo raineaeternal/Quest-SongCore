@@ -71,7 +71,9 @@
       {
         "id": "scotland2",
         "versionRange": "^0.1.4",
-        "additionalData": {}
+        "additionalData": {
+          "includeQmod": false
+        }
       },
       {
         "id": "kaleb",
@@ -285,7 +287,8 @@
           "soLink": "https://github.com/sc2ad/scotland2/releases/download/v0.1.4/libsl2.so",
           "debugSoLink": "https://github.com/sc2ad/scotland2/releases/download/v0.1.4/debug_libsl2.so",
           "overrideSoName": "libsl2.so",
-          "branchName": "version/v0_1_4"
+          "branchName": "version/v0_1_4",
+          "includeQmod": false
         }
       },
       "version": "0.1.4"

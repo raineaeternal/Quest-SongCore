@@ -17,14 +17,12 @@ if ($help -eq $true) {
 
 $mod = "./mod.json"
 
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-}
 $modJson = Get-Content $mod -Raw | ConvertFrom-Json
 
 if ($qmodName -eq "") {
     $qmodName = $modJson.name
 }
+Write-Output "Creating qmod with name ${qmodName}.qmod"
 
 $filelist = @($mod)
 
@@ -62,3 +60,4 @@ $qmod = $qmodName + ".qmod"
 
 Compress-Archive -Path $filelist -DestinationPath $zip -Update
 Move-Item $zip $qmod -Force
+return $LastExitCode
