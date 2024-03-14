@@ -45,19 +45,6 @@ public:
 
 	/// @brief struct providing basic information about a difficulty beatmap (characteristic + difficulty)
 	struct BasicCustomDifficultyBeatmapDetails {
-		/// @brief struct describing a contributor entry
-		struct Contributor {
-			/// @brief name of this contributor
-			std::string name;
-			/// @brief what did they do?
-			std::string role;
-			/// @brief path to the icon to display for this contributor
-			std::filesystem::path iconPath;
-
-			/// @brief deserializer method
-			/// @return whether deserialization was succesful
-			bool Deserialize(ValueUTF16 const& value);
-		};
 		struct CustomColors {
 			std::optional<UnityEngine::Color> colorLeft;
 			std::optional<UnityEngine::Color> colorRight;
@@ -88,21 +75,18 @@ public:
 		/// @brief information for this beatmap
 		std::vector<std::string> information;
 
-		/// @brief contributors to this beatmap
-		std::vector<Contributor> contributors;
-
 		/// @brief if set, the custom diff name
 		std::optional<std::string> customDiffName;
 		/// @brief if set, the custom diff hover text
 		std::optional<std::string> customDiffLabel;
 		/// @brief if set, the environment type
 		std::optional<std::string> environmentType;
-		/// @brief if set, the amount of sabers (probably 1 or 2)
-		std::optional<int> saberCount;
+		/// @brief if set, whether this map overrides saber count for characteristic
+		std::optional<bool> oneSaber;
 		/// @brief if set, the custom colors for this map
 		std::optional<CustomColors> customColors;
-		/// @brief if set, the amount of sabers (probably 1 or 2)
-		bool showRotationNoteSpawnLines = true;
+		/// @brief whether to show rotation spawn lines
+		std::optional<bool> showRotationNoteSpawnLines;
 
 		/// @brief deserializer method
 		/// @return whether deserialization was succesful
@@ -139,7 +123,24 @@ public:
 
 	/// @brief struct providing basic information about a beatmap
 	struct BasicCustomLevelDetails {
+		/// @brief struct describing a contributor entry
+		struct Contributor {
+			/// @brief name of this contributor
+			std::string name;
+			/// @brief what did they do?
+			std::string role;
+			/// @brief path to the icon to display for this contributor
+			std::filesystem::path iconPath;
+
+			/// @brief deserializer method
+			/// @return whether deserialization was succesful
+			bool Deserialize(ValueUTF16 const& value);
+		};
+
 		std::unordered_map<std::string, BasicCustomDifficultyBeatmapDetailsSet> characteristicNameToBeatmapDetailsSet;
+
+		/// @brief contributors to this level
+		std::vector<Contributor> contributors;
 
 		/// @brief tries to get the characteristic details
 		/// @param characteristic characteristic name
@@ -170,10 +171,40 @@ public:
 		bool Deserialize(ValueUTF16 const& value);
 	};
 
+	/// @brief tries to get the basic level details for this savedata
+	/// @return optional reference to the parsed data, or nullopt if parse was unsuccesful
 	std::optional<std::reference_wrapper<BasicCustomLevelDetails const>> TryGetBasicLevelDetails();
 
+	/// @brief tries to get the basic level details for this savedata
+	/// @param outDetails reference to your output variable. will copy construct
+	/// @return true if available, false if not
+	bool TryGetBasicLevelDetails(BasicCustomLevelDetails& outDetails);
+
+	/// @brief tries to get the characteristic details
+	/// @param characteristic characteristic name
+	/// @return optional details set, nullopt if not found
+	[[nodiscard]] std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetailsSet const>> TryGetCharacteristic(std::string const& characteristic);
+
+	/// @brief tries to get the characteristic details
+	/// @param characteristic characteristic name
+	/// @param outSet reference to destination details set. will copy construct
+	/// @return true if found, false if not
+	[[nodiscard]] bool TryGetCharacteristic(std::string const& characteristic, BasicCustomDifficultyBeatmapDetailsSet& outSet);
+	/// @brief tries to get the difficulty details for a characteristic
+	/// @param characteristic characteristic name
+	/// @param difficulty the difficulty to get the details for
+	/// @return optional details, nullopt if either characteristic or difficulty not found
+	[[nodiscard]] std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetails const>> TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty);
+
+	/// @brief tries to get the difficulty details for a characteristic
+	/// @param characteristic characteristic name
+	/// @param difficulty the difficulty to get the details for
+	/// @param outDetails reference to your output variable. will copy construct
+	/// @return true if found, false if not
+	[[nodiscard]] bool TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails);
+
 private:
-	void ParseLevelDetails();
+	bool ParseLevelDetails();
 	std::optional<BasicCustomLevelDetails> _cachedLevelDetails;
 )
 
