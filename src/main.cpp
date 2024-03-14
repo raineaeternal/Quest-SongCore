@@ -2,6 +2,9 @@
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "SongLoader/NavigationControllerUpdater.hpp"
 #include "UI/PlayButtonsUpdater.hpp"
+#include "UI/IconCache.hpp"
+#include "UI/RequirementsListManager.hpp"
+#include "UI/ColorsOptions.hpp"
 #include "Utils/Cache.hpp"
 
 #include "UI/ProgressBar.hpp"
@@ -89,11 +92,14 @@ SONGCORE_EXPORT_FUNC void late_load() {
         container->BindInterfacesAndSelfTo<SongCore::Characteristics*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::PlayButtonInteractable*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::SongLoader::RuntimeSongLoader*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::IconCache*>()->AsSingle()->NonLazy();
     });
 
     z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
         container->BindInterfacesAndSelfTo<SongCore::SongLoader::NavigationControllerUpdater*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::PlayButtonsUpdater*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::RequirementsListManager*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::ColorsOptions*>()->AsSingle()->NonLazy();
         Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>())->AsSingle()->NonLazy();
     });
 
