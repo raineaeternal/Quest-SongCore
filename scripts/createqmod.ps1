@@ -17,9 +17,6 @@ if ($help -eq $true) {
 
 $mod = "./mod.json"
 
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-}
 $modJson = Get-Content $mod -Raw | ConvertFrom-Json
 
 if ($qmodName -eq "") {
