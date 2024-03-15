@@ -20,4 +20,5 @@ DECLARE_FILE(_binary_Resources_YellowCheck_png, Assets::Resources, YellowCheck_p
 DECLARE_FILE(_binary_Resources_YellowX_png, Assets::Resources, YellowX_png);
 DECLARE_FILE(_binary_Resources_pixel_png, Assets::Resources, pixel_png);
 DECLARE_FILE(_binary_colors_bsml, Assets, colors_bsml);
+DECLARE_FILE(_binary_deletemodal_bsml, Assets, deletemodal_bsml);
 DECLARE_FILE(_binary_requirements_bsml, Assets, requirements_bsml);

@@ -1,5 +1,6 @@
 #include "include/UI/DeleteLevelButton.hpp"
 #include "logging.hpp"
+#include "assets.hpp"
 
 #include "UnityEngine/UI/Button.hpp"
 #include "UnityEngine/Transform.hpp"
@@ -16,20 +17,23 @@
 DEFINE_TYPE(SongCore::UI, DeleteLevelButton);
 
 namespace SongCore::UI {
-    void DeleteLevelButton::ctor(SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* standardLevelDetailViewController, LevelSelect* levelSelect, IconCache* iconCache) {
+    void DeleteLevelButton::ctor(SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* standardLevelDetailViewController, LevelSelect* levelSelect, IconCache* iconCache, ProgressBar* progressBar) {
         INVOKE_CTOR();
         _runtimeSongLoader = runtimeSongLoader;
         _levelDetailViewController = standardLevelDetailViewController;
         _levelSelect = levelSelect;
         _iconCache = iconCache;
+        _progressBar = progressBar;
     }
 
     void DeleteLevelButton::Initialize() {
+        _levelSelect->LevelWasSelected += {&DeleteLevelButton::LevelWasSelected, this};
+
         auto detailView = _levelDetailViewController->_standardLevelDetailView;
         auto parent = detailView->practiceButton->transform->parent;
 
         // create button
-        BSML::parse_and_construct("<icon-button id='_deleteButton' pref-width='10' pref-height='10'/>", parent, this);
+        BSML::parse_and_construct("<icon-button id='_deleteButton' pref-width='10' pref-height='10' on-click='AttemptDeleteCurrentlySelectedLevel'/>", parent, this);
         _deleteButtonRoot = _deleteButton->gameObject;
         /// make sure it's the leftmost button
         _deleteButtonRoot->transform->SetAsFirstSibling();
@@ -42,9 +46,12 @@ namespace SongCore::UI {
         if (imageView) {
             imageView->_skew = 0.18f;
         }
+
+        BSML::parse_and_construct(Assets::deletemodal_bsml, parent, this);
     }
 
     void DeleteLevelButton::Dispose() {
+        _levelSelect->LevelWasSelected -= {&DeleteLevelButton::LevelWasSelected, this};
     }
 
     void DeleteLevelButton::Tick() {
@@ -52,6 +59,7 @@ namespace SongCore::UI {
         if (_songDeleteFuture.valid() && _songDeleteFuture.wait_for(0ns) == std::future_status::ready) {
             _songDeleteFuture = std::future<void>();
             _runtimeSongLoader->RefreshSongs();
+            _progressBar->ShowMessage("Level Deleted!", 5);
         }
     }
 
@@ -60,7 +68,17 @@ namespace SongCore::UI {
     }
 
     void DeleteLevelButton::AttemptDeleteCurrentlySelectedLevel() {
-        DEBUG("Delete was pressed!");
+        // can't delete a level that isn't custom
+        if (!_lastSelectedCustomLevel) return;
+        // we're still waiting for a delete to finish up
+        if (_songDeleteFuture.valid()) return;
+        _levelText->text = _lastSelectedCustomLevel->songName;
+        _deleteModal->Show();
+    }
+
+    void DeleteLevelButton::CommitDelete() {
+        _songDeleteFuture = _runtimeSongLoader->DeleteSong(_lastSelectedCustomLevel);
+        _deleteModal->Hide();
     }
 
     void DeleteLevelButton::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
