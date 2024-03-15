@@ -51,6 +51,7 @@ namespace SongCore::UI {
         DestroyIcon(_warningIcon);
         DestroyIcon(_haveSuggestionIcon);
         DestroyIcon(_missingSuggestionIcon);
+        DestroyIcon(_deleteIcon);
     }
 
     UnityEngine::Sprite* IconCache::GetIconForPath(std::filesystem::path const& path) {
