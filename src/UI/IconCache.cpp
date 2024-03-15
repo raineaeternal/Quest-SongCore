@@ -71,6 +71,7 @@ namespace SongCore::UI {
     UnityEngine::Sprite* IconCache::GetWarningIcon() { GetIconImpl(_warningIcon, Warning); }
     UnityEngine::Sprite* IconCache::GetHaveSuggestionIcon() { GetIconImpl(_haveSuggestionIcon, YellowCheck); }
     UnityEngine::Sprite* IconCache::GetMissingSuggestionIcon() { GetIconImpl(_missingSuggestionIcon, YellowX); }
+    UnityEngine::Sprite* IconCache::GetDeleteIcon() { GetIconImpl(_deleteIcon, DeleteIcon); }
 
     void IconCache::PathWasUsed(std::filesystem::path const& path) {
         auto itr = std::find(_lastUsedIcons.begin(), _lastUsedIcons.end(), path);
