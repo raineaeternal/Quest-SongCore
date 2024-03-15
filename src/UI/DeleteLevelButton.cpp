@@ -59,7 +59,6 @@ namespace SongCore::UI {
         if (_songDeleteFuture.valid() && _songDeleteFuture.wait_for(0ns) == std::future_status::ready) {
             _songDeleteFuture = std::future<void>();
             _runtimeSongLoader->RefreshSongs();
-            _progressBar->ShowMessage("Level Deleted!", 5);
         }
     }
 
@@ -79,6 +78,7 @@ namespace SongCore::UI {
     void DeleteLevelButton::CommitDelete() {
         _songDeleteFuture = _runtimeSongLoader->DeleteSong(_lastSelectedCustomLevel);
         _deleteModal->Hide();
+        _progressBar->ShowMessage("Deleting level!", 5);
     }
 
     void DeleteLevelButton::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {

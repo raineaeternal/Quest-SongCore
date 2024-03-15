@@ -100,8 +100,6 @@ namespace SongCore::UI {
     void ProgressBar::ShowMessage(std::string message) {
         _showingMessage = true;
         _headerText->text = message;
-        _loadingBar->enabled = false;
-        _loadingBg->enabled = false;
         _canvas->enabled = true;
         ShowCanvasForSeconds(5);
     }
@@ -109,32 +107,30 @@ namespace SongCore::UI {
     void ProgressBar::ShowMessage(std::string message, float time) {
         _showingMessage = true;
         _headerText->text = message;
-        _loadingBar->enabled = false;
-        _loadingBg->enabled = false;
         _canvas->enabled = true;
         ShowCanvasForSeconds(5);
     }
 
     custom_types::Helpers::Coroutine ProgressBar::DisableCanvasRoutine(float time) {
+        float range = 0.25f;
         float totalTime = time;
+        float alphaEndRaiseTime = totalTime - range;
+        float alphaStartDecreaseTime = range;
+
         while (time > 0) {
             auto deltaTime = UnityEngine::Time::get_deltaTime();
             time -= deltaTime;
             co_yield nullptr;
+
+            // get alpha
             float alpha = _canvasGroup->alpha;
-            if ((totalTime - time) < 0.25 && alpha < 1.0f) {
-                alpha += deltaTime * 4;
-            }
 
-            // towards the end, fade out the canvas
-            if (time < 0.25f) {
-                alpha = time * 4;
-            }
+            float raiseAlpha = (range - (time - alphaEndRaiseTime)) / range;
+            alpha = std::max(alpha, raiseAlpha);
 
+            float decreaseAlpha = (time - alphaStartDecreaseTime) / range;
+            alpha = std::min(alpha, decreaseAlpha);
             _canvasGroup->alpha = alpha;
-            if (time < 0.25f) {
-                _canvasGroup->alpha = time * 4;
-            }
         }
         _canvasGroup->alpha = 0.0f;
         _canvas->enabled = false;
@@ -157,8 +153,6 @@ namespace SongCore::UI {
         StopDisableCanvasRoutine();
         _showingMessage = false;
         _headerText->text = HeaderText;
-        _loadingBar->enabled = true;
-        _loadingBg->enabled = true;
         _canvas->enabled = true;
     }
 
@@ -166,18 +160,13 @@ namespace SongCore::UI {
         _showingMessage = false;
         std::string songOrSongs = customLevels.size() == 1 ? "song" : "songs";
         _headerText->text = fmt::format("{} {} loaded", customLevels.size(), songOrSongs);
-        _loadingBar->enabled = false;
-        _loadingBg->enabled = false;
-        _loadingBar->fillAmount = 1.0f;
         ShowCanvasForSeconds(5);
     }
 
     void ProgressBar::Tick() {
         if (!_canvas || !_canvas->enabled) return;
 
-        if (_runtimeSongLoader->AreSongsRefreshing) {
-            _loadingBar->fillAmount = _runtimeSongLoader->Progress;
-        }
+        _loadingBar->fillAmount = _runtimeSongLoader->Progress;
     }
 
     void ProgressBar::Dispose() {
