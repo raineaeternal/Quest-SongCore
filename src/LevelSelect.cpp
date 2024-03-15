@@ -1,4 +1,5 @@
 #include "LevelSelect.hpp"
+#include "logging.hpp"
 
 #include "CustomJSONData.hpp"
 #include "SongCore.hpp"
@@ -53,7 +54,7 @@ namespace SongCore {
             eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
             eventArgs.levelID = static_cast<std::string>(eventArgs.previewBeatmapLevel->levelID);
 
-            auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomDifficultyBeatmap>(eventArgs.beatmapLevel).value_or(nullptr);
+            auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
             if (customLevel) {
                 eventArgs.isCustom = true;
                 HandleCustomLevelWasSelected(eventArgs);
@@ -72,7 +73,7 @@ namespace SongCore {
         eventArgs.difficultyBeatmapSet = GetSelectedDifficultyBeatmapSet();
         eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
 
-        auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomDifficultyBeatmap>(eventArgs.beatmapLevel).value_or(nullptr);
+        auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
         if (customLevel) {
             eventArgs.isCustom = true;
             HandleCustomLevelWasSelected(eventArgs);
