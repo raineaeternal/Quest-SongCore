@@ -11,12 +11,14 @@
 #include "System/IDisposable.hpp"
 
 #include "SongLoader/RuntimeSongLoader.hpp"
+#include "LevelSelect.hpp"
 #include "IconCache.hpp"
 
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, DeleteLevelButton, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(Zenject::ITickable*), classof(System::IDisposable*)}),
-        DECLARE_CTOR(ctor, SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* standardLevelDetailViewController, IconCache* iconCache);
+        DECLARE_CTOR(ctor, SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* standardLevelDetailViewController, LevelSelect* levelSelect, IconCache* iconCache);
         DECLARE_INSTANCE_FIELD_PRIVATE(SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
         DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
+        DECLARE_INSTANCE_FIELD_PRIVATE(LevelSelect*, _levelSelect);
         DECLARE_INSTANCE_FIELD_PRIVATE(IconCache*, _iconCache);
 
         DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::GameObject*, _deleteButtonRoot);
@@ -30,17 +32,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, DeleteLevelButton, System::Object
         DECLARE_OVERRIDE_METHOD_MATCH(void, Tick, &Zenject::ITickable::Tick);
         DECLARE_INSTANCE_METHOD(void, AttemptDeleteCurrentlySelectedLevel);
 
-        using ChangeDifficultyBeatmapAction = System::Action_2<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::IDifficultyBeatmap*>;
-        using ChangeContentAction = System::Action_2<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType>;
-        DECLARE_INSTANCE_FIELD_PRIVATE(ChangeDifficultyBeatmapAction*, _changeDifficultyBeatmapAction);
-        DECLARE_INSTANCE_FIELD_PRIVATE(ChangeContentAction*, _changeContentAction);
     private:
         std::future<void> _songDeleteFuture;
         void UpdateButtonState();
 
-        void LevelDetailContentChanged(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, GlobalNamespace::StandardLevelDetailViewController::ContentType contentType);
-        void BeatmapLevelSelected(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, GlobalNamespace::IDifficultyBeatmap* selectedBeatmap);
-
-        void HandleVanillaLevelWasSelected(GlobalNamespace::IBeatmapLevel* level, GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap);
-        void HandleCustomLevelWasSelected(GlobalNamespace::CustomBeatmapLevel* level, GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap);
+        void LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs);
 )

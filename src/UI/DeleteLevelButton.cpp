@@ -16,30 +16,15 @@
 DEFINE_TYPE(SongCore::UI, DeleteLevelButton);
 
 namespace SongCore::UI {
-    void DeleteLevelButton::ctor(SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* standardLevelDetailViewController, IconCache* iconCache) {
+    void DeleteLevelButton::ctor(SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* standardLevelDetailViewController, LevelSelect* levelSelect, IconCache* iconCache) {
         INVOKE_CTOR();
         _runtimeSongLoader = runtimeSongLoader;
         _levelDetailViewController = standardLevelDetailViewController;
+        _levelSelect = levelSelect;
         _iconCache = iconCache;
     }
 
     void DeleteLevelButton::Initialize() {
-        _changeDifficultyBeatmapAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::IDifficultyBeatmap*>(
-            std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::IDifficultyBeatmap*)>(
-                std::bind(&DeleteLevelButton::BeatmapLevelSelected, this, std::placeholders::_1, std::placeholders::_2)
-            )
-        );
-
-        _levelDetailViewController->add_didChangeDifficultyBeatmapEvent(_changeDifficultyBeatmapAction);
-
-        _changeContentAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType>(
-            std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType)>(
-                std::bind(&DeleteLevelButton::LevelDetailContentChanged, this, std::placeholders::_1, std::placeholders::_2)
-            )
-        );
-
-        _levelDetailViewController->add_didChangeContentEvent(_changeContentAction);
-
         auto detailView = _levelDetailViewController->_standardLevelDetailView;
         auto parent = detailView->practiceButton->transform->parent;
 
@@ -60,8 +45,6 @@ namespace SongCore::UI {
     }
 
     void DeleteLevelButton::Dispose() {
-        _levelDetailViewController->remove_didChangeDifficultyBeatmapEvent(_changeDifficultyBeatmapAction);
-        _levelDetailViewController->remove_didChangeContentEvent(_changeContentAction);
     }
 
     void DeleteLevelButton::Tick() {
@@ -80,48 +63,11 @@ namespace SongCore::UI {
         DEBUG("Delete was pressed!");
     }
 
-    void DeleteLevelButton::LevelDetailContentChanged(GlobalNamespace::StandardLevelDetailViewController* viewController, GlobalNamespace::StandardLevelDetailViewController::ContentType contentType) {
-        if (contentType == GlobalNamespace::StandardLevelDetailViewController::ContentType::OwnedAndReady) {
-            auto difficultyBeatmap = viewController->selectedDifficultyBeatmap;
-            _lastSelectedDifficultyBeatmap = difficultyBeatmap;
-            _lastSelectedCustomLevel = nullptr;
-            if (!difficultyBeatmap) return;
-
-            auto beatmapLevel = difficultyBeatmap->level;
-            auto customBeatmapLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
-
-            if (customBeatmapLevel) { // custom level
-                HandleCustomLevelWasSelected(customBeatmapLevel, difficultyBeatmap);
-            } else { // vanilla level
-                HandleVanillaLevelWasSelected(beatmapLevel, difficultyBeatmap);
-            }
+    void DeleteLevelButton::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
+        _lastSelectedDifficultyBeatmap = eventArgs.difficultyBeatmap;
+        if (eventArgs.isCustom) {
+            _lastSelectedCustomLevel = eventArgs.customBeatmapLevel;
         }
-    }
-
-    void DeleteLevelButton::BeatmapLevelSelected(GlobalNamespace::StandardLevelDetailViewController* _, GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap) {
-        _lastSelectedDifficultyBeatmap = difficultyBeatmap;
-        _lastSelectedCustomLevel = nullptr;
-        if (!difficultyBeatmap) return;
-
-        auto beatmapLevel = difficultyBeatmap->level;
-        auto customBeatmapLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
-
-        if (customBeatmapLevel) {
-            HandleCustomLevelWasSelected(customBeatmapLevel, difficultyBeatmap);
-        } else { // not a custom level
-            HandleVanillaLevelWasSelected(beatmapLevel, difficultyBeatmap);
-        }
-    }
-
-    void DeleteLevelButton::HandleVanillaLevelWasSelected(GlobalNamespace::IBeatmapLevel* level, GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap) {
-        _lastSelectedDifficultyBeatmap = difficultyBeatmap;
-        _lastSelectedCustomLevel = nullptr;
-        UpdateButtonState();
-    }
-
-    void DeleteLevelButton::HandleCustomLevelWasSelected(GlobalNamespace::CustomBeatmapLevel* level, GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap) {
-        _lastSelectedDifficultyBeatmap = difficultyBeatmap;
-        _lastSelectedCustomLevel = level;
         UpdateButtonState();
     }
 }

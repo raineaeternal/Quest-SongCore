@@ -345,4 +345,11 @@ namespace SongCore::API {
             return instance->GetLevelByFunction(searchFunction);
         }
     }
+
+    namespace LevelSelect {
+        UnorderedEventCallback<LevelWasSelectedEventArgs const&> _levelWasSelectedEvent;
+        UnorderedEventCallback<LevelWasSelectedEventArgs const&>& GetLevelWasSelectedEvent() {
+            return _levelWasSelectedEvent;
+        }
+    }
 }
