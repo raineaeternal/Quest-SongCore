@@ -3,6 +3,7 @@
 
 DECLARE_FILE(_binary_Resources_Colors_png, Assets::Resources, Colors_png);
 DECLARE_FILE(_binary_Resources_CustomWIPLevelsCover_png, Assets::Resources, CustomWIPLevelsCover_png);
+DECLARE_FILE(_binary_Resources_DeleteIcon_png, Assets::Resources, DeleteIcon_png);
 DECLARE_FILE(_binary_Resources_Environment_png, Assets::Resources, Environment_png);
 DECLARE_FILE(_binary_Resources_ExtraDiffsIcon_png, Assets::Resources, ExtraDiffsIcon_png);
 DECLARE_FILE(_binary_Resources_FolderIcon_png, Assets::Resources, FolderIcon_png);
@@ -19,4 +20,5 @@ DECLARE_FILE(_binary_Resources_YellowCheck_png, Assets::Resources, YellowCheck_p
 DECLARE_FILE(_binary_Resources_YellowX_png, Assets::Resources, YellowX_png);
 DECLARE_FILE(_binary_Resources_pixel_png, Assets::Resources, pixel_png);
 DECLARE_FILE(_binary_colors_bsml, Assets, colors_bsml);
+DECLARE_FILE(_binary_deletemodal_bsml, Assets, deletemodal_bsml);
 DECLARE_FILE(_binary_requirements_bsml, Assets, requirements_bsml);

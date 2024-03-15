@@ -6,7 +6,7 @@
     "name": "Quest-SongCore",
     "id": "songcore",
     "version": "0.1.0",
-    "url": null,
+    "url": "https://github.com/raineio/quest-songcore",
     "additionalData": {
       "overrideSoName": "libsongcore.so"
     }

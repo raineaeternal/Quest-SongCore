@@ -515,6 +515,7 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::DeleteSong_internal(std::filesystem::path levelPath) {
+        INFO("Deleting song @ path {}", levelPath.string());
         auto csPath = StringW(levelPath.string());
         SongDict* targetDict = nullptr;
 
@@ -528,10 +529,10 @@ namespace SongCore::SongLoader {
             level = CustomWIPLevels->get_Item(csPath);
         }
 
-        if (!level && !targetDict) {
+        if (!targetDict) {
             WARNING("Level with path {} was attempted to be deleted, but it couldn't be found in the songloader dictionaries! returning...", levelPath.string());
             return;
-        } else if(targetDict) {
+        } else if(!level) {
             WARNING("Somehow the stored beatmap level was null, just removing from the dictionary and nothing else...");
             targetDict->TryRemove(csPath, byref(level));
             return;

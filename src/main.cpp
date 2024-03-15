@@ -6,6 +6,7 @@
 #include "UI/RequirementsListManager.hpp"
 #include "UI/ColorsOptions.hpp"
 #include "Overrides/RotationSpawnLinesOverride.hpp"
+#include "UI/DeleteLevelButton.hpp"
 #include "Utils/Cache.hpp"
 
 #include "UI/ProgressBar.hpp"
@@ -23,6 +24,7 @@
 #include "lapiz/shared/utilities/ZenjectExtensions.hpp"
 #include "lapiz/shared/AttributeRegistration.hpp"
 
+#include "LevelSelect.hpp"
 #include "Capabilities.hpp"
 #include "Characteristics.hpp"
 #include "PlayButtonInteractable.hpp"
@@ -101,7 +103,9 @@ SONGCORE_EXPORT_FUNC void late_load() {
         container->BindInterfacesAndSelfTo<SongCore::UI::PlayButtonsUpdater*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::RequirementsListManager*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::ColorsOptions*>()->AsSingle()->NonLazy();
-        Lapiz::Zenject::ZenjectExtensions::FromNewComponentOnNewGameObject(container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>())->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::DeleteLevelButton*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::LevelSelect*>()->AsSingle()->NonLazy();
     });
 
     z->Install(Lapiz::Zenject::Location::GameCore, [](::Zenject::DiContainer* container) {

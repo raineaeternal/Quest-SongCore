@@ -10,6 +10,12 @@
 #include "SongLoader/SongCoreCustomBeatmapLevelCollection.hpp"
 #include "SongLoader/SongCoreCustomLevelPack.hpp"
 
+#include "GlobalNamespace/CustomBeatmapLevel.hpp"
+#include "GlobalNamespace/CustomDifficultyBeatmapSet.hpp"
+#include "GlobalNamespace/CustomDifficultyBeatmap.hpp"
+
+#include "CustomJSONData.hpp"
+
 #include <span>
 #include <future>
 
@@ -200,5 +206,55 @@ namespace SongCore::API {
         /// @brief gets a level by a search function
         /// @return nullptr if level not found
         SONGCORE_EXPORT GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByFunction(std::function<bool(GlobalNamespace::CustomPreviewBeatmapLevel*)> searchFunction);
+    }
+
+    namespace LevelSelect {
+        struct SONGCORE_EXPORT LevelWasSelectedEventArgs {
+            /// @brief whether this is a custom level. if true, using the custom** in the unions should be valid, if not, you should be using the interfaces
+            bool isCustom;
+
+            struct BasicCustomLevelDetailsGroup {
+                CustomJSONData::CustomLevelInfoSaveData::BasicCustomLevelDetails const& levelDetails;
+                CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet const& characteristicDetails;
+                CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const& difficultyDetails;
+            };
+
+            /// @brief if this is a custom level, this should be set
+            std::optional<CustomJSONData::CustomLevelInfoSaveData*> customLevelInfoSaveData;
+
+            /// @brief if this is a custom level, this should be set
+            std::optional<BasicCustomLevelDetailsGroup> customLevelDetails;
+
+            /// @brief the selected levelpack, may or may not be a custom pack
+            union {
+                SongCore::SongLoader::SongCoreCustomLevelPack* customLevelPack;
+                GlobalNamespace::IBeatmapLevelPack* levelPack;
+            };
+
+            union {
+                GlobalNamespace::CustomPreviewBeatmapLevel* customPreviewBeatmapLevel;
+                GlobalNamespace::IPreviewBeatmapLevel* previewBeatmapLevel;
+            };
+
+            /// @brief equivalent to levels in the left list in song selection
+            union {
+                GlobalNamespace::CustomBeatmapLevel* customBeatmapLevel;
+                GlobalNamespace::IBeatmapLevel* beatmapLevel;
+            };
+
+            /// @brief describing characteristics (a set of diffs)
+            union {
+                GlobalNamespace::CustomDifficultyBeatmapSet* customDifficultyBeatmapSet;
+                GlobalNamespace::IDifficultyBeatmapSet* difficultyBeatmapSet;
+            };
+
+            /// @brief diff of the map
+            union {
+                GlobalNamespace::CustomDifficultyBeatmap* customDifficultyBeatmap;
+                GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap;
+            };
+        };
+
+        SONGCORE_EXPORT UnorderedEventCallback<LevelWasSelectedEventArgs const&>& GetLevelWasSelectedEvent();
     }
 }
