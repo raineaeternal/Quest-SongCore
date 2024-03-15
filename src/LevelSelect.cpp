@@ -1,9 +1,15 @@
 #include "LevelSelect.hpp"
+#include "logging.hpp"
 
 #include "CustomJSONData.hpp"
 #include "SongCore.hpp"
+
+#include "SongLoader/RuntimeSongLoader.hpp"
+
+#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
 #include "GlobalNamespace/IDifficultyBeatmap.hpp"
 #include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "bsml/shared/Helpers/delegates.hpp"
 
 DEFINE_TYPE(SongCore, LevelSelect);
@@ -46,8 +52,9 @@ namespace SongCore {
             eventArgs.beatmapLevel = GetSelectedBeatmapLevel();
             eventArgs.difficultyBeatmapSet = GetSelectedDifficultyBeatmapSet();
             eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
+            eventArgs.levelID = static_cast<std::string>(eventArgs.previewBeatmapLevel->levelID);
 
-            auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomDifficultyBeatmap>(eventArgs.beatmapLevel).value_or(nullptr);
+            auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
             if (customLevel) {
                 eventArgs.isCustom = true;
                 HandleCustomLevelWasSelected(eventArgs);
@@ -66,7 +73,7 @@ namespace SongCore {
         eventArgs.difficultyBeatmapSet = GetSelectedDifficultyBeatmapSet();
         eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
 
-        auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomDifficultyBeatmap>(eventArgs.beatmapLevel).value_or(nullptr);
+        auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
         if (customLevel) {
             eventArgs.isCustom = true;
             HandleCustomLevelWasSelected(eventArgs);
@@ -77,6 +84,14 @@ namespace SongCore {
 
     void LevelSelect::HandleCustomLevelWasSelected(LevelWasSelectedEventArgs& eventArgs) {
         if (!eventArgs.isCustom) return;
+
+        eventArgs.isWIP = eventArgs.levelID.ends_with(" WIP");
+        // get a view into the levelid
+        std::string_view hashView(eventArgs.levelID);
+        // remove `custom_level_` from the front
+        hashView = hashView.substr(SongLoader::RuntimeSongLoader::CUSTOM_LEVEL_PREFIX_ID.size());
+        // possibly remove ` WIP` from the end
+        eventArgs.hash = hashView.substr(0, hashView.size() - (eventArgs.isWIP ? 4 : 0));
 
         auto saveData = il2cpp_utils::try_cast<CustomJSONData::CustomLevelInfoSaveData>(eventArgs.customBeatmapLevel->standardLevelInfoSaveData).value_or(nullptr);
         if (!saveData) return;

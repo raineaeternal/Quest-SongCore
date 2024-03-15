@@ -212,6 +212,14 @@ namespace SongCore::API {
         struct SONGCORE_EXPORT LevelWasSelectedEventArgs {
             /// @brief whether this is a custom level. if true, using the custom** in the unions should be valid, if not, you should be using the interfaces
             bool isCustom;
+            /// @brief whether this is a WIP level
+            bool isWIP;
+
+            /// @brief levelID for the level
+            std::string levelID;
+
+            /// @brief optional level hash
+            std::optional<std::string> hash;
 
             struct BasicCustomLevelDetailsGroup {
                 CustomJSONData::CustomLevelInfoSaveData::BasicCustomLevelDetails const& levelDetails;

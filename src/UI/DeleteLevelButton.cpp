@@ -85,6 +85,8 @@ namespace SongCore::UI {
         _lastSelectedDifficultyBeatmap = eventArgs.difficultyBeatmap;
         if (eventArgs.isCustom) {
             _lastSelectedCustomLevel = eventArgs.customBeatmapLevel;
+        } else {
+            _lastSelectedCustomLevel = nullptr;
         }
         UpdateButtonState();
     }
