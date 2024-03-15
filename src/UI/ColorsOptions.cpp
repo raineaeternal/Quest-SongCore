@@ -21,18 +21,23 @@ namespace SongCore::UI {
         );
     }
 
-    void ColorsOptions::ShowColors(CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const& details) {
-        if (!_colorsOptionsModal) {
-            BSML::parse_and_construct(Assets::colors_bsml, _levelDetailViewController->_standardLevelDetailView->transform, this);
-        }
+    void ColorsOptions::Show() {
         _colorsOptionsModal->Show();
+    }
+
+    void ColorsOptions::ShowColors(CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const& details) {
+        Parse();
+        Show();
         SetColors(details.customColors.value());
     }
 
-    void ColorsOptions::PostParse() {
-        if (!_selectedColorBG) {
-            WARNING("_selectedColorBG was null in postparse??");
+    void ColorsOptions::Parse() {
+        if (!_colorsOptionsModal) {
+            BSML::parse_and_construct(Assets::colors_bsml, _levelDetailViewController->_standardLevelDetailView->transform, this);
         }
+    }
+
+    void ColorsOptions::PostParse() {
         auto colorSchemeViewPrefab = UnityEngine::Resources::FindObjectsOfTypeAll<GlobalNamespace::ColorSchemeView*>()->First();
         auto colorSchemeViewObject = UnityEngine::Object::Instantiate(colorSchemeViewPrefab->gameObject, _selectedColorBG);
         _colorSchemeView = colorSchemeViewObject->GetComponent<GlobalNamespace::ColorSchemeView*>();

@@ -3,6 +3,7 @@
 #include "CustomJSONData.hpp"
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 #include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
+#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/RectTransform.hpp"
@@ -24,10 +25,11 @@ static inline UnityEngine::Vector3 operator*(UnityEngine::Vector3 vec, float v) 
 }
 
 namespace SongCore::UI {
-    void RequirementsListManager::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, ColorsOptions* colorsOptions, Capabilities* capabilities, IconCache* iconCache) {
+    void RequirementsListManager::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, ColorsOptions* colorsOptions, Capabilities* capabilities, LevelSelect* levelSelect, IconCache* iconCache) {
         _levelDetailViewController = levelDetailViewController;
         _colorsOptions = colorsOptions;
         _capabilities = capabilities;
+        _levelSelect = levelSelect;
         _iconCache = iconCache;
 
         _requirementsCells = ListW<BSML::CustomCellInfo*>::New();
@@ -36,21 +38,8 @@ namespace SongCore::UI {
     }
 
     void RequirementsListManager::Initialize() {
-        _changeDifficultyBeatmapAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::IDifficultyBeatmap*>(
-            std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::IDifficultyBeatmap*)>(
-                std::bind(&RequirementsListManager::BeatmapLevelSelected, this, std::placeholders::_1, std::placeholders::_2)
-            )
-        );
+        _levelSelect->LevelWasSelected += {&RequirementsListManager::LevelWasSelected, this};
 
-        _levelDetailViewController->add_didChangeDifficultyBeatmapEvent(_changeDifficultyBeatmapAction);
-
-        _changeContentAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType>(
-            std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType)>(
-                std::bind(&RequirementsListManager::LevelDetailContentChanged, this, std::placeholders::_1, std::placeholders::_2)
-            )
-        );
-
-        _levelDetailViewController->add_didChangeContentEvent(_changeContentAction);
         auto levelDetailView = _levelDetailViewController->_standardLevelDetailView;
         BSML::parse_and_construct("<bg><action-button id='_requirementButton' text='?' anchor-pos-x='31' anchor-pos-y='0' pref-width='12' pref-height='9' on-click='ShowRequirements'/></bg>", levelDetailView->transform, this);
         _requirementButton->transform->parent->localScale *= 0.7f;
@@ -60,16 +49,11 @@ namespace SongCore::UI {
     }
 
     void RequirementsListManager::Dispose() {
-        _levelDetailViewController->remove_didChangeDifficultyBeatmapEvent(_changeDifficultyBeatmapAction);
-        _levelDetailViewController->remove_didChangeContentEvent(_changeContentAction);
-    }
-
-    void RequirementsListManager::SetRequirementButtonActive(bool active) {
-        _requirementButton->gameObject->SetActive(active);
+        _levelSelect->LevelWasSelected -= {&RequirementsListManager::LevelWasSelected, this};
     }
 
     void RequirementsListManager::UpdateRequirementButton() {
-        SetRequirementButtonActive(!_requirementsCells.empty());
+        _requirementButton->gameObject->SetActive(!_requirementsCells.empty());
     }
 
     BSML::CustomCellInfo* RequirementsListManager::GetCellInfo() {
@@ -86,41 +70,29 @@ namespace SongCore::UI {
         _requirementsCells->Clear();
     }
 
-    void RequirementsListManager::UpdateRequirementCells() {
+    void RequirementsListManager::UpdateRequirementCells(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
         DEBUG("Updating requirement cells");
         ClearRequirementCells();
 
-        if (!_lastSelectedCustomLevel) {
+        if (!eventArgs.isCustom) {
             DEBUG("Last selected level was not custom! returning...");
-        }
-
-        auto difficulty = _lastSelectedDifficultyBeatmap->difficulty;
-        auto characteristic = _lastSelectedDifficultyBeatmap->parentDifficultyBeatmapSet->beatmapCharacteristic;
-
-        auto saveData = il2cpp_utils::cast<CustomJSONData::CustomLevelInfoSaveData>(_lastSelectedCustomLevel->standardLevelInfoSaveData);
-
-        auto levelDetailsOpt = saveData->TryGetBasicLevelDetails();
-        if (!levelDetailsOpt.has_value()) {
-            DEBUG("level details not aquired! returning...");
             return;
         }
-        auto& levelDetails = levelDetailsOpt->get();
 
-        auto diffDetailsOpt = levelDetails.TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
+        auto& levelDetails = eventArgs.customLevelDetails->levelDetails;
+        auto& characteristicDetails = eventArgs.customLevelDetails->characteristicDetails;
+        auto& diffDetails = eventArgs.customLevelDetails->difficultyDetails;
 
-        if (diffDetailsOpt.has_value()) {
-            auto& diffDetails = diffDetailsOpt->get();
-            for (auto& requirement : diffDetails.requirements) {
-                static ConstString RequirementFound("Requirement Found");
-                static ConstString RequirementMissing("Requirement Missing");
+        for (auto& requirement : diffDetails.requirements) {
+            static ConstString RequirementFound("Requirement Found");
+            static ConstString RequirementMissing("Requirement Missing");
 
-                bool installed = _capabilities->IsCapabilityRegistered(requirement);
-                auto cell = GetCellInfo();
-                cell->text = fmt::format("<size=75%>{}", requirement);
-                cell->subText = installed ? RequirementFound : RequirementMissing;
-                cell->icon = installed ? _iconCache->HaveReqIcon : _iconCache->MissingReqIcon;
-                _requirementsCells.push_back(cell);
-            }
+            bool installed = _capabilities->IsCapabilityRegistered(requirement);
+            auto cell = GetCellInfo();
+            cell->text = fmt::format("<size=75%>{}", requirement);
+            cell->subText = installed ? RequirementFound : RequirementMissing;
+            cell->icon = installed ? _iconCache->HaveReqIcon : _iconCache->MissingReqIcon;
+            _requirementsCells.push_back(cell);
         }
 
         for (auto& contributor : levelDetails.contributors) {
@@ -129,14 +101,14 @@ namespace SongCore::UI {
             cell->subText = contributor.role;
             UnityEngine::Sprite* icon = nullptr;
             if (!contributor.iconPath.empty()) {
-                std::filesystem::path levelPath(_lastSelectedCustomLevel->customLevelPath);
+                std::filesystem::path levelPath(eventArgs.customPreviewBeatmapLevel->customLevelPath);
                 icon = _iconCache->GetIconForPath(levelPath / contributor.iconPath);
             }
             cell->icon = icon ? icon : _iconCache->InfoIcon;
             _requirementsCells.push_back(cell);
         }
 
-        if (_lastSelectedCustomLevel->levelID.ends_with(u" WIP")) {
+        if (eventArgs.isWIP) {
             static ConstString WipText("<size=75%>WIP Level. Please Play in Practice Mode");
             static ConstString WipSubText("Warning");
 
@@ -147,82 +119,81 @@ namespace SongCore::UI {
             _requirementsCells.push_back(cell);
         }
 
-        if (diffDetailsOpt.has_value()) {
-            auto& diffDetails = diffDetailsOpt->get();
+        if (diffDetails.customColors.has_value()) {
+            static ConstString CustomColorsText("<size=75%>Custom Colors Available");
+            static ConstString CustomColorsSubText("Click here to preview & enable or disable it.");
 
-            if (diffDetails.customColors.has_value()) {
-                static ConstString CustomColorsText("<size=75%>Custom Colors Available");
-                static ConstString CustomColorsSubText("Click here to preview & enable or disable it.");
+            auto cell = GetCellInfo();
+            cell->text = CustomColorsText;
+            cell->subText = CustomColorsSubText;
+            cell->icon = _iconCache->ColorsIcon;
+            _requirementsCells.push_back(cell);
 
-                auto cell = GetCellInfo();
-                cell->text = CustomColorsText;
-                cell->subText = CustomColorsSubText;
-                cell->icon = _iconCache->ColorsIcon;
-                _requirementsCells.push_back(cell);
-            }
+            _colorsOptions->Parse();
+            _colorsOptions->SetColors(diffDetails.customColors.value());
+        }
 
-            for (auto& warning : diffDetails.warnings) {
-                static ConstString Warning("Warning");
+        for (auto& warning : diffDetails.warnings) {
+            static ConstString Warning("Warning");
 
-                auto cell = GetCellInfo();
-                cell->text = fmt::format("<size=75%>{}", warning);
-                cell->subText = Warning;
-                cell->icon = _iconCache->WarningIcon;
-                _requirementsCells.push_back(cell);
-            }
+            auto cell = GetCellInfo();
+            cell->text = fmt::format("<size=75%>{}", warning);
+            cell->subText = Warning;
+            cell->icon = _iconCache->WarningIcon;
+            _requirementsCells.push_back(cell);
+        }
 
-            for (auto& information : diffDetails.information) {
-                static ConstString Info("Info");
+        for (auto& information : diffDetails.information) {
+            static ConstString Info("Info");
 
-                auto cell = GetCellInfo();
-                cell->text = fmt::format("<size=75%>{}", information);
-                cell->subText = Info;
-                cell->icon = _iconCache->InfoIcon;
-                _requirementsCells.push_back(cell);
-            }
+            auto cell = GetCellInfo();
+            cell->text = fmt::format("<size=75%>{}", information);
+            cell->subText = Info;
+            cell->icon = _iconCache->InfoIcon;
+            _requirementsCells.push_back(cell);
+        }
 
-            for (auto& suggestion : diffDetails.suggestions) {
-                static ConstString SuggestionFound("Suggestion Found");
-                static ConstString SuggestionMissing("Suggestion Missing");
+        for (auto& suggestion : diffDetails.suggestions) {
+            static ConstString SuggestionFound("Suggestion Found");
+            static ConstString SuggestionMissing("Suggestion Missing");
 
-                bool installed = _capabilities->IsCapabilityRegistered(suggestion);
-                auto cell = GetCellInfo();
-                cell->text = suggestion;
-                cell->subText = installed ? SuggestionFound : SuggestionMissing;
-                cell->icon = installed ? _iconCache->HaveSuggestionIcon : _iconCache->MissingSuggestionIcon;
-                _requirementsCells.push_back(cell);
-            }
+            bool installed = _capabilities->IsCapabilityRegistered(suggestion);
+            auto cell = GetCellInfo();
+            cell->text = suggestion;
+            cell->subText = installed ? SuggestionFound : SuggestionMissing;
+            cell->icon = installed ? _iconCache->HaveSuggestionIcon : _iconCache->MissingSuggestionIcon;
+            _requirementsCells.push_back(cell);
+        }
 
-            if (diffDetails.oneSaber.has_value()) {
-                auto oneSaber = diffDetails.oneSaber.value();
-                static const char* FANCY_ENABLED("[<color=#89ff89>Enabled</color]");
-                static const char* FANCY_DISABLED("[<color=#ff5072>Disabled</color]");
-                static const char* ENABLE("enable");
-                static const char* DISABLE("disable");
-                static const char* FORCED_ONE("Forced One Saber");
-                static const char* FORCED_TWO("Forced Standard");
+        if (diffDetails.oneSaber.has_value()) {
+            auto oneSaber = diffDetails.oneSaber.value();
+            static const char* FANCY_ENABLED("[<color=#89ff89>Enabled</color]");
+            static const char* FANCY_DISABLED("[<color=#ff5072>Disabled</color]");
+            static const char* ENABLE("enable");
+            static const char* DISABLE("disable");
+            static const char* FORCED_ONE("Forced One Saber");
+            static const char* FORCED_TWO("Forced Standard");
 
-                auto enabledText = config.disableOneSaberOverride ? FANCY_DISABLED : FANCY_ENABLED;
-                auto enableSubText = config.disableOneSaberOverride ? ENABLE : DISABLE;
-                auto saberCountText = oneSaber ? FORCED_ONE : FORCED_TWO;
+            auto enabledText = config.disableOneSaberOverride ? FANCY_DISABLED : FANCY_ENABLED;
+            auto enableSubText = config.disableOneSaberOverride ? ENABLE : DISABLE;
+            auto saberCountText = oneSaber ? FORCED_ONE : FORCED_TWO;
 
-                auto cell = GetCellInfo();
-                cell->text = fmt::format("<size=75%>{} {}", saberCountText, enabledText);
-                cell->subText = fmt::format("Map changes saber count, click here to {}", enableSubText);
-                cell->icon = oneSaber ? _iconCache->OneSaberIcon : _iconCache->StandardIcon;
-                _requirementsCells.push_back(cell);
-            }
+            auto cell = GetCellInfo();
+            cell->text = fmt::format("<size=75%>{} {}", saberCountText, enabledText);
+            cell->subText = fmt::format("Map changes saber count, click here to {}", enableSubText);
+            cell->icon = oneSaber ? _iconCache->OneSaberIcon : _iconCache->StandardIcon;
+            _requirementsCells.push_back(cell);
+        }
 
-            // add environment info here if list isn't empty
-            if (!_requirementsCells.empty()) {
-                static ConstString EnvironmentInfo("<size=75%>Environment Info");
+        // add environment info here if list isn't empty
+        if (!_requirementsCells.empty()) {
+            static ConstString EnvironmentInfo("<size=75%>Environment");
 
-                auto cell = GetCellInfo();
-                cell->text = EnvironmentInfo;
-                cell->subText = fmt::format("This Map uses the Environment: {}", _lastSelectedCustomLevel->environmentInfo->environmentName);
-                cell->icon = _iconCache->EnvironmentIcon;
-                _requirementsCells.push_back(cell);
-            }
+            auto cell = GetCellInfo();
+            cell->text = EnvironmentInfo;
+            cell->subText = eventArgs.previewBeatmapLevel->environmentInfo->environmentName;
+            cell->icon = _iconCache->EnvironmentIcon;
+            _requirementsCells.push_back(cell);
         }
     }
 
@@ -239,11 +210,7 @@ namespace SongCore::UI {
     }
 
     void RequirementsListManager::ShowColorsOptions() {
-        auto saveData = il2cpp_utils::cast<CustomJSONData::CustomLevelInfoSaveData>(_lastSelectedCustomLevel->standardLevelInfoSaveData);
-        auto characteristic = _lastSelectedDifficultyBeatmap->parentDifficultyBeatmapSet->beatmapCharacteristic;
-        auto difficulty = _lastSelectedDifficultyBeatmap->difficulty;
-        auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
-        _colorsOptions->ShowColors(diffDetailsOpt->get());
+        _colorsOptions->Show();
     }
 
     void RequirementsListManager::RequirementCellSelected(HMUI::TableView* tableView, int cellIndex) {
@@ -260,53 +227,11 @@ namespace SongCore::UI {
         _listTableData->tableView->ClearSelection();
     }
 
-    void RequirementsListManager::LevelDetailContentChanged(GlobalNamespace::StandardLevelDetailViewController* viewController, GlobalNamespace::StandardLevelDetailViewController::ContentType contentType) {
-        if (contentType == GlobalNamespace::StandardLevelDetailViewController::ContentType::OwnedAndReady) {
-            auto difficultyBeatmap = viewController->selectedDifficultyBeatmap;
-            _lastSelectedDifficultyBeatmap = difficultyBeatmap;
-            _lastSelectedCustomLevel = nullptr;
-            if (!difficultyBeatmap) return;
-
-            auto beatmapLevel = difficultyBeatmap->level;
-            auto customBeatmapLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
-
-            if (customBeatmapLevel) { // custom level
-                HandleCustomLevelWasSelected(customBeatmapLevel, difficultyBeatmap);
-            } else { // vanilla level
-                HandleVanillaLevelWasSelected(beatmapLevel, difficultyBeatmap);
-            }
-        }
-    }
-
-    void RequirementsListManager::BeatmapLevelSelected(GlobalNamespace::StandardLevelDetailViewController* _, GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap) {
-        _lastSelectedDifficultyBeatmap = difficultyBeatmap;
-        _lastSelectedCustomLevel = nullptr;
-        if (!difficultyBeatmap) return;
-
-        auto beatmapLevel = difficultyBeatmap->level;
-        auto customBeatmapLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
-
-        if (customBeatmapLevel) {
-            HandleCustomLevelWasSelected(customBeatmapLevel, difficultyBeatmap);
-        } else { // not a custom level
-            HandleVanillaLevelWasSelected(beatmapLevel, difficultyBeatmap);
-        }
-    }
-
-    void RequirementsListManager::HandleVanillaLevelWasSelected(GlobalNamespace::IBeatmapLevel* level, GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap) {
-        _lastSelectedCustomLevel = nullptr;
-        _lastSelectedDifficultyBeatmap = difficultyBeatmap;
-
-        SetRequirementButtonActive(false);
-    }
-
-    void RequirementsListManager::HandleCustomLevelWasSelected(GlobalNamespace::CustomBeatmapLevel* level, GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap) {
-        _lastSelectedCustomLevel = level;
-        _lastSelectedDifficultyBeatmap = difficultyBeatmap;
-
-        UpdateRequirementCells();
+    void RequirementsListManager::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
+        UpdateRequirementCells(eventArgs);
         UpdateRequirementButton();
     }
+
     ListW<BSML::CustomCellInfo*> RequirementsListManager::get_requirementsCells() {
         return _requirementsCells;
     }
