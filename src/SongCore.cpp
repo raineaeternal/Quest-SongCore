@@ -133,12 +133,13 @@ namespace SongCore::API {
 
         void RegisterCustomCharacteristic(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
             characteristic->hideFlags = characteristic->hideFlags | UnityEngine::HideFlags::DontUnloadUnusedAsset;
-
-            if (GetCharacteristicBySerializedName(static_cast<std::string>(characteristic->serializedName))) {
+            auto serializedName = static_cast<std::string>(characteristic->serializedName);
+            if (!GetCharacteristicBySerializedName(serializedName)) {
+                INFO("Registering characteristic with serialized name {}", serializedName);
                 get_registeredCharacteristics()->Add(characteristic);
                 _characteristicsUpdatedEvent.invoke(characteristic, CharacteristicEventKind::Registered);
             } else {
-                WARNING("Characteristic '{}' was registered more than once! not registering again", characteristic->serializedName);
+                WARNING("Characteristic '{}' was registered more than once! not registering again", serializedName);
             }
         }
 
@@ -157,9 +158,17 @@ namespace SongCore::API {
         }
 
         GlobalNamespace::BeatmapCharacteristicSO* GetCharacteristicBySerializedName(std::string_view serializedName) {
-            auto characteristic = get_registeredCharacteristics().find([&serializedName](auto x) { return x->serializedName == serializedName; });
-            // value_or(nullptr) doesn't work because it's a reference wrapper in an optional
-            return characteristic.has_value() ? characteristic.value() : nullptr;
+            auto characteristics = GetRegisteredCharacteristics();
+            auto itr = std::find_if(characteristics.begin(), characteristics.end(), [&serializedName](auto x) {
+                return x->serializedName == serializedName;
+            });
+
+            if (itr == characteristics.end()) {
+                DEBUG("Failed to find characteristic with serializedName: {}", serializedName);
+                return nullptr;
+            } else {
+                return *itr;
+            }
         }
 
         UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent() {

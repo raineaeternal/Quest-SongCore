@@ -1,5 +1,6 @@
 #include "CustomJSONData.hpp"
 #include "paper/shared/utfcpp/source/utf8.h"
+#include "logging.hpp"
 #include <cctype>
 #include <string>
 
@@ -166,11 +167,11 @@ namespace SongCore::CustomJSONData {
 	bool CustomLevelInfoSaveData::BasicCustomLevelDetails::Contributor::Deserialize(ValueUTF16 const& value) {
 		auto memberEnd = value.MemberEnd();
 		auto nameItr = value.FindMember(u"_name");
-		if (nameItr != memberEnd && nameItr->value.IsString()) name = utf8::utf16to8(nameItr->value.Get<std::u16string>());
+		if (nameItr != memberEnd) name = utf8::utf16to8(nameItr->value.Get<std::u16string>());
 		auto roleItr = value.FindMember(u"_role");
-		if (roleItr != memberEnd && roleItr->value.IsString()) role = utf8::utf16to8(roleItr->value.Get<std::u16string>());
+		if (roleItr != memberEnd) role = utf8::utf16to8(roleItr->value.Get<std::u16string>());
 		auto iconPathItr = value.FindMember(u"_iconPath");
-		if (iconPathItr != memberEnd && iconPathItr->value.IsString()) iconPath = utf8::utf16to8(iconPathItr->value.Get<std::u16string>());
+		if (iconPathItr != memberEnd) iconPath = utf8::utf16to8(iconPathItr->value.Get<std::u16string>());
 
 		return true;
 	}
@@ -217,10 +218,10 @@ namespace SongCore::CustomJSONData {
 			auto memberEnd = customData.MemberEnd();
 
 			auto characteristicLabelItr = customData.FindMember(u"_characteristicLabel");
-			if (characteristicLabelItr != memberEnd && characteristicLabelItr->value.IsString()) characteristicLabel = utf8::utf16to8(characteristicLabelItr->value.Get<std::u16string>());
+			if (characteristicLabelItr != memberEnd) characteristicLabel = utf8::utf16to8(characteristicLabelItr->value.Get<std::u16string>());
 
-			auto characteristicIconImageFileNameItr = customData.FindMember(u"_characteristicIconImageFileName");
-			if (characteristicIconImageFileNameItr != memberEnd && characteristicIconImageFileNameItr->value.IsString()) characteristicIconImageFileName = utf8::utf16to8(characteristicIconImageFileNameItr->value.Get<std::u16string>());
+			auto characteristicIconImageFileNameItr = customData.FindMember(u"_characteristicIconImageFilename");
+			if (characteristicIconImageFileNameItr != memberEnd) characteristicIconImageFileName = utf8::utf16to8(characteristicIconImageFileNameItr->value.Get<std::u16string>());
 		}
 
 		auto difficultyBeatmapsItr = value.FindMember(u"_difficultyBeatmaps");

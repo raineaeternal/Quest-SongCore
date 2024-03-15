@@ -54,7 +54,6 @@ namespace SongCore {
         return _disabledBeatmapCharacteristics.ref_to();
     }
 
-
     UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& Characteristics::GetCharacteristicsUpdatedEvent() {
         return _characteristicsUpdated;
     }
@@ -75,10 +74,11 @@ namespace SongCore {
 
     void Characteristics::AddCharacteristicToCollection(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
         std::lock_guard<std::mutex> lock(_collectionMutex);
+        auto serializedName = characteristic->serializedName;
         if (characteristic->requires360Movement && !_appStaticSettings->enable360DegreeLevels) {
             _disabledBeatmapCharacteristics->Add(characteristic);
         } else {
-            _beatmapCharacteristicCollection->_beatmapCharacteristicsBySerializedName->Add(characteristic->serializedName, characteristic);
+            _beatmapCharacteristicCollection->_beatmapCharacteristicsBySerializedName->Add(serializedName, characteristic);
             _beatmapCharacteristics->Add(characteristic);
         }
     }

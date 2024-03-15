@@ -11,13 +11,24 @@ DEFINE_TYPE(SongCore::UI, IconCache);
         if (!fieldname) fieldname = BSML::Utilities::LoadSpriteRaw(Assets::Resources::assetname##_png); \
         return fieldname; \
 } while(0)
+
+#define DestroyIcon(fieldname) do { \
+    if (fieldname && fieldname->m_CachedPtr) \
+        UnityEngine::Object::Destroy(fieldname); \
+    fieldname = nullptr; \
+} while(0)
 namespace SongCore::UI {
+    IconCache* IconCache::_instance = nullptr;
+
     void IconCache::ctor() {
         INVOKE_CTOR();
         _pathIcons = IconDict::New_ctor();
+        if (!_instance) _instance = this;
     }
 
     void IconCache::Dispose() {
+        if (_instance == this) _instance = nullptr;
+
         auto enumerator = _pathIcons->GetEnumerator();
         while (enumerator.MoveNext()) {
             auto [path, icon] = enumerator.Current;
@@ -27,6 +38,20 @@ namespace SongCore::UI {
 
         _pathIcons->Clear();
         _lastUsedIcons.clear();
+
+        DestroyIcon(_colorsIcon);
+        DestroyIcon(_environmentIcon);
+        DestroyIcon(_extraDiffsIcon);
+        DestroyIcon(_folderIcon);
+        DestroyIcon(_haveReqIcon);
+        DestroyIcon(_infoIcon);
+        DestroyIcon(_oneSaberIcon);
+        DestroyIcon(_missingReqIcon);
+        DestroyIcon(_standardIcon);
+        DestroyIcon(_warningIcon);
+        DestroyIcon(_haveSuggestionIcon);
+        DestroyIcon(_missingSuggestionIcon);
+        DestroyIcon(_deleteIcon);
     }
 
     UnityEngine::Sprite* IconCache::GetIconForPath(std::filesystem::path const& path) {
