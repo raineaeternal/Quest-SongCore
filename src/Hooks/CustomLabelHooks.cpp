@@ -64,8 +64,8 @@ MAKE_AUTO_HOOK_MATCH(BeatmapCharacteristicSegmentedControlController_SetData, &G
         if (characteristicDetails.characteristicIconImageFileName.has_value() && !characteristicDetails.characteristicIconImageFileName->empty()) {
             auto iconCache = SongCore::UI::IconCache::_instance;
             if (iconCache) { // if iconcache instance exists, use it
-                std::filesystem::path levelPath(customLevel->get_customLevelPath());
-                icon = iconCache->GetIconForPath(levelPath / characteristicDetails.characteristicIconImageFileName.value());
+                auto iconPath = std::filesystem::path(customLevel->get_customLevelPath()) / characteristicDetails.characteristicIconImageFileName.value();
+                icon = iconCache->GetIconForPath(iconPath);
             }
         }
 
@@ -121,7 +121,6 @@ MAKE_AUTO_HOOK_MATCH(BeatmapDifficultySegmentedControlController_SetData, &Globa
     }
 
     if (success) { // we found labels
-        INFO("Replacing labels with {} other labels", labels.size());
         self->_difficultySegmentedControl->SetTexts(labels->i___System__Collections__Generic__IReadOnlyList_1_T_());
     }
 }
