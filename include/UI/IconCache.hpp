@@ -23,6 +23,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, IconCache, System::Object, classo
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Sprite*, _warningIcon);
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Sprite*, _haveSuggestionIcon);
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Sprite*, _missingSuggestionIcon);
+    DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Sprite*, _deleteIcon);
 
     using IconDict = System::Collections::Generic::Dictionary_2<StringW, UnityEngine::Sprite*>;
     DECLARE_INSTANCE_FIELD_PRIVATE(IconDict*, _pathIcons);
@@ -65,6 +66,8 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, IconCache, System::Object, classo
         UnityEngine::Sprite* GetMissingSuggestionIcon();
         __declspec(property(get=GetMissingSuggestionIcon)) UnityEngine::Sprite* MissingSuggestionIcon;
 
+        UnityEngine::Sprite* GetDeleteIcon();
+        __declspec(property(get=GetDeleteIcon)) UnityEngine::Sprite* DeleteIcon;
     private:
         static constexpr size_t MAX_ICON_CACHE_COUNT = 50;
         /// @brief keeps track of the last used icons, and if the cache has too many used icons, the least used will be removed
