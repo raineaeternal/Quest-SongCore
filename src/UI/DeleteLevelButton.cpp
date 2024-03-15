@@ -8,15 +8,10 @@
 #include "UnityEngine/UI/ContentSizeFitter.hpp"
 
 #include "bsml/shared/BSML.hpp"
-#include "bsml/shared/BSML-Lite.hpp"
 #include "bsml/shared/BSML/Components/ButtonIconImage.hpp"
 
 #include <chrono>
 #include <future>
-
-#define protected public
-#include "bsml/shared/BSML/Tags/ButtonWithIconTag.hpp"
-#undef protected
 
 DEFINE_TYPE(SongCore::UI, DeleteLevelButton);
 
@@ -48,28 +43,20 @@ namespace SongCore::UI {
         auto detailView = _levelDetailViewController->_standardLevelDetailView;
         auto parent = detailView->practiceButton->transform->parent;
 
-        // _deleteButtonRoot = BSML::ButtonWithIconTag().CreateObject(parent);
-        // _deleteButton = _deleteButtonRoot->GetComponent<UnityEngine::UI::Button*>();
-        // auto img = _deleteButtonRoot->GetComponent<BSML::ButtonIconImage*>();
-        // img->SetIcon(_iconCache->DeleteIcon);
-
-        auto _deleteButton = BSML::Lite::CreateUIButton(parent, "", std::bind(&DeleteLevelButton::AttemptDeleteCurrentlySelectedLevel, this));
+        // create button
+        BSML::parse_and_construct("<icon-button id='_deleteButton' pref-width='10' pref-height='10'/>", parent, this);
         _deleteButtonRoot = _deleteButton->gameObject;
-        _deleteButton->transform->localScale = detailView->practiceButton->transform->localScale;
-        _deleteButton->transform->SetAsFirstSibling();
-        auto content = _deleteButton->transform->Find("Content");
-        UnityEngine::Object::Destroy(content->GetComponent<UnityEngine::UI::LayoutElement*>());
-        UnityEngine::Object::Destroy(content->Find("Text")->gameObject);
-        auto icon = BSML::Lite::CreateImage(content, _iconCache->DeleteIcon);
-        icon->preserveAspect = true;
-
-        // TODO: fix the button from being wide for some reason
-        auto layout = _deleteButton->gameObject->GetComponent<UnityEngine::UI::LayoutElement*>();
-        layout->preferredHeight = 10.0f;
-        layout->preferredWidth = 10.0f;
-        auto fitter = _deleteButton->gameObject->GetComponent<UnityEngine::UI::ContentSizeFitter*>();
-        fitter->set_verticalFit(UnityEngine::UI::ContentSizeFitter::FitMode::PreferredSize);
-        fitter->set_horizontalFit(UnityEngine::UI::ContentSizeFitter::FitMode::PreferredSize);
+        /// make sure it's the leftmost button
+        _deleteButtonRoot->transform->SetAsFirstSibling();
+        // sprite, scale, skew fixing
+        auto buttonImg = _deleteButtonRoot->GetComponent<BSML::ButtonIconImage*>();
+        buttonImg->SetIcon(_iconCache->DeleteIcon);
+        float scale = 1.7f;
+        buttonImg->image->transform->localScale = {scale, scale, scale};
+        auto imageView = il2cpp_utils::try_cast<HMUI::ImageView>(buttonImg->image).value_or(nullptr);
+        if (imageView) {
+            imageView->_skew = 0.18f;
+        }
     }
 
     void DeleteLevelButton::Dispose() {
