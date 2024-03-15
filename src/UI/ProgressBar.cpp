@@ -58,6 +58,8 @@ namespace SongCore::UI {
         gameObject->transform->localScale = _scale;
 
         _canvas = gameObject->AddComponent<UnityEngine::Canvas *>();
+        _canvasGroup = gameObject->AddComponent<UnityEngine::CanvasGroup*>();
+        _canvasGroup->alpha = 1.0f;
         _canvas->renderMode = UnityEngine::RenderMode::WorldSpace;
         _canvas->enabled = true;
 
@@ -103,6 +105,7 @@ namespace SongCore::UI {
 
     void ProgressBar::ShowMessage(std::string message) {
         StopDisableCanvasRoutine();
+        _canvasGroup->alpha = 1.0f;
         _showingMessage = true;
         _headerText->text = message;
         _loadingBar->enabled = false;
@@ -112,6 +115,7 @@ namespace SongCore::UI {
 
     void ProgressBar::ShowMessage(std::string message, float time) {
         StopDisableCanvasRoutine();
+        _canvasGroup->alpha = 1.0f;
         _showingMessage = true;
         _headerText->text = message;
         _loadingBar->enabled = false;
@@ -123,7 +127,9 @@ namespace SongCore::UI {
         while (time > 0) {
             time -= UnityEngine::Time::get_deltaTime();
             co_yield nullptr;
-
+            if (time < 1.0f) {
+                _canvasGroup->alpha = time;
+            }
         }
 
         _canvas->enabled = false;

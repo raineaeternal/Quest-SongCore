@@ -8,6 +8,7 @@
 #include "System/IDisposable.hpp"
 #include "Zenject/ITickable.hpp"
 #include "UnityEngine/Canvas.hpp"
+#include "UnityEngine/CanvasGroup.hpp"
 #include "TMPro/TMP_Text.hpp"
 
 #include "UnityEngine/Vector2.hpp"
@@ -27,6 +28,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     DECLARE_INSTANCE_FIELD(SongCore::SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
 
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Canvas*, _canvas);
+    DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::CanvasGroup*, _canvasGroup);
     DECLARE_INSTANCE_FIELD_PRIVATE(TMPro::TMP_Text*, _authorNameText);
     DECLARE_INSTANCE_FIELD_PRIVATE(TMPro::TMP_Text*, _pluginNameText);
     DECLARE_INSTANCE_FIELD_PRIVATE(TMPro::TMP_Text*, _headerText);
