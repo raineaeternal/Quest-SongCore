@@ -49,7 +49,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     DECLARE_INSTANCE_FIELD(UnityEngine::Vector2, _loadingBarSize);
     DECLARE_INSTANCE_FIELD(UnityEngine::Color, _bgColor);
 
-    UnityEngine::Coroutine* _coroReturn;
+    UnityEngine::Coroutine* _disableCanvasRoutine;
 
     std::string HeaderText;
     std::string PluginText;
@@ -66,6 +66,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     void RuntimeSongLoaderOnSongLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> customLevels);
     custom_types::Helpers::Coroutine DisableCanvasRoutine(float time);
     void StopDisableCanvasRoutine();
+    void ShowCanvasForSeconds(float time);
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &::Zenject::IInitializable::Initialize);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &::System::IDisposable::Dispose);

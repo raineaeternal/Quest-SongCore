@@ -21,12 +21,6 @@ namespace SongCore::UI {
         _headerPos = UnityEngine::Vector2(10, 15);
         _headerSize = UnityEngine::Vector2(100, 20);
 
-        std::string HeaderText = "Loading songs...";
-        std::string PluginText = "SongCore Loader";
-
-        float _headerTextSize = 15.0f;
-        float _pluginTextSize = 9.0f;
-
         HeaderText = "Loading songs...";
         PluginText = "SongCore Loader";
 
@@ -35,7 +29,7 @@ namespace SongCore::UI {
 
         _pluginTextPos = UnityEngine::Vector2(10, 23);
 
-        _loadingBarSize = UnityEngine::Vector2(10, 1);
+        _loadingBarSize = UnityEngine::Vector2(100, 10);
         _bgColor = UnityEngine::Color(0, 0, 0, 0.2f);
     }
 
@@ -104,43 +98,59 @@ namespace SongCore::UI {
     }
 
     void ProgressBar::ShowMessage(std::string message) {
-        StopDisableCanvasRoutine();
-        _canvasGroup->alpha = 1.0f;
         _showingMessage = true;
         _headerText->text = message;
         _loadingBar->enabled = false;
         _loadingBg->enabled = false;
         _canvas->enabled = true;
+        ShowCanvasForSeconds(5);
     }
 
     void ProgressBar::ShowMessage(std::string message, float time) {
-        StopDisableCanvasRoutine();
-        _canvasGroup->alpha = 1.0f;
         _showingMessage = true;
         _headerText->text = message;
         _loadingBar->enabled = false;
         _loadingBg->enabled = false;
         _canvas->enabled = true;
+        ShowCanvasForSeconds(5);
     }
 
     custom_types::Helpers::Coroutine ProgressBar::DisableCanvasRoutine(float time) {
+        float totalTime = time;
         while (time > 0) {
-            time -= UnityEngine::Time::get_deltaTime();
+            auto deltaTime = UnityEngine::Time::get_deltaTime();
+            time -= deltaTime;
             co_yield nullptr;
-            if (time < 1.0f) {
-                _canvasGroup->alpha = time;
+            float alpha = _canvasGroup->alpha;
+            if ((totalTime - time) < 0.25 && alpha < 1.0f) {
+                alpha += deltaTime * 4;
+            }
+
+            // towards the end, fade out the canvas
+            if (time < 0.25f) {
+                alpha = time * 4;
+            }
+
+            _canvasGroup->alpha = alpha;
+            if (time < 0.25f) {
+                _canvasGroup->alpha = time * 4;
             }
         }
-
+        _canvasGroup->alpha = 0.0f;
         _canvas->enabled = false;
         _showingMessage = false;
 
         co_return;
     }
 
+    void ProgressBar::ShowCanvasForSeconds(float time) {
+        StopDisableCanvasRoutine();
+        _disableCanvasRoutine = BSML::SharedCoroutineStarter::StartCoroutine(DisableCanvasRoutine(5));
+    }
+
     void ProgressBar::StopDisableCanvasRoutine() {
-        if (_coroReturn) BSML::SharedCoroutineStarter::StopCoroutine(_coroReturn);
-        _coroReturn = nullptr;
+        if (_disableCanvasRoutine) BSML::SharedCoroutineStarter::StopCoroutine(_disableCanvasRoutine);
+        _disableCanvasRoutine = nullptr;
     }
 
     void ProgressBar::RuntimeSongLoaderOnSongRefresh() {
@@ -159,7 +169,7 @@ namespace SongCore::UI {
         _loadingBar->enabled = false;
         _loadingBg->enabled = false;
         _loadingBar->fillAmount = 1.0f;
-        _coroReturn = BSML::SharedCoroutineStarter::StartCoroutine(DisableCanvasRoutine(5));
+        ShowCanvasForSeconds(5);
     }
 
     void ProgressBar::Tick() {
