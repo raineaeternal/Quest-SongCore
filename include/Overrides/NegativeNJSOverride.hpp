@@ -6,7 +6,7 @@
 #include "System/IDisposable.hpp"
 #include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::Overrides, RotationSpawnLinesOverride, System::Object, classof(System::IDisposable*),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::Overrides, NegativeNJSOverride, System::Object, classof(System::IDisposable*),
     DECLARE_CTOR(ctor, GlobalNamespace::GameplayCoreSceneSetupData* sceneSetupData);
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);

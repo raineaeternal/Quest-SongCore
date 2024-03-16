@@ -13,19 +13,15 @@ extern bool NoteSpawnLinesOverrideShowLines;
 namespace SongCore::Overrides {
 
     void RotationSpawnLinesOverride::ctor(GlobalNamespace::GameplayCoreSceneSetupData* sceneSetupData) {
-        _sceneSetupData = sceneSetupData;
-    }
-
-    void RotationSpawnLinesOverride::Initialize() {
         NoteSpawnLinesOverrideLevelIsCustom = false;
         NoteSpawnLinesOverrideShowLines = true;
-        auto customPreviewLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomPreviewBeatmapLevel>(_sceneSetupData->previewBeatmapLevel).value_or(nullptr);
+        auto customPreviewLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomPreviewBeatmapLevel>(sceneSetupData->previewBeatmapLevel).value_or(nullptr);
         if (!customPreviewLevel) return;
 
         auto saveData = il2cpp_utils::try_cast<CustomJSONData::CustomLevelInfoSaveData>(customPreviewLevel->standardLevelInfoSaveData).value_or(nullptr);
         if (!saveData) return;
 
-        auto difficultyBeatmap = _sceneSetupData->difficultyBeatmap;
+        auto difficultyBeatmap = sceneSetupData->difficultyBeatmap;
         auto characteristic = difficultyBeatmap->parentDifficultyBeatmapSet->beatmapCharacteristic;
         auto difficulty = difficultyBeatmap->difficulty;
 
