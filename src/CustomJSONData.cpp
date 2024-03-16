@@ -319,6 +319,19 @@ namespace SongCore::CustomJSONData {
 		return foundAnything;
 	}
 
+void CustomDifficultyBeatmapSet::ctor(
+	StringW beatmapCharacteristicName,
+	ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap*> difficultyBeatmaps
+) {
+	INVOKE_CTOR();
+
+	_ctor(
+		beatmapCharacteristicName,
+		difficultyBeatmaps
+	);
+}
+
+
 void CustomDifficultyBeatmap::ctor(
 	StringW difficultyName,
 	int difficultyRank,

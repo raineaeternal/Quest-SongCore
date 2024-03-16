@@ -133,15 +133,12 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
     for (rapidjson::SizeType i = 0; i < beatmapSetsArr.Size(); i++) {
         SongCore::CustomJSONData::ValueUTF16 const& beatmapSetJson = beatmapSetsArr[i];
 
-        DEBUG("Handling set {}", i);
         auto originalBeatmapSet = original->difficultyBeatmapSets[i];
         auto customBeatmaps = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap *>(originalBeatmapSet->difficultyBeatmaps.size());
 
         auto const& difficultyBeatmaps = beatmapSetJson.FindMember(u"_difficultyBeatmaps")->value;
 
         for (rapidjson::SizeType j = 0; j < originalBeatmapSet->difficultyBeatmaps.size(); j++) {
-            DEBUG("Handling map {}", j);
-
             SongCore::CustomJSONData::ValueUTF16 const& difficultyBeatmapJson = difficultyBeatmaps[j];
             auto originalBeatmap = originalBeatmapSet->difficultyBeatmaps[j];
 
@@ -164,12 +161,18 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
             customBeatmaps[j] = customBeatmap;
         }
 
-        customBeatmapSets[i] = GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet::New_ctor(
+        auto customBeatmapSet = SongCore::CustomJSONData::CustomDifficultyBeatmapSet::New_ctor(
             originalBeatmapSet->beatmapCharacteristicName,
             customBeatmaps
         );
+
+        auto customDataItr = beatmapSetJson.FindMember(u"_customData");
+        if (customDataItr != beatmapSetJson.MemberEnd()) {
+            customBeatmapSet->customData = customDataItr->value;
+        }
+
+        customBeatmapSets[i] = customBeatmapSet;
     }
-    DEBUG("{}", customSaveData->ToString());
     return customSaveData;
 }
 
