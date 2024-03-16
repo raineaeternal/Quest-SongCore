@@ -190,7 +190,7 @@ namespace SongCore::SongLoader {
             INFO("Loaded {} (actual: {}) songs in {}ms", (size_t)_totalSongs, actualCount, ms);
         } else {
             auto µs = (float)duration_cast<nanoseconds>(time).count() / 1000.0f;
-            INFO("Loaded {} (actual: {}) songs in {}µs", (size_t)_totalSongs, actualCount, µs);
+            INFO("Loaded {} (actual: {}) songs in {}us", (size_t)_totalSongs, actualCount, µs);
         }
 
         // anonymous function to get the values from a songdict into a vector
@@ -300,7 +300,7 @@ namespace SongCore::SongLoader {
                     INFO("Loaded song in {}ms", ms);
                 } else {
                     auto µs = (float)duration_cast<nanoseconds>(time).count() / 1000.0f;
-                    INFO("Loaded song in {}µs", µs);
+                    INFO("Loaded song in {}us", µs);
                 }
 
                 // update progress
