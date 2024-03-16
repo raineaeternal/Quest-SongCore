@@ -563,7 +563,7 @@ namespace SongCore::SongLoader {
             InvokeSongDeleted();
             deletedInvoked = true;
         });
-        while (!willDeleteInvoked) std::this_thread::yield();
+        while (!deletedInvoked) std::this_thread::yield();
     }
 
     std::future<void> RuntimeSongLoader::DeleteSong(std::filesystem::path const& levelPath) {
