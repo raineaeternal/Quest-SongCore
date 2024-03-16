@@ -170,3 +170,9 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_GetBeatmapLevelAsync, &BeatmapLevel
         return orig;
     }
 }
+
+// hook to fix the song duration not applying, which the game just doesn't copy for some reason
+MAKE_HOOK_MATCH(CustomBeatmapLevel_ctor, &CustomBeatmapLevel::_ctor, void, CustomBeatmapLevel* self, CustomPreviewBeatmapLevel* customPreviewBeatmapLevel) {
+    CustomBeatmapLevel_ctor(self, customPreviewBeatmapLevel);
+    self->_songDuration_k__BackingField = customPreviewBeatmapLevel->songDuration;
+}
