@@ -63,8 +63,6 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
 
     std::string sub(cppStr.substr(0, 100));
 
-    DEBUG("First 100 chars from json: {}", sub);
-
     if (std::regex_search(cppStr, matches, versionRegex)) {
         // Does not match supported version
         if (matches.size() >= 1) {
@@ -80,7 +78,6 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
                 StringW(cppStr));
         }
     }
-    // }
 
     if (!original || !original.ptr()) {
         DEBUG("No fixup performed for map version");
