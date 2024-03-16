@@ -136,6 +136,7 @@ namespace SongCore::UI {
         _canvas->enabled = false;
         _showingMessage = false;
 
+        _disableCanvasRoutine = nullptr;
         co_return;
     }
 
