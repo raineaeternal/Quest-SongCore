@@ -48,6 +48,8 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, std::vec
 
         void HandleCustomLevelWasSelected(LevelWasSelectedEventArgs& eventArgs);
 
+        void StartLevelWasSelectedInvoke();
+
         /// @brief invoker method for the events
         void InvokeLevelWasSelected(LevelWasSelectedEventArgs const& eventArgs);
 )

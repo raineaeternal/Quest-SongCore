@@ -45,26 +45,15 @@ namespace SongCore {
 
     void LevelSelect::LevelDetailContentChanged(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, GlobalNamespace::StandardLevelDetailViewController::ContentType contentType) {
         if (contentType == GlobalNamespace::StandardLevelDetailViewController::ContentType::OwnedAndReady) {
-            LevelWasSelectedEventArgs eventArgs;
-
-            eventArgs.levelPack = GetSelectedLevelPack();
-            eventArgs.previewBeatmapLevel = GetSelectedPreviewBeatmapLevel();
-            eventArgs.beatmapLevel = GetSelectedBeatmapLevel();
-            eventArgs.difficultyBeatmapSet = GetSelectedDifficultyBeatmapSet();
-            eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
-            eventArgs.levelID = static_cast<std::string>(eventArgs.previewBeatmapLevel->levelID);
-
-            auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
-            if (customLevel) {
-                eventArgs.isCustom = true;
-                HandleCustomLevelWasSelected(eventArgs);
-            }
-
-            InvokeLevelWasSelected(eventArgs);
+            StartLevelWasSelectedInvoke();
         }
     }
 
     void LevelSelect::BeatmapLevelSelected(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, GlobalNamespace::IDifficultyBeatmap* selectedBeatmap) {
+        StartLevelWasSelectedInvoke();
+    }
+
+    void LevelSelect::StartLevelWasSelectedInvoke() {
         LevelWasSelectedEventArgs eventArgs;
 
         eventArgs.levelPack = GetSelectedLevelPack();
@@ -72,6 +61,7 @@ namespace SongCore {
         eventArgs.beatmapLevel = GetSelectedBeatmapLevel();
         eventArgs.difficultyBeatmapSet = GetSelectedDifficultyBeatmapSet();
         eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
+        eventArgs.levelID = static_cast<std::string>(eventArgs.previewBeatmapLevel->levelID);
 
         auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
         if (customLevel) {
