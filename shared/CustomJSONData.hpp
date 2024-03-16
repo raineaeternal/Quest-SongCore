@@ -18,6 +18,7 @@ using DocumentUTF16 = rapidjson::GenericDocument<rapidjson::UTF16<char16_t>>;
 }
 
 DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveData, GlobalNamespace::StandardLevelInfoSaveData,
+
     DECLARE_CTOR(ctor,
         StringW songName,
 		StringW songSubName,
@@ -208,6 +209,16 @@ private:
 	std::optional<BasicCustomLevelDetails> _cachedLevelDetails;
 )
 
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapSet, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet,
+
+	DECLARE_CTOR(ctor,
+		StringW beatmapCharacteristicName,
+		ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap*> difficultyBeatmaps
+	);
+public:
+	std::optional<std::reference_wrapper<const ValueUTF16>> customData;
+)
+
 DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap,
 
 	DECLARE_CTOR(ctor,
@@ -222,7 +233,4 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalN
 
 public:
 	std::optional<std::reference_wrapper<const ValueUTF16>> customData;
-
-
-
 )
