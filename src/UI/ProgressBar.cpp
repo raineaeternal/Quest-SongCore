@@ -5,6 +5,7 @@
 #include "logging.hpp"
 #include "custom-types/shared/coroutine.hpp"
 #include "bsml/shared/BSML/SharedCoroutineStarter.hpp"
+#include <cstdio>
 #include <string>
 #include "UnityEngine/Time.hpp"
 
@@ -34,13 +35,10 @@ namespace SongCore::UI {
     }
 
     void ProgressBar::Inject(SongLoader::RuntimeSongLoader* runtimeSongLoader) {
-        DEBUG("ProgressBar::Inject");
         _runtimeSongLoader = runtimeSongLoader;
     }
 
     void ProgressBar::Initialize() {
-        INFO("Connected RSL instance: {}", fmt::ptr(_runtimeSongLoader));
-
         _runtimeSongLoader->SongsWillRefresh += {&ProgressBar::RuntimeSongLoaderOnSongRefresh, this};
         _runtimeSongLoader->SongsLoaded += {&ProgressBar::RuntimeSongLoaderOnSongLoaded, this};
 
@@ -98,46 +96,33 @@ namespace SongCore::UI {
     }
 
     void ProgressBar::ShowMessage(std::string message) {
-        _showingMessage = true;
         _headerText->text = message;
         _canvas->enabled = true;
+        _showingMessage = true;
         ShowCanvasForSeconds(5);
     }
 
     void ProgressBar::ShowMessage(std::string message, float time) {
-        _showingMessage = true;
         _headerText->text = message;
         _canvas->enabled = true;
+        _showingMessage = true;
         ShowCanvasForSeconds(5);
     }
 
-    custom_types::Helpers::Coroutine ProgressBar::DisableCanvasRoutine(float time) {
-        while (time > 0) {
-            time -= UnityEngine::Time::get_deltaTime();
-            co_yield nullptr;
-        }
-        _canvas->enabled = false;
-        _showingMessage = false;
-
-        _disableCanvasRoutine = nullptr;
-        co_return;
-    }
-
     void ProgressBar::ShowCanvasForSeconds(float time) {
-        StopDisableCanvasRoutine();
-        _disableCanvasRoutine = BSML::SharedCoroutineStarter::StartCoroutine(DisableCanvasRoutine(5));
+        _canvasDisplayTimer = time;
     }
 
-    void ProgressBar::StopDisableCanvasRoutine() {
-        if (_disableCanvasRoutine) BSML::SharedCoroutineStarter::StopCoroutine(_disableCanvasRoutine);
-        _disableCanvasRoutine = nullptr;
+    void ProgressBar::HideCanvas() {
+        _canvasDisplayTimer = std::nullopt;
+        _showingMessage = false;
     }
 
     void ProgressBar::RuntimeSongLoaderOnSongRefresh() {
-        StopDisableCanvasRoutine();
         _showingMessage = true;
-        _headerText->text = HeaderText;
         _canvas->enabled = true;
+        _headerText->text = HeaderText;
+        _canvasDisplayTimer = std::nullopt;
     }
 
     void ProgressBar::RuntimeSongLoaderOnSongLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> customLevels) {
@@ -150,11 +135,25 @@ namespace SongCore::UI {
     void ProgressBar::Tick() {
         if (!_canvas || !_canvas->enabled) return;
 
+        float deltaTime = UnityEngine::Time::get_deltaTime();
+        if (_canvasDisplayTimer.has_value()) {
+            _canvasDisplayTimer.value() -= deltaTime;
+            if (_canvasDisplayTimer.value() < 0) {
+                _canvasDisplayTimer = std::nullopt;
+                _showingMessage = false;
+            }
+        }
+
         if (_canvasGroup) {
-            int dir = _showingMessage ? 4 : -4;
-            float curAlpha = _canvasGroup->alpha;
-            if (curAlpha > 0.0f && curAlpha < 1.0f) {
-                _canvasGroup->alpha = std::clamp<float>(curAlpha + (dir * UnityEngine::Time::get_deltaTime()), 0, 1);
+            float delta = 4 * UnityEngine::Time::get_deltaTime();
+            if (_showingMessage) { // raise up to 1
+                _canvasGroup->alpha = std::min<float>(_canvasGroup->alpha + delta, 1.0f);
+            } else { // decrease down to 0
+                _canvasGroup->alpha = std::max<float>(_canvasGroup->alpha - delta, 0.0f);
+            }
+
+            if (_canvasGroup->alpha == 0) {
+                _canvas->enabled = false;
             }
         }
 
@@ -162,11 +161,11 @@ namespace SongCore::UI {
     }
 
     void ProgressBar::Dispose() {
-        StopDisableCanvasRoutine();
         if (_canvas && _canvas->m_CachedPtr) {
             UnityEngine::Object::Destroy(_canvas->gameObject);
         }
         _canvas = nullptr;
+        _canvasGroup = nullptr;
 
         _runtimeSongLoader->SongsWillRefresh -= {&ProgressBar::RuntimeSongLoaderOnSongRefresh, this};
         _runtimeSongLoader->SongsLoaded -= {&ProgressBar::RuntimeSongLoaderOnSongLoaded, this};

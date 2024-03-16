@@ -56,6 +56,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
 
     float _headerTextSize;
     float _pluginTextSize;
+    std::optional<float> _canvasDisplayTimer;
 
     bool _showingMessage;
 
@@ -64,9 +65,8 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
 
     void RuntimeSongLoaderOnSongRefresh();
     void RuntimeSongLoaderOnSongLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> customLevels);
-    custom_types::Helpers::Coroutine DisableCanvasRoutine(float time);
-    void StopDisableCanvasRoutine();
     void ShowCanvasForSeconds(float time);
+    void HideCanvas();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &::Zenject::IInitializable::Initialize);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &::System::IDisposable::Dispose);
