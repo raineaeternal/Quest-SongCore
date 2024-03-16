@@ -438,7 +438,6 @@ namespace SongCore::SongLoader {
 
     #define FixEmptyString(name) \
     if(!name) { \
-        WARNING("Fixed nullptr string \"{}\"! THIS SHOULDN'T HAPPEN!", #name); \
         name = EmptyString(); \
     }
 
@@ -539,13 +538,7 @@ namespace SongCore::SongLoader {
         }
 
         // let consumers of our api know a song will be deleted
-        bool willDeleteInvoked = false;
-        BSML::MainThreadScheduler::Schedule([this, &willDeleteInvoked, level](){
-            InvokeSongWillBeDeleted(level);
-            willDeleteInvoked = true;
-        });
-
-        while (!willDeleteInvoked) std::this_thread::yield();
+        InvokeSongWillBeDeleted(level);
 
         std::error_code error_code;
         std::filesystem::remove_all(levelPath, error_code);
@@ -559,11 +552,7 @@ namespace SongCore::SongLoader {
 
         bool deletedInvoked = false;
         // let consumers of our api know a song was deleted
-        BSML::MainThreadScheduler::Schedule([this, &deletedInvoked](){
-            InvokeSongDeleted();
-            deletedInvoked = true;
-        });
-        while (!deletedInvoked) std::this_thread::yield();
+        InvokeSongDeleted();
     }
 
     std::future<void> RuntimeSongLoader::DeleteSong(std::filesystem::path const& levelPath) {
@@ -621,33 +610,39 @@ namespace SongCore::SongLoader {
         return SongCore::API::Loading::GetPreferredCustomWIPLevelPath();
     }
 
+
+// macro to wrap an event invoke into something that always executes on main thread. could we just check whether we are on main thread and invoke in place? sure, but where's the fun in that!
+#define EVENT_MAIN_THREAD_INVOKE_WRAPPER(event, ...) do { \
+    bool eventInvoked = false; \
+    BSML::MainThreadScheduler::Schedule([this, &eventInvoked __VA_OPT__(, __VA_ARGS__)](){ \
+        event.invoke(__VA_ARGS__); \
+        SongCore::API::Loading::Get##event##Event().invoke(__VA_ARGS__); \
+        eventInvoked = true; \
+    }); \
+    while (!eventInvoked) std::this_thread::sleep_for(std::chrono::milliseconds(10)); \
+} while (0)
+
     void RuntimeSongLoader::InvokeSongsWillRefresh() const {
-        SongsWillRefresh.invoke();
-        SongCore::API::Loading::GetSongsWillRefreshEvent().invoke();
+        EVENT_MAIN_THREAD_INVOKE_WRAPPER(SongsWillRefresh);
     }
 
     void RuntimeSongLoader::InvokeSongsLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> levels) const {
-        SongsLoaded.invoke(levels);
-        SongCore::API::Loading::GetSongsLoadedEvent().invoke(levels);
+        EVENT_MAIN_THREAD_INVOKE_WRAPPER(SongsLoaded, levels);
     }
 
     void RuntimeSongLoader::InvokeCustomLevelPacksWillRefresh(SongCoreCustomBeatmapLevelPackCollection* levelPackCollection) const {
-        CustomLevelPacksWillRefresh.invoke(levelPackCollection);
-        SongCore::API::Loading::GetCustomLevelPacksWillRefreshEvent().invoke(levelPackCollection);
+        EVENT_MAIN_THREAD_INVOKE_WRAPPER(CustomLevelPacksWillRefresh, levelPackCollection);
     }
 
     void RuntimeSongLoader::InvokeCustomLevelPacksRefreshed(SongCoreCustomBeatmapLevelPackCollection* levelPackCollection) const {
-        CustomLevelPacksRefreshed.invoke(levelPackCollection);
-        SongCore::API::Loading::GetCustomLevelPacksRefreshedEvent().invoke(levelPackCollection);
+        EVENT_MAIN_THREAD_INVOKE_WRAPPER(CustomLevelPacksRefreshed, levelPackCollection);
     }
 
     void RuntimeSongLoader::InvokeSongWillBeDeleted(GlobalNamespace::CustomPreviewBeatmapLevel* level) const {
-        SongWillBeDeleted.invoke(level);
-        SongCore::API::Loading::GetSongWillBeDeletedEvent().invoke(level);
+        EVENT_MAIN_THREAD_INVOKE_WRAPPER(SongWillBeDeleted, level);
     }
 
     void RuntimeSongLoader::InvokeSongDeleted() const {
-        SongDeleted.invoke();
-        SongCore::API::Loading::GetSongDeletedEvent().invoke();
+        EVENT_MAIN_THREAD_INVOKE_WRAPPER(SongDeleted);
     }
 }
