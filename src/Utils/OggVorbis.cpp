@@ -79,7 +79,6 @@ namespace SongCore::Utils {
         auto foundVorbis = FindBytes(reader, VORBIS, 256);
         if (foundVorbis) {
             reader.seekg((size_t)reader.tellg() + 5, std::ios::beg);
-            // TODO: check that this reads the int correctly, endianness??
             reader.read((char*)&rate, sizeof(int32_t));
         } else {
             WARNING("Could not find rate for {}", path.string());
@@ -105,7 +104,6 @@ namespace SongCore::Utils {
             // check to find the OGG bytes
             auto foundOggS = FindBytes(reader, OGG, SEEK_BLOCK_SIZE - overshoot);
             if (foundOggS) {
-                // TODO: check that this reads the int64 correctly, endianness??
                 reader.read((char*)&lastSample, sizeof(int64_t));
                 break;
             }
