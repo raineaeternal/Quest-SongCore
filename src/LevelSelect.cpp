@@ -61,6 +61,14 @@ namespace SongCore {
         eventArgs.beatmapLevel = GetSelectedBeatmapLevel();
         eventArgs.difficultyBeatmapSet = GetSelectedDifficultyBeatmapSet();
         eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
+
+        // if anything isn't set, early return because the selection performed was invalid
+        if (!eventArgs.levelPack) return;
+        if (!eventArgs.previewBeatmapLevel) return;
+        if (!eventArgs.beatmapLevel) return;
+        if (!eventArgs.difficultyBeatmapSet) return;
+        if (!eventArgs.difficultyBeatmap) return;
+
         eventArgs.levelID = static_cast<std::string>(eventArgs.previewBeatmapLevel->levelID);
 
         auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
@@ -118,11 +126,11 @@ namespace SongCore {
     }
 
     GlobalNamespace::IBeatmapLevel* LevelSelect::GetSelectedBeatmapLevel() {
-        return _levelDetailViewController->selectedDifficultyBeatmap->level;
+        return _levelDetailViewController->selectedDifficultyBeatmap ? _levelDetailViewController->selectedDifficultyBeatmap->level : nullptr;
     }
 
     GlobalNamespace::IDifficultyBeatmapSet* LevelSelect::GetSelectedDifficultyBeatmapSet() {
-        return _levelDetailViewController->selectedDifficultyBeatmap->parentDifficultyBeatmapSet;
+        return _levelDetailViewController->selectedDifficultyBeatmap ? _levelDetailViewController->selectedDifficultyBeatmap->parentDifficultyBeatmapSet : nullptr;
     }
 
     GlobalNamespace::IDifficultyBeatmap* LevelSelect::GetSelectedDifficultyBeatmap() {
