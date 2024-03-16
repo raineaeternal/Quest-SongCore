@@ -114,11 +114,19 @@ ListW<IDifficultyBeatmapSet*> LoadDifficultyBeatmapSets(path const& levelPath, C
 }
 
 BeatmapLevelData* LoadBeatmapLevelData(BeatmapLevelsModel* beatmapLevelsModel, path const& levelPath, CustomBeatmapLevel* level, CustomPreviewBeatmapLevel* previewLevel, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+    using namespace std::chrono_literals;
     auto sets = LoadDifficultyBeatmapSets(levelPath, level, previewLevel, saveData);
     if (!sets) return nullptr;
 
-    auto task = beatmapLevelsModel->_audioClipAsyncLoader->LoadSong(level->i___GlobalNamespace__IBeatmapLevel());
-    while(!task->IsCompleted) std::this_thread::yield();
+    // loadsong needs to happen on main thread or something because it loads an audioclip
+    std::atomic<System::Threading::Tasks::Task_1<UnityW<UnityEngine::AudioClip>>*> atomicTask = nullptr;
+    BSML::MainThreadScheduler::Schedule([&atomicTask, level, beatmapLevelsModel](){
+        atomicTask = beatmapLevelsModel->_audioClipAsyncLoader->LoadSong(level->i___GlobalNamespace__IBeatmapLevel());
+    });
+    while (!atomicTask) std::this_thread::sleep_for(100ms);
+
+    auto task = (System::Threading::Tasks::Task_1<UnityW<UnityEngine::AudioClip>>*)atomicTask;
+    while(!task->IsCompleted) std::this_thread::sleep_for(100ms);
     if (!task->IsCompletedSuccessfully) return nullptr;
     auto clip = task->Result;
     return BeatmapLevelData::New_ctor(clip, sets->i___System__Collections__Generic__IReadOnlyList_1_T_());
@@ -140,7 +148,8 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_GetBeatmapLevelAsync, &BeatmapLevel
     auto orig = BeatmapLevelsModel_GetBeatmapLevelAsync(self, levelID, cancellationToken);
     if (levelID.starts_with("custom_level_")) { // check if this is a custom level first
         return SongCore::StartTask<BeatmapLevelsModel::GetBeatmapLevelResult>([=](SongCore::CancellationToken cancelToken){
-            while(!orig->IsCompleted) std::this_thread::yield();
+            using namespace std::chrono_literals;
+            while(!orig->IsCompleted) std::this_thread::sleep_for(10ms);
 
             auto result = orig->Result;
             // if we get a valid result, just return that
