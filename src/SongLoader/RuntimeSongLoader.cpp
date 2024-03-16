@@ -185,7 +185,13 @@ namespace SongCore::SongLoader {
         Utils::SaveSongInfoCache();
 
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
-        INFO("Loaded {} (actual: {}) songs in {}ms", (size_t)_totalSongs, actualCount, duration_cast<milliseconds>(high_resolution_clock::now() - startTime).count());
+        auto time = high_resolution_clock::now() - startTime;
+        if (auto ms = duration_cast<milliseconds>(time).count(); ms > 0) {
+            INFO("Loaded {} (actual: {}) songs in {}ms", (size_t)_totalSongs, actualCount, ms);
+        } else {
+            auto ns = duration_cast<nanoseconds>(time).count();
+            INFO("Loaded {} (actual: {}) songs in {}ns", (size_t)_totalSongs, actualCount, ns);
+        }
 
         // anonymous function to get the values from a songdict into a vector
         static auto GetValues = [](SongDict* dict){
@@ -260,7 +266,7 @@ namespace SongCore::SongLoader {
             }
 
             try {
-                time_point<high_resolution_clock> start = high_resolution_clock::now();
+                auto startTime = high_resolution_clock::now();
                 GlobalNamespace::CustomPreviewBeatmapLevel* level = nullptr;
                 StringW csLevelPath(levelPath.string());
 
@@ -289,7 +295,13 @@ namespace SongCore::SongLoader {
                     WARNING("Somehow failed to load song at path {}", levelPath.string());
                 }
 
-                INFO("Loaded song in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - start).count());
+                auto time = high_resolution_clock::now() - startTime;
+                if (auto ms = duration_cast<milliseconds>(time).count(); ms > 0) {
+                    INFO("Loaded song in {}ms", ms);
+                } else {
+                    auto ns = duration_cast<nanoseconds>(time).count();
+                    INFO("Loaded song in {}ns", ns);
+                }
 
                 // update progress
                 _loadedSongs++;
