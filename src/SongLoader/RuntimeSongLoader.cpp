@@ -147,6 +147,10 @@ namespace SongCore::SongLoader {
         CollectLevels(config.RootCustomLevelPaths, false, levels);
         CollectLevels(config.RootCustomWIPLevelPaths, false, levels);
 
+        if (fullRefresh) {
+            CustomLevels->Clear();
+            CustomWIPLevels->Clear();
+        }
 
         // load songs on multiple threads
         std::mutex levelsItrMutex;
