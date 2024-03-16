@@ -198,25 +198,23 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_UpdateAllLoadedBeatmapLevelPacks, &
     self->_allLoadedBeatmapLevelPackCollection = reinterpret_cast<IBeatmapLevelPackCollection*>(BeatmapLevelPackCollection::New_ctor(list->ToArray()));
 }
 
-MAKE_AUTO_HOOK_MATCH(AdditionalContentModel_GetLevelEntitlementStatusAsync, &AdditionalContentModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
+MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetLevelEntitlementStatusAsync, &AdditionalContentModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
     if(levelId.starts_with("custom_level_"))
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
     return AdditionalContentModel_GetLevelEntitlementStatusAsync(self, levelId, cancellationToken);
 }
 
-MAKE_AUTO_HOOK_MATCH(AdditionalContentModel_GetPackEntitlementStatusAsync, &AdditionalContentModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
+MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetPackEntitlementStatusAsync, &AdditionalContentModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
     if(levelPackId.starts_with("custom_levelPack_"))
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
     return AdditionalContentModel_GetPackEntitlementStatusAsync(self, levelPackId, cancellationToken);
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<IBeatmapLevelPackCollection*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
-    DEBUG("BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync");
     return Task_1<IBeatmapLevelPackCollection*>::FromResult(self->customLevelPackCollection);
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
-    DEBUG("FileHelpers_GetEscapedURLForFilePath");
     std::u16string str = filePath;
     int index = str.find_last_of('/') + 1;
     StringW dir = str.substr(0, index);
