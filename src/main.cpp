@@ -3,10 +3,12 @@
 #include "SongLoader/NavigationControllerUpdater.hpp"
 #include "UI/PlayButtonsUpdater.hpp"
 #include "UI/IconCache.hpp"
+#include "UI/RefreshSongButton.hpp"
 #include "UI/RequirementsListManager.hpp"
 #include "UI/ColorsOptions.hpp"
 #include "Overrides/RotationSpawnLinesOverride.hpp"
 #include "UI/DeleteLevelButton.hpp"
+#include "UI/RefreshSongButton.hpp"
 #include "Utils/Cache.hpp"
 
 #include "UI/ProgressBar.hpp"
@@ -105,6 +107,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
         container->BindInterfacesAndSelfTo<SongCore::UI::ColorsOptions*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::ProgressBar*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::DeleteLevelButton*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::UI::RefreshSongButton*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::LevelSelect*>()->AsSingle()->NonLazy();
     });
 
