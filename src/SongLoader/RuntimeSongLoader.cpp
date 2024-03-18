@@ -162,23 +162,25 @@ namespace SongCore::SongLoader {
         auto startTime = high_resolution_clock::now();
 
         auto workerThreadCount = std::clamp<size_t>(levels.size(), 1, MAX_THREAD_COUNT);
-        std::vector<il2cpp_utils::il2cpp_aware_thread> workerThreads;
-        workerThreads.reserve(workerThreadCount);
+        std::vector<std::future<void>> songLoadFutures;
+        songLoadFutures.reserve(workerThreadCount);
 
         _totalSongs = levels.size();
 
         for (int i = 0; i < workerThreadCount; i++) {
-            workerThreads.emplace_back(
-                &RuntimeSongLoader::RefreshSongWorkerThread,
-                this,
-                &levelsItrMutex,
-                &levelsItr,
-                &levelsEnd
+            songLoadFutures.emplace_back(
+                il2cpp_utils::il2cpp_async(
+                    &RuntimeSongLoader::RefreshSongWorkerThread,
+                    this,
+                    &levelsItrMutex,
+                    &levelsItr,
+                    &levelsEnd
+                )
             );
         }
 
-        for (auto& t : workerThreads) {
-            t.join();
+        for (auto& t : songLoadFutures) {
+            t.wait();
         }
 
         // save cache to file after all songs are loaded
