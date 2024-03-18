@@ -142,6 +142,7 @@ namespace SongCore::SongLoader {
 
     void RuntimeSongLoader::RefreshSongs_internal(bool fullRefresh) {
         std::set<LevelPathAndWip> levels;
+        _loadedSongs = 0;
 
         // travel the given song paths to collect levels to load
         CollectLevels(config.RootCustomLevelPaths, false, levels);
@@ -165,7 +166,6 @@ namespace SongCore::SongLoader {
         workerThreads.reserve(workerThreadCount);
 
         _totalSongs = levels.size();
-        _loadedSongs = 0;
 
         for (int i = 0; i < workerThreadCount; i++) {
             workerThreads.emplace_back(
