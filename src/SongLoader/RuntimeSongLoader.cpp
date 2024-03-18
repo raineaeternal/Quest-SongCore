@@ -36,6 +36,7 @@
 #include <mutex>
 #include <ostream>
 #include <ratio>
+#include <shared_mutex>
 #include <stdexcept>
 #include <string.h>
 #include <string>
@@ -102,6 +103,8 @@ namespace SongCore::SongLoader {
         for (auto entry : iterator) {
             if (!entry.is_directory()) continue;
             auto songPath = entry.path();
+            // if this is an autosaves dir, just skip silently
+            if (songPath.string().ends_with("autosaves")) continue;
 
             auto dataPath = songPath / "info.dat";
             if (!std::filesystem::exists(dataPath)) {
@@ -128,16 +131,61 @@ namespace SongCore::SongLoader {
     }
 
     std::shared_future<void> RuntimeSongLoader::RefreshSongs(bool fullRefresh) {
+        DEBUG("A refresh was requested!");
         if (AreSongsRefreshing) {
-            WARNING("Refresh was requested while songs were refershing, returning the same future");
-            return _currentlyLoadingFuture;
+            // if double future isn't valid, that means we need to make a new one here
+            if (!_doubleRefreshRequestedFuture.valid()) {
+                std::unique_lock<std::shared_mutex> writingLock(_doubleRefreshMutex);
+                // if it wasn't marked as a full refresh, mark it as such
+                _doubleRefreshIsFull = fullRefresh;
+                _doubleRefreshRequestedFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshRequestedWhileRefreshing, this);
+            } else {
+                // if the double refresh isn't full, update it
+                if (!_doubleRefreshIsFull) {
+                    std::unique_lock<std::shared_mutex> writingLock(_doubleRefreshMutex);
+                    _doubleRefreshIsFull = fullRefresh;
+                }
+            }
+
+            WARNING("Refresh was requested while songs were refreshing, returning the same future and awaiting ");
+            std::shared_lock<std::shared_mutex> readingLock(_doubleRefreshMutex);
+            return _doubleRefreshRequestedFuture;
         }
 
         InvokeSongsWillRefresh();
         _areSongsLoaded = false;
 
+        std::unique_lock<std::shared_mutex> writingLock(_currentRefreshMutex);
         _currentlyLoadingFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshSongs_internal, this, std::forward<bool>(fullRefresh));
         return _currentlyLoadingFuture;
+    }
+
+    void RuntimeSongLoader::RefreshRequestedWhileRefreshing() {
+        // while old refresh still going, wait
+        DEBUG("reading current future with lock");
+        std::shared_lock<std::shared_mutex> currentRefreshReadLock(_currentRefreshMutex);
+        auto currentRefreshFuture = _currentlyLoadingFuture;
+        currentRefreshReadLock.unlock();
+
+        DEBUG("waiting for current loading future");
+        currentRefreshFuture.wait();
+
+        // queue up another refresh
+        DEBUG("Requesting next reload");
+        currentRefreshFuture = RefreshSongs(_doubleRefreshIsFull);
+
+        // overwrite current loading future with this double request future since we want to
+        // then allow a refresh requested during *this* one to be allowed to overwrite the double refresh
+        {
+            DEBUG("moving double refresh into current load refresh as override");
+            std::unique_lock<std::shared_mutex> currentRefreshWriteLock(_currentRefreshMutex);
+            std::unique_lock<std::shared_mutex> doubleRefreshWriteLock(_doubleRefreshMutex);
+            _currentlyLoadingFuture = std::move(_doubleRefreshRequestedFuture);
+        }
+
+        // wait for our queued refresh to finish
+        DEBUG("waiting for the new refresh to finish up before this method can conclude");
+        currentRefreshFuture.wait();
     }
 
     void RuntimeSongLoader::RefreshSongs_internal(bool fullRefresh) {
@@ -234,16 +282,19 @@ namespace SongCore::SongLoader {
                 _allLevelIds->Add(levelID);
         }
 
-        // finish up everything on the main thread so that
-        BSML::MainThreadScheduler::Schedule([this](){
+        bool finishedOnMainThread = false;
+        // finish things up on the main thread for safety with loading
+        BSML::MainThreadScheduler::Schedule([this, &finishedOnMainThread](){
             INFO("Finishing up level loading on main thread");
             RefreshLevelPacks();
 
             InvokeSongsLoaded(_allLoadedLevels);
 
-            // clear current future
-            _currentlyLoadingFuture = std::future<void>();
+            // let the loading thread know you're done
+            finishedOnMainThread = true;
         });
+
+        while (!finishedOnMainThread) std::this_thread::sleep_for(10ms);
     }
 
     void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd) {
@@ -314,8 +365,6 @@ namespace SongCore::SongLoader {
                 ERROR("Caught exception of unknown type (current_exception typeid: {}) while loading song @ path '{}', song will be skipped!", typeid(std::current_exception()).name(), levelPath.string());
             }
         }
-
-        DEBUG("RuntimeSongLoader::RefreshSongWorkerThread end");
     }
 
     SongCore::CustomJSONData::CustomLevelInfoSaveData* RuntimeSongLoader::GetStandardSaveData(std::filesystem::path path) {

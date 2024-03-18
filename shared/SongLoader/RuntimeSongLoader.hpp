@@ -9,6 +9,7 @@
 
 #include "custom-types/shared/macros.hpp"
 
+#include "logging.hpp"
 #include "../CustomJSONData.hpp"
 #include "SongCoreCustomLevelPack.hpp"
 #include "SongCoreCustomBeatmapLevelPackCollection.hpp"
@@ -31,6 +32,7 @@
 #include "GlobalNamespace/AdditionalContentModel.hpp"
 #include "GlobalNamespace/IAdditionalContentModel.hpp"
 
+#include "Zenject/IInitializable.hpp"
 #include "Zenject/IInitializable.hpp"
 #include "System/IDisposable.hpp"
 #include "lapiz/shared/macros.hpp"
@@ -108,7 +110,15 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         __declspec(property(get = get_CustomBeatmapLevelPackCollection)) SongCoreCustomBeatmapLevelPackCollection* CustomBeatmapLevelPackCollection;
 
         /// @brief lets you check whether songs are currently being refreshed
-        bool get_AreSongsRefreshing() const { return _currentlyLoadingFuture.valid(); }
+        bool get_AreSongsRefreshing() {
+            using namespace std::chrono_literals;
+            std::shared_lock<std::shared_mutex> lock(_currentRefreshMutex);
+            // if not valid, we are not refreshing
+            if (!_currentlyLoadingFuture.valid()) return false;
+            // if not ready, we are refreshing
+            return _currentlyLoadingFuture.wait_for(0ns) != std::future_status::ready;
+        }
+
         __declspec(property(get=get_AreSongsRefreshing)) bool AreSongsRefreshing;
 
         /// @brief lets you check whether songs loaded are valid right now
@@ -200,8 +210,11 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         /// @brief collects levels from the roots into the given set, and keeps the wip status
         static void CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out);
 
+        /// @brief method used when a double (or triple, quadruple...) refresh is requested
+        void RefreshRequestedWhileRefreshing();
+
         /// @brief method kicked of by RefreshSongs on an il2cpp async
-        void RefreshSongs_internal(bool refreshSongs);
+        void RefreshSongs_internal(bool fullRefresh);
 
         /// @brief worker thread for loading songs from a set
         void RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd);
@@ -209,12 +222,20 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         /// @brief internal method for deleting a song, ran through il2cpp async
         void DeleteSong_internal(std::filesystem::path levelPath);
 
-
         /// @brief gets the savedata from the path
         SongCore::CustomJSONData::CustomLevelInfoSaveData* GetStandardSaveData(std::filesystem::path path);
 
+        /// @brief mutex for accesing the current refresh
+        std::shared_mutex _currentRefreshMutex;
         /// @brief while songs are refreshing this future holds what is currently happening
         std::shared_future<void> _currentlyLoadingFuture;
+
+        /// @brief mutex for accesing the double refresh
+        std::shared_mutex _doubleRefreshMutex;
+        /// @brief if a request is sent for a double refresh (while refreshing) this stores the future of that request
+        std::shared_future<void> _doubleRefreshRequestedFuture;
+        /// @brief whether the double refresh should be a full refresh
+        bool _doubleRefreshIsFull;
 
         /// @brief how many songs have already been loaded
         std::atomic<size_t> _loadedSongs;
