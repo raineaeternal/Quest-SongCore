@@ -216,7 +216,7 @@ namespace SongCore::UI {
                 c32.r / 256.0f,
                 c32.g / 256.0f,
                 c32.b / 256.0f,
-                c32.a / 256.0f
+                1.0f
             };
         } else {
             _loadingBar->color = {1, 1, 1, 0.5f};
