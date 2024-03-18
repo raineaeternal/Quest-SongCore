@@ -89,8 +89,10 @@ SONGCORE_EXPORT_FUNC void late_load() {
     EnsureNoMedia();
 
     if (!LoadConfig()) SaveConfig();
-    if (!config.PreferredCustomLevelPath.empty() && !std::filesystem::exists(config.PreferredCustomLevelPath)) std::filesystem::create_directories(config.PreferredCustomLevelPath);
-    if (!config.PreferredCustomWIPLevelPath.empty() && !std::filesystem::exists(config.PreferredCustomWIPLevelPath)) std::filesystem::create_directory(config.PreferredCustomWIPLevelPath);
+    auto preferredCustomLevelPath = SongCore::API::Loading::GetPreferredCustomLevelPath();
+    auto preferredCustomWIPLevelPath = SongCore::API::Loading::GetPreferredCustomWIPLevelPath();
+    if (!preferredCustomLevelPath.empty() && !std::filesystem::exists(preferredCustomLevelPath)) std::filesystem::create_directories(preferredCustomLevelPath);
+    if (!preferredCustomWIPLevelPath.empty() && !std::filesystem::exists(preferredCustomWIPLevelPath)) std::filesystem::create_directory(preferredCustomWIPLevelPath);
 
     z->Install(Lapiz::Zenject::Location::App, [](::Zenject::DiContainer* container){
         INFO("Installing RSL to location App from SongCore");
