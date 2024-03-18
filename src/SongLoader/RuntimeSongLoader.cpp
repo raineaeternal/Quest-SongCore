@@ -695,11 +695,11 @@ namespace SongCore::SongLoader {
         EVENT_MAIN_THREAD_INVOKE_WRAPPER(SongsLoaded, levels);
     }
 
-    void RuntimeSongLoader::InvokeCustomLevelPacksWillRefresh(CustomBeatmapLevelPackCollection* levelPackCollection) const {
+    void RuntimeSongLoader::InvokeCustomLevelPacksWillRefresh(SongCore::SongLoader::CustomBeatmapLevelPackCollection* levelPackCollection) const {
         EVENT_MAIN_THREAD_INVOKE_WRAPPER(CustomLevelPacksWillRefresh, levelPackCollection);
     }
 
-    void RuntimeSongLoader::InvokeCustomLevelPacksRefreshed(CustomBeatmapLevelPackCollection* levelPackCollection) const {
+    void RuntimeSongLoader::InvokeCustomLevelPacksRefreshed(SongCore::SongLoader::CustomBeatmapLevelPackCollection* levelPackCollection) const {
         EVENT_MAIN_THREAD_INVOKE_WRAPPER(CustomLevelPacksRefreshed, levelPackCollection);
     }
 
