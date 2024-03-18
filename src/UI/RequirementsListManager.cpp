@@ -26,6 +26,7 @@ static inline UnityEngine::Vector3 operator*(UnityEngine::Vector3 vec, float v) 
 
 namespace SongCore::UI {
     void RequirementsListManager::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, ColorsOptions* colorsOptions, Capabilities* capabilities, LevelSelect* levelSelect, IconCache* iconCache) {
+        INVOKE_CTOR();
         _levelDetailViewController = levelDetailViewController;
         _colorsOptions = colorsOptions;
         _capabilities = capabilities;
@@ -66,7 +67,11 @@ namespace SongCore::UI {
     }
 
     void RequirementsListManager::ClearRequirementCells() {
-        for (auto cellInfo : _requirementsCells) _unusedRequirementCells->Add(cellInfo);
+        for (int i = 0; auto cellInfo : _requirementsCells) {
+            INFO("pushing a cell to unused {}", i++);
+            _unusedRequirementCells->Add(cellInfo);
+        }
+        INFO("clearing list");
         _requirementsCells->Clear();
     }
 
@@ -76,6 +81,11 @@ namespace SongCore::UI {
 
         if (!eventArgs.isCustom) {
             DEBUG("Last selected level was not custom! returning...");
+            return;
+        }
+
+        if (!eventArgs.customLevelDetails.has_value()) {
+            DEBUG("Last level selected was custom, but had no level details! returning...");
             return;
         }
 
