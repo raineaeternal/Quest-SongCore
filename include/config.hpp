@@ -14,6 +14,9 @@ struct Config {
     /// @brief whether the saber count override should be honored
     bool disableOneSaberOverride = false;
 
+    /// @brief whether to not show the songloader warning again
+    bool dontShowSongloaderWarningAgain = false;
+
     /// @brief multiple paths to folders to load songs from, in case user has multiple folders. Not exposed
     std::vector<std::filesystem::path> RootCustomLevelPaths {
         "/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/CustomLevels",

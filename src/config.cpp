@@ -25,6 +25,7 @@ void SaveConfig() {
     SET(customSongObstacleColors);
     SET(customSongEnvironmentColors);
     SET(disableOneSaberOverride);
+    SET(dontShowSongloaderWarningAgain);
 
     rapidjson::Value rootCustomLevelPaths;
     rootCustomLevelPaths.SetArray();
@@ -62,6 +63,7 @@ bool LoadConfig() {
     GET(customSongObstacleColors);
     GET(customSongEnvironmentColors);
     GET(disableOneSaberOverride);
+    GET(dontShowSongloaderWarningAgain);
 
     auto RootCustomLevelPathsItr = doc.FindMember("RootCustomLevelPaths");
     if (RootCustomLevelPathsItr != doc.MemberEnd() && RootCustomLevelPathsItr->value.IsArray()) {

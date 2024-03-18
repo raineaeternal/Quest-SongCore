@@ -92,6 +92,11 @@ SONGCORE_EXPORT_FUNC void late_load() {
         return;
     }
 
+    if (config.dontShowSongloaderWarningAgain) {
+        config.dontShowSongloaderWarningAgain = false;
+        SaveConfig();
+    }
+
     SongCore::Hooking::InstallHooks(getLogger());
     auto z = Lapiz::Zenject::Zenjector::Get();
 
