@@ -87,7 +87,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
 
     // check for songloader, and if its installed then don't do any songcore things and tell the user about it
     auto res = modloader_require_mod(&songloaderInfo, CMatchType::MatchType_IdOnly);
-    if (res == CLoadResult::MatchType_Loaded) {
+    if (res == CLoadResult::LoadResult_Loaded) {
         SongLoaderInstalled();
         return;
     }
