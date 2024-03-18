@@ -18,5 +18,5 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdat
     DECLARE_CTOR(ctor, RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::LevelFilteringNavigationController* levelFilteringNavigationController);
 
     private:
-        void CustomLevelPacksRefreshed(SongCoreCustomBeatmapLevelPackCollection* collection);
+        void CustomLevelPacksRefreshed(CustomBeatmapLevelPackCollection* collection);
 )

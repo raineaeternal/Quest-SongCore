@@ -1,6 +1,6 @@
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "CustomJSONData.hpp"
-#include "SongLoader/SongCoreCustomLevelPack.hpp"
+#include "SongLoader/CustomLevelPack.hpp"
 #include "main.hpp"
 #include "SongCore.hpp"
 #include "logging.hpp"
@@ -60,9 +60,9 @@ namespace SongCore::SongLoader {
         _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
         _additionalContentModel = il2cpp_utils::cast<GlobalNamespace::AdditionalContentModel>(additionalContentModel);
 
-        _customLevelPack = SongCoreCustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", customLevelLoader->_defaultPackCover);
-        _customWIPLevelPack = SongCoreCustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", BSML::Utilities::LoadSpriteRaw(Assets::Resources::CustomWIPLevelsCover_png));
-        _customLevelPackCollection = SongCoreCustomBeatmapLevelPackCollection::New();
+        _customLevelPack = CustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", customLevelLoader->_defaultPackCover);
+        _customWIPLevelPack = CustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", BSML::Utilities::LoadSpriteRaw(Assets::Resources::CustomWIPLevelsCover_png));
+        _customLevelPackCollection = CustomBeatmapLevelPackCollection::New();
 
         _customLevels = SongDict::New_ctor();
         _customWIPLevels = SongDict::New_ctor();
@@ -695,11 +695,11 @@ namespace SongCore::SongLoader {
         EVENT_MAIN_THREAD_INVOKE_WRAPPER(SongsLoaded, levels);
     }
 
-    void RuntimeSongLoader::InvokeCustomLevelPacksWillRefresh(SongCoreCustomBeatmapLevelPackCollection* levelPackCollection) const {
+    void RuntimeSongLoader::InvokeCustomLevelPacksWillRefresh(CustomBeatmapLevelPackCollection* levelPackCollection) const {
         EVENT_MAIN_THREAD_INVOKE_WRAPPER(CustomLevelPacksWillRefresh, levelPackCollection);
     }
 
-    void RuntimeSongLoader::InvokeCustomLevelPacksRefreshed(SongCoreCustomBeatmapLevelPackCollection* levelPackCollection) const {
+    void RuntimeSongLoader::InvokeCustomLevelPacksRefreshed(CustomBeatmapLevelPackCollection* levelPackCollection) const {
         EVENT_MAIN_THREAD_INVOKE_WRAPPER(CustomLevelPacksRefreshed, levelPackCollection);
     }
 

@@ -1,26 +1,26 @@
-#include "SongLoader/SongCoreCustomBeatmapLevelPackCollection.hpp"
-#include "SongLoader/SongCoreCustomLevelPack.hpp"
+#include "SongLoader/CustomBeatmapLevelPackCollection.hpp"
+#include "SongLoader/CustomLevelPack.hpp"
 
 #include "GlobalNamespace/IBeatmapLevelCollection.hpp"
 #include "System/Collections/Generic/IReadOnlyList_1.hpp"
 #include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
 
-DEFINE_TYPE(SongCore::SongLoader, SongCoreCustomBeatmapLevelPackCollection);
+DEFINE_TYPE(SongCore::SongLoader, CustomBeatmapLevelPackCollection);
 
 namespace SongCore::SongLoader {
-    void SongCoreCustomBeatmapLevelPackCollection::ctor() {
+    void CustomBeatmapLevelPackCollection::ctor() {
         _ctor(ArrayW<GlobalNamespace::IBeatmapLevelPack*>::Empty());
     }
 
-    SongCoreCustomBeatmapLevelPackCollection* SongCoreCustomBeatmapLevelPackCollection::New() {
-        return SongCoreCustomBeatmapLevelPackCollection::New_ctor();
+    CustomBeatmapLevelPackCollection* CustomBeatmapLevelPackCollection::New() {
+        return CustomBeatmapLevelPackCollection::New_ctor();
     }
 
-    void SongCoreCustomBeatmapLevelPackCollection::ClearPacks() {
+    void CustomBeatmapLevelPackCollection::ClearPacks() {
         _beatmapLevelPacks = ArrayW<GlobalNamespace::IBeatmapLevelPack*>::Empty();
     }
 
-    void SongCoreCustomBeatmapLevelPackCollection::AddPack(SongCoreCustomLevelPack* levelPack, bool addIfEmpty) {
+    void CustomBeatmapLevelPackCollection::AddPack(CustomLevelPack* levelPack, bool addIfEmpty) {
         // if we don't want to force the add, and the pack has 0 levels, don't add it
         if (!addIfEmpty) { // dumb check for the levels because the interface method call can fail somehow
             auto beatmapLevels = levelPack->beatmapLevelCollection->beatmapLevels;

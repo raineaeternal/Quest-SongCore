@@ -11,8 +11,8 @@
 
 #include "logging.hpp"
 #include "../CustomJSONData.hpp"
-#include "SongCoreCustomLevelPack.hpp"
-#include "SongCoreCustomBeatmapLevelPackCollection.hpp"
+#include "CustomLevelPack.hpp"
+#include "CustomBeatmapLevelPackCollection.hpp"
 
 #include "System/Collections/Concurrent/ConcurrentDictionary_2.hpp"
 #include "System/Collections/Generic/List_1.hpp"
@@ -53,9 +53,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapCharacteristicCollection*, _beatmapCharacteristicCollection);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::AdditionalContentModel*, _additionalContentModel);
 
-    DECLARE_INSTANCE_FIELD_PRIVATE(SongCoreCustomLevelPack*, _customLevelPack);
-    DECLARE_INSTANCE_FIELD_PRIVATE(SongCoreCustomLevelPack*, _customWIPLevelPack);
-    DECLARE_INSTANCE_FIELD_PRIVATE(SongCoreCustomBeatmapLevelPackCollection*, _customLevelPackCollection);
+    DECLARE_INSTANCE_FIELD_PRIVATE(CustomLevelPack*, _customLevelPack);
+    DECLARE_INSTANCE_FIELD_PRIVATE(CustomLevelPack*, _customWIPLevelPack);
+    DECLARE_INSTANCE_FIELD_PRIVATE(CustomBeatmapLevelPackCollection*, _customLevelPackCollection);
 
     DECLARE_INSTANCE_FIELD_PRIVATE(SongDict*, _customLevels);
     DECLARE_INSTANCE_FIELD_PRIVATE(SongDict*, _customWIPLevels);
@@ -98,16 +98,16 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         __declspec(property(get = get_customWIPLevels)) SongLoader::SongDict* CustomWIPLevels;
 
         /// @brief returns the levelpack songcore makes
-        SongCoreCustomLevelPack* get_CustomLevelPack() const { return _customLevelPack; }
-        __declspec(property(get = get_CustomLevelPack)) SongCoreCustomLevelPack* CustomLevelPack;
+        CustomLevelPack* get_CustomLevelPack() const { return _customLevelPack; }
+        __declspec(property(get = get_CustomLevelPack)) CustomLevelPack* CustomLevelPack;
 
         /// @brief returns the wip levelpack songcore makes
-        SongCoreCustomLevelPack* get_CustomWIPLevelPack() const { return _customWIPLevelPack; }
-        __declspec(property(get = get_CustomWIPLevelPack)) SongCoreCustomLevelPack* CustomWIPLevelPack;
+        CustomLevelPack* get_CustomWIPLevelPack() const { return _customWIPLevelPack; }
+        __declspec(property(get = get_CustomWIPLevelPack)) CustomLevelPack* CustomWIPLevelPack;
 
         /// @brief returns the beatmaplevelpackcollection songcore makes
-        SongCoreCustomBeatmapLevelPackCollection* get_CustomBeatmapLevelPackCollection() const { return _customLevelPackCollection; }
-        __declspec(property(get = get_CustomBeatmapLevelPackCollection)) SongCoreCustomBeatmapLevelPackCollection* CustomBeatmapLevelPackCollection;
+        CustomBeatmapLevelPackCollection* get_CustomBeatmapLevelPackCollection() const { return _customLevelPackCollection; }
+        __declspec(property(get = get_CustomBeatmapLevelPackCollection)) CustomBeatmapLevelPackCollection* CustomBeatmapLevelPackCollection;
 
         /// @brief lets you check whether songs are currently being refreshed
         bool get_AreSongsRefreshing() {
@@ -140,10 +140,10 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>> SongsLoaded;
 
         /// @brief event invoked before the beatmaplevelsmodel is updated with the new collections
-        UnorderedEventCallback<SongCoreCustomBeatmapLevelPackCollection*> CustomLevelPacksWillRefresh;
+        UnorderedEventCallback<CustomBeatmapLevelPackCollection*> CustomLevelPacksWillRefresh;
 
         /// @brief event invoked after the beatmaplevelsmodel was updated with the new collection
-        UnorderedEventCallback<SongCoreCustomBeatmapLevelPackCollection*> CustomLevelPacksRefreshed;
+        UnorderedEventCallback<CustomBeatmapLevelPackCollection*> CustomLevelPacksRefreshed;
 
         /// @brief event invoked before a song is deleted so you can do last minute things you want to do with the deleted level
         UnorderedEventCallback<GlobalNamespace::CustomPreviewBeatmapLevel*> SongWillBeDeleted;
@@ -253,9 +253,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         /// @brief invoker method for SongsLoaded event
         void InvokeSongsLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> levels) const;
         /// @brief invoker method for CustomLevelPacksWillRefresh event
-        void InvokeCustomLevelPacksWillRefresh(SongCoreCustomBeatmapLevelPackCollection* levelPackCollection) const;
+        void InvokeCustomLevelPacksWillRefresh(CustomBeatmapLevelPackCollection* levelPackCollection) const;
         /// @brief invoker method for CustomLevelPacksRefreshed event
-        void InvokeCustomLevelPacksRefreshed(SongCoreCustomBeatmapLevelPackCollection* levelPackCollection) const;
+        void InvokeCustomLevelPacksRefreshed(CustomBeatmapLevelPackCollection* levelPackCollection) const;
         /// @brief invoker method for SongWillBeDeleted event
         void InvokeSongWillBeDeleted(GlobalNamespace::CustomPreviewBeatmapLevel* level) const;
         /// @brief invoker method for SongDeleted event

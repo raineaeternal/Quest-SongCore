@@ -1,13 +1,13 @@
-#include "SongLoader/SongCoreCustomBeatmapLevelCollection.hpp"
+#include "SongLoader/CustomBeatmapLevelCollection.hpp"
 
-DEFINE_TYPE(SongCore::SongLoader, SongCoreCustomBeatmapLevelCollection);
+DEFINE_TYPE(SongCore::SongLoader, CustomBeatmapLevelCollection);
 
 namespace SongCore::SongLoader {
-    void SongCoreCustomBeatmapLevelCollection::ctor() {
+    void CustomBeatmapLevelCollection::ctor() {
         _ctor(ArrayW<GlobalNamespace::CustomPreviewBeatmapLevel*>::Empty());
     }
 
-    SongCoreCustomBeatmapLevelCollection* SongCoreCustomBeatmapLevelCollection::New() {
-        return SongCoreCustomBeatmapLevelCollection::New_ctor();
+    CustomBeatmapLevelCollection* CustomBeatmapLevelCollection::New() {
+        return CustomBeatmapLevelCollection::New_ctor();
     }
 }

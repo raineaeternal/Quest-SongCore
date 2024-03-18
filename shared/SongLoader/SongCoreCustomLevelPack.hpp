@@ -4,11 +4,11 @@
 #include "GlobalNamespace/CustomBeatmapLevelPack.hpp"
 #include <string>
 
-DECLARE_CLASS_CODEGEN(SongCore::SongLoader, SongCoreCustomLevelPack, GlobalNamespace::CustomBeatmapLevelPack,
+DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomLevelPack, GlobalNamespace::CustomBeatmapLevelPack,
     DECLARE_CTOR(ctor, StringW packId, StringW packName, UnityEngine::Sprite* coverImage);
 
     public:
-        static SongCoreCustomLevelPack* New(std::string_view packId, std::string_view packName, UnityEngine::Sprite* coverImage = nullptr);
+        static CustomLevelPack* New(std::string_view packId, std::string_view packName, UnityEngine::Sprite* coverImage = nullptr);
 
         /// @brief sorts the levels in the collection, based on `a->songName < b->songName`
         void SortLevels();

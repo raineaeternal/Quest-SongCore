@@ -196,8 +196,8 @@ namespace SongCore::API {
     namespace Loading {
         static UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>> _songsLoadedEvent;
         static UnorderedEventCallback<> _songsWillRefreshEvent;
-        static UnorderedEventCallback<SongCore::SongLoader::SongCoreCustomBeatmapLevelPackCollection*> _customLevelPacksWillRefreshEvent;
-        static UnorderedEventCallback<SongCore::SongLoader::SongCoreCustomBeatmapLevelPackCollection*> _customLevelPacksRefreshedEvent;
+        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*> _customLevelPacksWillRefreshEvent;
+        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*> _customLevelPacksRefreshedEvent;
         static UnorderedEventCallback<GlobalNamespace::CustomPreviewBeatmapLevel*> _songWillBeDeletedEvent;
         static UnorderedEventCallback<> _songDeletedEvent;
 
@@ -233,11 +233,11 @@ namespace SongCore::API {
             return _songsWillRefreshEvent;
         }
 
-        UnorderedEventCallback<SongCore::SongLoader::SongCoreCustomBeatmapLevelPackCollection*>& GetCustomLevelPacksWillRefreshEvent() {
+        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*>& GetCustomLevelPacksWillRefreshEvent() {
             return _customLevelPacksWillRefreshEvent;
         }
 
-        UnorderedEventCallback<SongCore::SongLoader::SongCoreCustomBeatmapLevelPackCollection*>& GetCustomLevelPacksRefreshedEvent() {
+        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*>& GetCustomLevelPacksRefreshedEvent() {
             return _customLevelPacksRefreshedEvent;
         }
 
@@ -314,19 +314,19 @@ namespace SongCore::API {
             return instance->AllLevels;
         }
 
-        SongLoader::SongCoreCustomLevelPack* GetCustomLevelPack() {
+        SongLoader::CustomLevelPack* GetCustomLevelPack() {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return nullptr;
             return instance->CustomLevelPack;
         }
 
-        SongLoader::SongCoreCustomLevelPack* GetCustomWIPLevelPack() {
+        SongLoader::CustomLevelPack* GetCustomWIPLevelPack() {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return nullptr;
             return instance->CustomWIPLevelPack;
         }
 
-        SongLoader::SongCoreCustomBeatmapLevelPackCollection* GetCustomLevelPackCollection() {
+        SongLoader::CustomBeatmapLevelPackCollection* GetCustomLevelPackCollection() {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return nullptr;
             return instance->CustomBeatmapLevelPackCollection;

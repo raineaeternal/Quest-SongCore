@@ -18,7 +18,7 @@ namespace SongCore::SongLoader {
         _runtimeSongLoader->CustomLevelPacksRefreshed -= {&NavigationControllerUpdater::CustomLevelPacksRefreshed, this};
     }
 
-    void NavigationControllerUpdater::CustomLevelPacksRefreshed(SongCoreCustomBeatmapLevelPackCollection* collection) {
+    void NavigationControllerUpdater::CustomLevelPacksRefreshed(CustomBeatmapLevelPackCollection* collection) {
         INFO("Updating levelFilteringNavigationController");
         _levelFilteringNavigationController->UpdateCustomSongs();
     }
