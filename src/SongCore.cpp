@@ -250,7 +250,8 @@ namespace SongCore::API {
         }
 
         std::filesystem::path GetPreferredCustomLevelPath() {
-            return config.PreferredCustomLevelPath;
+            if (config.RootCustomLevelPaths.empty()) return "/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/CustomLevels";
+            return config.RootCustomLevelPaths.front();
         }
 
         std::span<std::filesystem::path const> GetRootCustomLevelPaths() {
@@ -258,7 +259,8 @@ namespace SongCore::API {
         }
 
         std::filesystem::path GetPreferredCustomWIPLevelPath() {
-            return config.PreferredCustomWIPLevelPath;
+            if (config.RootCustomWIPLevelPaths.empty()) return "/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/CustomWIPLevels";
+            return config.RootCustomWIPLevelPaths.front();
         }
 
         std::span<std::filesystem::path const> GetRootCustomWIPLevelPaths() {

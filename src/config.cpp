@@ -26,8 +26,6 @@ void SaveConfig() {
     SET(customSongEnvironmentColors);
     SET(disableOneSaberOverride);
 
-    auto preferredCustomLevelPath = config.PreferredCustomLevelPath.string();
-    doc.AddMember("PreferredCustomLevelPath", rapidjson::Value(preferredCustomLevelPath.c_str(), preferredCustomLevelPath.length(), allocator), allocator);
     rapidjson::Value rootCustomLevelPaths;
     rootCustomLevelPaths.SetArray();
     for (auto& path : config.RootCustomLevelPaths) {
@@ -36,8 +34,6 @@ void SaveConfig() {
     }
     doc.AddMember("RootCustomLevelPaths", rootCustomLevelPaths, allocator);
 
-    auto preferredCustomWIPLevelPath = config.PreferredCustomWIPLevelPath.string();
-    doc.AddMember("PreferredCustomWIPLevelPath", rapidjson::Value(preferredCustomWIPLevelPath.c_str(), preferredCustomWIPLevelPath.length(), allocator), allocator);
     rapidjson::Value rootCustomWIPLevelPaths;
     rootCustomWIPLevelPaths.SetArray();
     for (auto& path : config.RootCustomWIPLevelPaths) {
@@ -67,12 +63,6 @@ bool LoadConfig() {
     GET(customSongEnvironmentColors);
     GET(disableOneSaberOverride);
 
-    if (auto PreferredCustomLevelPathItr = doc.FindMember("PreferredCustomLevelPath"); PreferredCustomLevelPathItr != doc.MemberEnd()) {
-        config.PreferredCustomLevelPath = PreferredCustomLevelPathItr->value.Get<std::string>();
-    } else {
-        foundEverything = false;
-    }
-
     auto RootCustomLevelPathsItr = doc.FindMember("RootCustomLevelPaths");
     if (RootCustomLevelPathsItr != doc.MemberEnd() && RootCustomLevelPathsItr->value.IsArray()) {
         config.RootCustomLevelPaths.clear();
@@ -80,12 +70,6 @@ bool LoadConfig() {
         for (auto itr = arr.Begin(); itr != arr.End(); itr++) {
             config.RootCustomLevelPaths.emplace_back(itr->Get<std::string>());
         }
-    } else {
-        foundEverything = false;
-    }
-
-    if (auto PreferredCustomWIPLevelPathItr = doc.FindMember("PreferredCustomWIPLevelPath"); PreferredCustomWIPLevelPathItr != doc.MemberEnd()) {
-        config.PreferredCustomWIPLevelPath = PreferredCustomWIPLevelPathItr->value.Get<std::string>();
     } else {
         foundEverything = false;
     }
