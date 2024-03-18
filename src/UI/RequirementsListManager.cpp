@@ -67,11 +67,7 @@ namespace SongCore::UI {
     }
 
     void RequirementsListManager::ClearRequirementCells() {
-        for (int i = 0; auto cellInfo : _requirementsCells) {
-            INFO("pushing a cell to unused {}", i++);
-            _unusedRequirementCells->Add(cellInfo);
-        }
-        INFO("clearing list");
+        for (auto cellInfo : _requirementsCells) _unusedRequirementCells->Add(cellInfo);
         _requirementsCells->Clear();
     }
 
