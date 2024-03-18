@@ -186,13 +186,13 @@ using namespace System::Collections::Generic;
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_UpdateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::UpdateAllLoadedBeatmapLevelPacks, void, BeatmapLevelsModel* self) {
     auto list = ListW<IBeatmapLevelPack*>::New();
     if(self->ostAndExtrasPackCollection)
-        list->AddRange(reinterpret_cast<IEnumerable_1<IBeatmapLevelPack*>*>(self->ostAndExtrasPackCollection->get_beatmapLevelPacks().convert()));
+        list.insert_range(self->ostAndExtrasPackCollection->beatmapLevelPacks);
     if(self->_dlcLevelPackCollectionContainer && self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection)
-        list->AddRange(reinterpret_cast<IEnumerable_1<IBeatmapLevelPack*>*>(self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection->get_beatmapLevelPacks().convert()));
-    self->_allLoadedBeatmapLevelWithoutCustomLevelPackCollection = reinterpret_cast<IBeatmapLevelPackCollection*>(BeatmapLevelPackCollection::New_ctor(list->ToArray()));
+        list.insert_range(self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection->beatmapLevelPacks);
+    self->_allLoadedBeatmapLevelWithoutCustomLevelPackCollection = BeatmapLevelPackCollection::New_ctor(list->ToArray())->i___GlobalNamespace__IBeatmapLevelPackCollection();
     if(self->customLevelPackCollection)
-        list->AddRange(reinterpret_cast<IEnumerable_1<IBeatmapLevelPack*>*>(self->customLevelPackCollection->get_beatmapLevelPacks().convert()));
-    self->_allLoadedBeatmapLevelPackCollection = reinterpret_cast<IBeatmapLevelPackCollection*>(BeatmapLevelPackCollection::New_ctor(list->ToArray()));
+        list.insert_range(self->customLevelPackCollection->beatmapLevelPacks);
+    self->_allLoadedBeatmapLevelPackCollection = BeatmapLevelPackCollection::New_ctor(list->ToArray())->i___GlobalNamespace__IBeatmapLevelPackCollection();
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetLevelEntitlementStatusAsync, &AdditionalContentModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
