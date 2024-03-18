@@ -35,7 +35,10 @@ struct TemporaryCharacteristicSegmentedControlData {
 MAKE_AUTO_HOOK_MATCH(BeatmapCharacteristicSegmentedControlController_SetData, &GlobalNamespace::BeatmapCharacteristicSegmentedControlController::SetData, void, GlobalNamespace::BeatmapCharacteristicSegmentedControlController* self, System::Collections::Generic::IReadOnlyList_1<::GlobalNamespace::IDifficultyBeatmapSet*>* difficultyBeatmapSets, GlobalNamespace::BeatmapCharacteristicSO* selectedBeatmapCharacteristic) {
     BeatmapCharacteristicSegmentedControlController_SetData(self, difficultyBeatmapSets, selectedBeatmapCharacteristic);
 
-    int count = difficultyBeatmapSets->i___System__Collections__Generic__IReadOnlyCollection_1_T_()->Count;
+    // if these are null we can't do anything, just pretend it's not custom
+    if (!difficultyBeatmapSets) return;
+
+    auto count = il2cpp_utils::RunMethodRethrow<int>(difficultyBeatmapSets, "get_Count");
 
     ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> selfBeatmapCharacteristics(self->_beatmapCharacteristics);
     std::vector<TemporaryCharacteristicSegmentedControlData> cellData;
@@ -43,7 +46,7 @@ MAKE_AUTO_HOOK_MATCH(BeatmapCharacteristicSegmentedControlController_SetData, &G
     int selectedCellIdx = self->_segmentedControl->selectedCellNumber;
     auto success = count != 0;
     for (int idx = 0; idx < count; idx++) {
-        auto difficultyBeatmapSet = difficultyBeatmapSets->get_Item(idx);
+        auto difficultyBeatmapSet = il2cpp_utils::RunMethodRethrow<GlobalNamespace::IDifficultyBeatmapSet*, false>(difficultyBeatmapSets, "get_Item", idx);
         auto characteristic = difficultyBeatmapSet->beatmapCharacteristic;
 
         auto customDifficultyBeatmapSet = il2cpp_utils::try_cast<GlobalNamespace::CustomDifficultyBeatmapSet>(difficultyBeatmapSet).value_or(nullptr);
@@ -94,13 +97,16 @@ MAKE_AUTO_HOOK_MATCH(BeatmapCharacteristicSegmentedControlController_SetData, &G
 MAKE_AUTO_HOOK_MATCH(BeatmapDifficultySegmentedControlController_SetData, &GlobalNamespace::BeatmapDifficultySegmentedControlController::SetData, void, GlobalNamespace::BeatmapDifficultySegmentedControlController* self, System::Collections::Generic::IReadOnlyList_1<GlobalNamespace::IDifficultyBeatmap*>* difficultyBeatmapsList, GlobalNamespace::BeatmapDifficulty selectedDifficulty) {
     BeatmapDifficultySegmentedControlController_SetData(self, difficultyBeatmapsList, selectedDifficulty);
 
+    // if these are null we can't do anything, just pretend it's not custom
+    if (!difficultyBeatmapsList) return;
+
     auto labels = ListW<StringW>::New();
 
-    int count = difficultyBeatmapsList->i___System__Collections__Generic__IReadOnlyCollection_1_T_()->Count;
+    auto count = il2cpp_utils::RunMethodRethrow<int>(difficultyBeatmapsList, "get_Count");
 
     auto success = count != 0;
     for (int idx = 0; idx < count; idx++) {
-        auto difficultyBeatmap = difficultyBeatmapsList->get_Item(idx);
+        auto difficultyBeatmap = il2cpp_utils::RunMethodRethrow<GlobalNamespace::IDifficultyBeatmap*, false>(difficultyBeatmapsList, "get_Item", idx);
         auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(difficultyBeatmap->level).value_or(nullptr);
         if (!customLevel) { success = false; break; }
 
