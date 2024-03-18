@@ -21,6 +21,7 @@
 #include "UnityEngine/RenderMode.hpp"
 
 #include "SongLoader/RuntimeSongLoader.hpp"
+#include "bsml/shared/BSML/Components/TextGradientUpdater.hpp"
 
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std::vector<Il2CppClass *>({classof(::Zenject::IInitializable *), classof(::System::IDisposable *), classof(::Zenject::ITickable *)}),
     DECLARE_CTOR(ctor);
@@ -59,6 +60,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     std::optional<float> _canvasDisplayTimer;
 
     bool _showingMessage;
+    bool _beGay;
+    float _gayTime;
+    BSML::Gradient* _gradient;
 
     void ShowMessage(std::string message, float time);
     void ShowMessage(std::string message);
@@ -67,6 +71,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     void RuntimeSongLoaderOnSongLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> customLevels);
     void ShowCanvasForSeconds(float time);
     void HideCanvas();
+    void UpdateLoadingBarColor();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &::Zenject::IInitializable::Initialize);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &::System::IDisposable::Dispose);

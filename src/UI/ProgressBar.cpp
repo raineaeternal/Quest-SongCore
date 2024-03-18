@@ -12,6 +12,36 @@
 DEFINE_TYPE(SongCore::UI, ProgressBar);
 
 namespace SongCore::UI {
+    /// @brief method to get a random gradient to use
+    BSML::Gradient* GetGradient(bool alwaysUseFlags = false) {
+        auto rawTime = time(nullptr);
+        auto localTime = localtime(&rawTime);
+
+        // month is 0 index (jan == 0, feb == 1, ...)
+        if (alwaysUseFlags || localTime->tm_mon == 5) {
+            static BSML::Gradient* gradients[] = {
+                BSML::Gradient::Parse("#e40303;#ff8c00;#ffed00;#008026;#004dff;#450787;#e40303"),
+                BSML::Gradient::Parse("#59c9f4;#f1a5b5;#ffffff;#f1a5b5;#59c9f4"),
+                BSML::Gradient::Parse("#d52c01;#fd9a57;#ffffff;#d1619f;#a20161;#d52c01"),
+                BSML::Gradient::Parse("#078e70;#26ceaa;#98e8c1;#ffffff;#7bade2;#5049cb;#3d1a78;#078e70"),
+                BSML::Gradient::Parse("#d0036d;#d0036d;#9a4f96;#0037a3;#0037a3;#d0036d"),
+                BSML::Gradient::Parse("#000000;#808080;#ffffff;#800080;#000000"),
+                BSML::Gradient::Parse("#3da542;#a8d379;#ffffff;#a9a9a9;#000000;#3da542"),
+                BSML::Gradient::Parse("#f11a85;#f11a85;#ffd900;#ffd900;#1bb3ff;#1bb3ff;#f11a85"),
+                BSML::Gradient::Parse("#f9ee33;#000000;#9c59cf;#2d2d2d;#f9ee33"),
+                BSML::Gradient::Parse("#ac77d0;#ac77d0;#ffffff;#ffffff;#4b8124;#4b8124;#ac77d0"),
+                BSML::Gradient::Parse("#ff75a2;#f5f5f5;#be18d6;#2c2c2c;#333ebd;#ff75a2"),
+                BSML::Gradient::Parse("#000000;#bcc4c6;#ffffff;#b9f480;#ffffff;#bcc4c6;#000000")
+            };
+
+            auto idx = rand() % (sizeof(gradients) / sizeof(void*));
+            return gradients[idx];
+        } else {
+            static auto gradient = BSML::Gradient::Parse("#ff6060;#ffa060;#ffff60;#a0ff60;#60ff60;#60ffa0;#60ffff;#60a0ff;#6060ff;#a060ff;#ff60ff;#ff60a0;#ff6060");
+            return gradient;
+        }
+    }
+
     void ProgressBar::ctor() {
         _pos = UnityEngine::Vector3(0, 0.05f, 3);
         _rot = UnityEngine::Vector3(90, 0, 0);
@@ -32,6 +62,8 @@ namespace SongCore::UI {
 
         _loadingBarSize = UnityEngine::Vector2(100, 10);
         _bgColor = UnityEngine::Color(0, 0, 0, 0.2f);
+
+        _gradient = GetGradient();
     }
 
     void ProgressBar::Inject(SongLoader::RuntimeSongLoader* runtimeSongLoader) {
@@ -129,6 +161,8 @@ namespace SongCore::UI {
         _showingMessage = true;
         std::string songOrSongs = customLevels.size() == 1 ? "song" : "songs";
         _headerText->text = fmt::format("{} {} loaded", customLevels.size(), songOrSongs);
+        _beGay = true;
+        _gradient = GetGradient();
         ShowCanvasForSeconds(5);
     }
 
@@ -154,10 +188,13 @@ namespace SongCore::UI {
 
             if (_canvasGroup->alpha == 0) {
                 _canvas->enabled = false;
+                _beGay = false; // :pensive:
             }
         }
 
         _loadingBar->fillAmount = _runtimeSongLoader->Progress;
+
+        UpdateLoadingBarColor();
     }
 
     void ProgressBar::Dispose() {
@@ -169,5 +206,20 @@ namespace SongCore::UI {
 
         _runtimeSongLoader->SongsWillRefresh -= {&ProgressBar::RuntimeSongLoaderOnSongRefresh, this};
         _runtimeSongLoader->SongsLoaded -= {&ProgressBar::RuntimeSongLoaderOnSongLoaded, this};
+    }
+
+    void ProgressBar::UpdateLoadingBarColor() {
+        if (_beGay) { // do crime
+            _gayTime += UnityEngine::Time::get_deltaTime() * 0.3f;
+            auto c32 =_gradient->Sample(_gayTime);
+            _loadingBar->color = {
+                c32.r / 256.0f,
+                c32.g / 256.0f,
+                c32.b / 256.0f,
+                c32.a / 256.0f
+            };
+        } else {
+            _loadingBar->color = {1, 1, 1, 0.5f};
+        }
     }
 }
