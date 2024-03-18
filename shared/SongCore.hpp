@@ -211,15 +211,15 @@ namespace SongCore::API {
     namespace LevelSelect {
         struct SONGCORE_EXPORT LevelWasSelectedEventArgs {
             /// @brief whether this is a custom level. if true, using the custom** in the unions should be valid, if not, you should be using the interfaces
-            bool isCustom;
+            bool isCustom = false;
             /// @brief whether this is a WIP level
-            bool isWIP;
+            bool isWIP = false;
 
             /// @brief levelID for the level
             std::string levelID;
 
             /// @brief optional level hash
-            std::optional<std::string> hash;
+            std::optional<std::string> hash = std::nullopt;
 
             struct BasicCustomLevelDetailsGroup {
                 CustomJSONData::CustomLevelInfoSaveData::BasicCustomLevelDetails const& levelDetails;
@@ -228,37 +228,37 @@ namespace SongCore::API {
             };
 
             /// @brief if this is a custom level, this should be set
-            std::optional<CustomJSONData::CustomLevelInfoSaveData*> customLevelInfoSaveData;
+            std::optional<CustomJSONData::CustomLevelInfoSaveData*> customLevelInfoSaveData = std::nullopt;
 
             /// @brief if this is a custom level, this should be set
-            std::optional<BasicCustomLevelDetailsGroup> customLevelDetails;
+            std::optional<BasicCustomLevelDetailsGroup> customLevelDetails = std::nullopt;
 
             /// @brief the selected levelpack, may or may not be a custom pack
             union {
-                SongCore::SongLoader::SongCoreCustomLevelPack* customLevelPack;
+                SongCore::SongLoader::SongCoreCustomLevelPack* customLevelPack = nullptr;
                 GlobalNamespace::IBeatmapLevelPack* levelPack;
             };
 
             union {
-                GlobalNamespace::CustomPreviewBeatmapLevel* customPreviewBeatmapLevel;
+                GlobalNamespace::CustomPreviewBeatmapLevel* customPreviewBeatmapLevel = nullptr;
                 GlobalNamespace::IPreviewBeatmapLevel* previewBeatmapLevel;
             };
 
             /// @brief equivalent to levels in the left list in song selection
             union {
-                GlobalNamespace::CustomBeatmapLevel* customBeatmapLevel;
+                GlobalNamespace::CustomBeatmapLevel* customBeatmapLevel = nullptr;
                 GlobalNamespace::IBeatmapLevel* beatmapLevel;
             };
 
             /// @brief describing characteristics (a set of diffs)
             union {
-                GlobalNamespace::CustomDifficultyBeatmapSet* customDifficultyBeatmapSet;
+                GlobalNamespace::CustomDifficultyBeatmapSet* customDifficultyBeatmapSet = nullptr;
                 GlobalNamespace::IDifficultyBeatmapSet* difficultyBeatmapSet;
             };
 
             /// @brief diff of the map
             union {
-                GlobalNamespace::CustomDifficultyBeatmap* customDifficultyBeatmap;
+                GlobalNamespace::CustomDifficultyBeatmap* customDifficultyBeatmap = nullptr;
                 GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap;
             };
         };

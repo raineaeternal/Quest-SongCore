@@ -61,6 +61,7 @@ namespace SongCore {
         eventArgs.beatmapLevel = GetSelectedBeatmapLevel();
         eventArgs.difficultyBeatmapSet = GetSelectedDifficultyBeatmapSet();
         eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
+        eventArgs.isCustom = false;
 
         // if anything isn't set, early return because the selection performed was invalid
         if (!eventArgs.levelPack) return;
