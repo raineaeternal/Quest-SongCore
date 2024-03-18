@@ -84,7 +84,6 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::Dispose() {
-        DEBUG("RuntimeSongLoader Dispose, _instance: {}, this: {}", fmt::ptr(_instance), fmt::ptr(this));
         if (_instance == this) _instance = nullptr;
 
         _customLevels->Clear();
@@ -131,8 +130,8 @@ namespace SongCore::SongLoader {
     }
 
     std::shared_future<void> RuntimeSongLoader::RefreshSongs(bool fullRefresh) {
-        DEBUG("A refresh was requested!");
         if (AreSongsRefreshing) {
+            INFO("Refresh was requested while songs were refreshing, queueing up a new refresh for afterwards, or returning the already queued up refresh");
             // if double future isn't valid, that means we need to make a new one here
             if (!_doubleRefreshRequestedFuture.valid()) {
                 std::unique_lock<std::shared_mutex> writingLock(_doubleRefreshMutex);
@@ -147,7 +146,6 @@ namespace SongCore::SongLoader {
                 }
             }
 
-            WARNING("Refresh was requested while songs were refreshing, returning the same future and awaiting ");
             std::shared_lock<std::shared_mutex> readingLock(_doubleRefreshMutex);
             return _doubleRefreshRequestedFuture;
         }
@@ -162,33 +160,29 @@ namespace SongCore::SongLoader {
 
     void RuntimeSongLoader::RefreshRequestedWhileRefreshing() {
         // while old refresh still going, wait
-        DEBUG("reading current future with lock");
         std::shared_lock<std::shared_mutex> currentRefreshReadLock(_currentRefreshMutex);
         auto currentRefreshFuture = _currentlyLoadingFuture;
         currentRefreshReadLock.unlock();
 
-        DEBUG("waiting for current loading future");
         currentRefreshFuture.wait();
 
         // queue up another refresh
-        DEBUG("Requesting next reload");
         currentRefreshFuture = RefreshSongs(_doubleRefreshIsFull);
 
         // overwrite current loading future with this double request future since we want to
         // then allow a refresh requested during *this* one to be allowed to overwrite the double refresh
         {
-            DEBUG("moving double refresh into current load refresh as override");
             std::unique_lock<std::shared_mutex> currentRefreshWriteLock(_currentRefreshMutex);
             std::unique_lock<std::shared_mutex> doubleRefreshWriteLock(_doubleRefreshMutex);
             _currentlyLoadingFuture = std::move(_doubleRefreshRequestedFuture);
         }
 
         // wait for our queued refresh to finish
-        DEBUG("waiting for the new refresh to finish up before this method can conclude");
         currentRefreshFuture.wait();
     }
 
     void RuntimeSongLoader::RefreshSongs_internal(bool fullRefresh) {
+        auto refreshStartTime = high_resolution_clock::now();
         std::set<LevelPathAndWip> levels;
         _loadedSongs = 0;
 
@@ -207,7 +201,7 @@ namespace SongCore::SongLoader {
         std::set<LevelPathAndWip>::const_iterator levelsEnd = levels.end();
 
         using namespace std::chrono;
-        auto startTime = high_resolution_clock::now();
+        auto loadStartTime = high_resolution_clock::now();
 
         auto workerThreadCount = std::clamp<size_t>(levels.size(), 1, MAX_THREAD_COUNT);
         std::vector<std::future<void>> songLoadFutures;
@@ -231,17 +225,17 @@ namespace SongCore::SongLoader {
             t.wait();
         }
 
-        // save cache to file after all songs are loaded
-        Utils::SaveSongInfoCache();
-
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
-        auto time = high_resolution_clock::now() - startTime;
+        auto time = high_resolution_clock::now() - loadStartTime;
         if (auto ms = duration_cast<milliseconds>(time).count(); ms > 0) {
             INFO("Loaded {} (actual: {}) songs in {}ms", (size_t)_totalSongs, actualCount, ms);
         } else {
             auto µs = (float)duration_cast<nanoseconds>(time).count() / 1000.0f;
             INFO("Loaded {} (actual: {}) songs in {}us", (size_t)_totalSongs, actualCount, µs);
         }
+
+        // save cache to file after all songs are loaded
+        Utils::SaveSongInfoCache();
 
         // anonymous function to get the values from a songdict into a vector
         static auto GetValues = [](SongDict* dict){
@@ -256,6 +250,8 @@ namespace SongCore::SongLoader {
 
             return vec;
         };
+
+        auto collectionUpdateStartTime = high_resolution_clock::now();
 
         auto customLevelValues = GetValues(_customLevels);
         auto customWIPLevelValues = GetValues(_customWIPLevels);
@@ -272,6 +268,7 @@ namespace SongCore::SongLoader {
         // insert wip levels before other loaded levels
         _allLoadedLevels.insert(_allLoadedLevels.begin(), customWIPLevelValues.begin(), customWIPLevelValues.end());
         _allLoadedLevels.insert(_allLoadedLevels.begin(), customLevelValues.begin(), customLevelValues.end());
+        INFO("Updated collections after load in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - collectionUpdateStartTime).count());
 
         _areSongsLoaded = true;
 
@@ -295,6 +292,7 @@ namespace SongCore::SongLoader {
         });
 
         while (!finishedOnMainThread) std::this_thread::sleep_for(10ms);
+        INFO("Refresh performed in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - refreshStartTime).count());
     }
 
     void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd) {
