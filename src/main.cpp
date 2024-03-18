@@ -72,6 +72,7 @@ MAKE_HOOK(abort_hook, nullptr, void) {
 SONGCORE_EXPORT_FUNC void late_load() {
     il2cpp_functions::Init();
 
+    srand(time(nullptr));
     custom_types::Register::AutoRegister();
     SongCore::Hooking::InstallHooks(getLogger());
     BSML::Init();
