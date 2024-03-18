@@ -5,6 +5,7 @@
 #include "System/IDisposable.hpp"
 #include "Zenject/IInitializable.hpp"
 #include "GlobalNamespace/LevelFilteringNavigationController.hpp"
+#include "GlobalNamespace/LevelCollectionViewController.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include <vector>
 
@@ -14,8 +15,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdat
 
     DECLARE_INSTANCE_FIELD_PRIVATE(RuntimeSongLoader*, _runtimeSongLoader);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::LevelFilteringNavigationController*, _levelFilteringNavigationController);
+    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::LevelCollectionViewController*, _levelCollectionViewController);
 
-    DECLARE_CTOR(ctor, RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::LevelFilteringNavigationController* levelFilteringNavigationController);
+    DECLARE_CTOR(ctor, RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::LevelFilteringNavigationController* levelFilteringNavigationController, GlobalNamespace::LevelCollectionViewController* levelCollectionViewController);
 
     private:
         void CustomLevelPacksRefreshed(CustomBeatmapLevelPackCollection* collection);
