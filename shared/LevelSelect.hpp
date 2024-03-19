@@ -17,7 +17,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, std::vec
         DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &Zenject::IInitializable::Initialize);
         DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);
 
-        using ChangeDifficultyBeatmapAction = System::Action_2<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::IDifficultyBeatmap*>;
+        using ChangeDifficultyBeatmapAction = System::Action_1<UnityW<GlobalNamespace::StandardLevelDetailViewController>>;
         using ChangeContentAction = System::Action_2<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType>;
         DECLARE_INSTANCE_FIELD_PRIVATE(ChangeDifficultyBeatmapAction*, _changeDifficultyBeatmapAction);
         DECLARE_INSTANCE_FIELD_PRIVATE(ChangeContentAction*, _changeContentAction);
@@ -27,24 +27,24 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, std::vec
 
         UnorderedEventCallback<LevelWasSelectedEventArgs const&> LevelWasSelected;
 
-        GlobalNamespace::IBeatmapLevelPack* GetSelectedLevelPack();
-        __declspec(property(get=GetSelectedLevelPack)) GlobalNamespace::IBeatmapLevelPack* SelectedLevelPack;
+        GlobalNamespace::BeatmapLevelPack* GetSelectedLevelPack();
+        __declspec(property(get=GetSelectedLevelPack)) GlobalNamespace::BeatmapLevelPack* SelectedLevelPack;
 
-        GlobalNamespace::IPreviewBeatmapLevel* GetSelectedPreviewBeatmapLevel();
-        __declspec(property(get=GetSelectedPreviewBeatmapLevel)) GlobalNamespace::IPreviewBeatmapLevel* SelectedPreviewBeatmapLevel;
+        GlobalNamespace::BeatmapLevel* GetSelectedBeatmapLevel();
+        __declspec(property(get=GetSelectedBeatmapLevel)) GlobalNamespace::BeatmapLevel* SelectedBeatmapLevel;
 
-        GlobalNamespace::IBeatmapLevel* GetSelectedBeatmapLevel();
-        __declspec(property(get=GetSelectedBeatmapLevel)) GlobalNamespace::IBeatmapLevel* SelectedBeatmapLevel;
+        GlobalNamespace::BeatmapKey GetSelectedBeatmapKey();
+        __declspec(property(get=GetSelectedBeatmapKey)) GlobalNamespace::BeatmapKey SelectedBeatmapKey;
 
-        GlobalNamespace::IDifficultyBeatmapSet* GetSelectedDifficultyBeatmapSet();
-        __declspec(property(get=GetSelectedDifficultyBeatmapSet)) GlobalNamespace::IDifficultyBeatmapSet* SelectedDifficultyBeatmapSet;
+        GlobalNamespace::BeatmapCharacteristicSO* GetSelectedCharacteristic();
+        __declspec(property(get=GetSelectedCharacteristic)) GlobalNamespace::BeatmapCharacteristicSO* SelectedCharacteristic;
 
-        GlobalNamespace::IDifficultyBeatmap* GetSelectedDifficultyBeatmap();
-        __declspec(property(get=GetSelectedDifficultyBeatmap)) GlobalNamespace::IDifficultyBeatmap* SelectedDifficultyBeatmap;
+        GlobalNamespace::BeatmapDifficulty GetSelectedDifficulty();
+        __declspec(property(get=GetSelectedDifficulty)) GlobalNamespace::BeatmapDifficulty SelectedDifficulty;
 
     private:
         void LevelDetailContentChanged(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, GlobalNamespace::StandardLevelDetailViewController::ContentType contentType);
-        void BeatmapLevelSelected(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, GlobalNamespace::IDifficultyBeatmap* selectedBeatmap);
+        void BeatmapLevelSelected(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController);
 
         void HandleCustomLevelWasSelected(LevelWasSelectedEventArgs& eventArgs);
 

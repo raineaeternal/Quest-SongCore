@@ -2,6 +2,8 @@
 #include "kaleb/shared/kaleb.hpp"
 
 DECLARE_FILE(_binary_Resources_Colors_png, Assets::Resources, Colors_png);
+DECLARE_FILE(_binary_Resources_CustomLevelsCover_png, Assets::Resources, CustomLevelsCover_png);
+DECLARE_FILE(_binary_Resources_CustomLevelsCoverEvil_png, Assets::Resources, CustomLevelsCoverEvil_png);
 DECLARE_FILE(_binary_Resources_CustomWIPLevelsCover_png, Assets::Resources, CustomWIPLevelsCover_png);
 DECLARE_FILE(_binary_Resources_DeleteIcon_png, Assets::Resources, DeleteIcon_png);
 DECLARE_FILE(_binary_Resources_Environment_png, Assets::Resources, Environment_png);
