@@ -35,7 +35,7 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^5.0.9",
+      "versionRange": "^5.1.1",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -49,7 +49,7 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^3402.1.2",
+      "versionRange": "^3500.*",
       "additionalData": {}
     },
     {
@@ -59,12 +59,12 @@
     },
     {
       "id": "lapiz",
-      "versionRange": "^0.2.2",
+      "versionRange": "^0.2.4",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.16.18",
+      "versionRange": "^0.17.1",
       "additionalData": {}
     },
     {

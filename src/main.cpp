@@ -42,11 +42,6 @@ void SongLoaderInstalled();
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
-Logger& getLogger() {
-    static auto logger = new Logger(modInfo, LoggerOptions(false, true));
-    return *logger;
-}
-
 // Loads the config from disk using our modInfo, then returns it for use
 // other config tools such as config-utils don't use this config, so it can be removed if those are in use
 Configuration& getConfig() {
@@ -64,8 +59,9 @@ SONGCORE_EXPORT_FUNC void setup(CModInfo* info) {
 }
 
 MAKE_HOOK(abort_hook, nullptr, void) {
-    getLogger().info("abort called");
-    getLogger().Backtrace(40);
+    auto logger = Paper::ConstLoggerContext("abort_hook");
+    logger.info("abort called");
+    logger.Backtrace(40);
 
     abort_hook();
 }
@@ -97,13 +93,14 @@ SONGCORE_EXPORT_FUNC void late_load() {
         SaveConfig();
     }
 
-    SongCore::Hooking::InstallHooks(getLogger());
+    SongCore::Hooking::InstallHooks();
     auto z = Lapiz::Zenject::Zenjector::Get();
 
     auto libc = dlopen("libc.so", RTLD_NOW);
     auto abrt = dlsym(libc, "abort");
 
-    INSTALL_HOOK_DIRECT(getLogger(), abort_hook, abrt);
+    auto logger = Paper::ConstLoggerContext("abort_hook_install");
+    INSTALL_HOOK_DIRECT(logger, abort_hook, abrt);
 
     // load cached hashes n stuff
     if (!SongCore::Utils::LoadSongInfoCache()) SongCore::Utils::SaveSongInfoCache();
