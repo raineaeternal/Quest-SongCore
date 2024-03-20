@@ -43,8 +43,9 @@ namespace SongCore::SongLoader {
         auto t = time(nullptr);
         auto localTime = *localtime(&t);
         auto evilTime = (localTime.tm_mday == 1 && localTime.tm_mon == 3);
+        bool doEvil = evilTime || ((rand() % 20) == 0);
 
-        _customLevelPack = CustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", BSML::Utilities::LoadSpriteRaw(evilTime ? Assets::Resources::CustomLevelsCoverEvil_png : Assets::Resources::CustomLevelsCover_png));
+        _customLevelPack = CustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", BSML::Utilities::LoadSpriteRaw(doEvil ? Assets::Resources::CustomLevelsCoverEvil_png : Assets::Resources::CustomLevelsCover_png));
         _customWIPLevelPack = CustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", BSML::Utilities::LoadSpriteRaw(Assets::Resources::CustomWIPLevelsCover_png));
         _customBeatmapLevelsRepository = CustomBeatmapLevelsRepository::New_ctor();
 
