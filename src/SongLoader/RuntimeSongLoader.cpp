@@ -183,9 +183,9 @@ namespace SongCore::SongLoader {
         auto workerThreadCount = std::clamp<size_t>(levels.size(), 1, MAX_THREAD_COUNT);
         std::vector<std::future<void>> songLoadFutures;
         songLoadFutures.reserve(workerThreadCount);
-
         _totalSongs = levels.size();
 
+        INFO("Now going to load {} levels on {} threads", (int)_totalSongs, workerThreadCount);
         for (int i = 0; i < workerThreadCount; i++) {
             songLoadFutures.emplace_back(
                 il2cpp_utils::il2cpp_async(
@@ -205,10 +205,10 @@ namespace SongCore::SongLoader {
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
         auto time = high_resolution_clock::now() - loadStartTime;
         if (auto ms = duration_cast<milliseconds>(time).count(); ms > 0) {
-            INFO("Loaded {} (actual: {}) songs in {}ms", (size_t)_totalSongs, actualCount, ms);
+            INFO("Loaded {} (actual: {}) songs in {}ms", levels.size(), actualCount, ms);
         } else {
             auto µs = (float)duration_cast<nanoseconds>(time).count() / 1000.0f;
-            INFO("Loaded {} (actual: {}) songs in {}us", (size_t)_totalSongs, actualCount, µs);
+            INFO("Loaded {} (actual: {}) songs in {}us", levels.size(), actualCount, µs);
         }
 
         // save cache to file after all songs are loaded
@@ -328,8 +328,12 @@ namespace SongCore::SongLoader {
                 _loadedSongs++;
             } catch (std::exception const& e) {
                 ERROR("Caught exception of type {} while loading song @ path '{}', song will be skipped! what: {}", typeid(e).name(), levelPath.string(), e.what());
+                // if an error was caught, a song failed to load so we decrease total song count
+                _totalSongs--;
             } catch (...) {
                 ERROR("Caught exception of unknown type (current_exception typeid: {}) while loading song @ path '{}', song will be skipped!", typeid(std::current_exception()).name(), levelPath.string());
+                // if an error was caught, a song failed to load so we decrease total song count
+                _totalSongs--;
             }
         }
     }
