@@ -1,5 +1,6 @@
 #include "SongCore.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
+#include "SongLoader/LevelLoader.hpp"
 #include "SongLoader/NavigationControllerUpdater.hpp"
 #include "UI/PlayButtonsUpdater.hpp"
 #include "UI/IconCache.hpp"
@@ -117,6 +118,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
         container->BindInterfacesAndSelfTo<SongCore::Capabilities*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::Characteristics*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::PlayButtonInteractable*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::SongLoader::LevelLoader*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::SongLoader::RuntimeSongLoader*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::IconCache*>()->AsSingle()->NonLazy();
     });
