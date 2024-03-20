@@ -4,8 +4,7 @@
 #include "GlobalNamespace/BeatmapDataTransformHelper.hpp"
 #include "GlobalNamespace/BoolSO.hpp"
 #include "GlobalNamespace/MainSettingsModelSO.hpp"
-
-#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
+#include "GlobalNamespace/BeatmapLevel.hpp"
 
 // hook to get around the `IsObstaclesMergingNeeded` if statement in this method. if it's a custom level we want to block merging, and since the if statement checks for !displacementEnabled we just set that to true
 MAKE_AUTO_HOOK_MATCH(
@@ -13,7 +12,7 @@ MAKE_AUTO_HOOK_MATCH(
     &GlobalNamespace::BeatmapDataTransformHelper::CreateTransformedBeatmapData,
     GlobalNamespace::IReadonlyBeatmapData*,
     GlobalNamespace::IReadonlyBeatmapData* beatmapData,
-    GlobalNamespace::IPreviewBeatmapLevel* beatmapLevel,
+    GlobalNamespace::BeatmapLevel* beatmapLevel,
     GlobalNamespace::GameplayModifiers* gameplayModifiers,
     bool leftHanded,
     GlobalNamespace::EnvironmentEffectsFilterPreset environmentEffectsFilterPreset,

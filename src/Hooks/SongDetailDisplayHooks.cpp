@@ -2,8 +2,7 @@
 #include "logging.hpp"
 
 #include "GlobalNamespace/LevelListTableCell.hpp"
-#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
-#include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 #include "UnityEngine/Vector3.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "TMPro/TMP_Text.hpp"
@@ -13,7 +12,7 @@ MAKE_AUTO_HOOK_MATCH(
     &GlobalNamespace::LevelListTableCell::SetDataFromLevelAsync,
     void,
     GlobalNamespace::LevelListTableCell* self,
-    GlobalNamespace::IPreviewBeatmapLevel* level,
+    GlobalNamespace::BeatmapLevel* level,
     bool isFavorite,
     bool isPromoted,
     bool isUpdated
@@ -22,12 +21,12 @@ MAKE_AUTO_HOOK_MATCH(
     if (!level) return;
 
     self->_songBpmText->text = std::to_string((int)level->beatsPerMinute);
-    auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomPreviewBeatmapLevel>(level);
+    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level);
     if (customLevel.has_value()) {
         self->_songAuthorText->richText = true;
-        if (!System::String::IsNullOrWhiteSpace(level->levelAuthorName)) {
+        if (!System::String::IsNullOrWhiteSpace(level->allMappers[0])) {
             auto songAuthorName = level->songAuthorName;
-            auto levelAuthorName = level->levelAuthorName;
+            auto levelAuthorName = level->allMappers[0];
 
             auto color = "ff69b4";
 

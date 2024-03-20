@@ -4,73 +4,105 @@
 
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
+#include "GlobalNamespace/EnvironmentsListModel.hpp"
 #include "GlobalNamespace/ColorSchemeSO.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
-#include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
-#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
-#include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
+#include "GlobalNamespace/RecordingToolManager.hpp"
+#include "System/Nullable_1.hpp"
+
+#include "SongLoader/CustomBeatmapLevel.hpp"
 #include "CustomJSONData.hpp"
 
 /// @brief method to merge the given custom colors into a newly created color scheme, or nothing if all custom color overrides are disabled
 GlobalNamespace::ColorScheme* ApplyOverrideColors(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails::CustomColors const& customColors);
 
-MAKE_AUTO_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Init,
-    &GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init,
+// TODO: extract similiar code into seperate method from both these hooks
+MAKE_AUTO_HOOK_MATCH(
+    StandardLevelScenesTransitionSetupDataSO_Init_1,
+    static_cast<
+        void
+        (GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::*)(
+            ::StringW,
+            ByRef<::GlobalNamespace::BeatmapKey>,
+            ::GlobalNamespace::BeatmapLevel*,
+            ::GlobalNamespace::OverrideEnvironmentSettings*,
+            ::GlobalNamespace::ColorScheme*,
+            ::GlobalNamespace::ColorScheme*,
+            ::GlobalNamespace::GameplayModifiers*,
+            ::GlobalNamespace::PlayerSpecificSettings*,
+            ::GlobalNamespace::PracticeSettings*,
+            ::GlobalNamespace::EnvironmentsListModel*,
+            ::GlobalNamespace::AudioClipAsyncLoader*,
+            ::GlobalNamespace::BeatmapDataLoader*,
+            ::StringW,
+            ::GlobalNamespace::BeatmapLevelsModel*,
+            bool,
+            bool,
+            ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
+    )>(&GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init),
     void,
     GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
     ::StringW gameMode,
-    ::GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap,
-    ::GlobalNamespace::IPreviewBeatmapLevel* previewBeatmapLevel,
+    ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
+    ::GlobalNamespace::BeatmapLevel* beatmapLevel,
     ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
     ::GlobalNamespace::ColorScheme* overrideColorScheme,
     ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme,
     ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
     ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
     ::GlobalNamespace::PracticeSettings* practiceSettings,
+    ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
+    ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
+    ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
     ::StringW backButtonText,
+    ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel,
     bool useTestNoteCutSoundEffects,
     bool startPaused,
-    ::GlobalNamespace::BeatmapDataCache* beatmapDataCache,
     ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
 ) {
-    auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomPreviewBeatmapLevel>(previewBeatmapLevel).value_or(nullptr);
-    if (!customLevel) { // level was not custom
-        return StandardLevelScenesTransitionSetupDataSO_Init(
+    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
+    if (!customLevel) {
+        return StandardLevelScenesTransitionSetupDataSO_Init_1(
             self,
             gameMode,
-            difficultyBeatmap,
-            previewBeatmapLevel,
+            beatmapKey,
+            beatmapLevel,
             overrideEnvironmentSettings,
             overrideColorScheme,
             beatmapOverrideColorScheme,
             gameplayModifiers,
             playerSpecificSettings,
             practiceSettings,
+            environmentsListModel,
+            audioClipAsyncLoader,
+            beatmapDataLoader,
             backButtonText,
+            beatmapLevelsModel,
             useTestNoteCutSoundEffects,
             startPaused,
-            beatmapDataCache,
             recordingToolData
         );
     }
 
-    auto characteristic = difficultyBeatmap->parentDifficultyBeatmapSet->beatmapCharacteristic;
-    auto diff = difficultyBeatmap->difficulty;
+    auto characteristic = beatmapKey->beatmapCharacteristic;
+    auto diff = beatmapKey->difficulty;
     bool containsRotation = characteristic->containsRotationEvents;
 
-    auto saveData = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveData>(customLevel->standardLevelInfoSaveData).value_or(nullptr);
+    auto saveData = customLevel->standardLevelInfoSaveData;
     if (saveData) {
         auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, diff);
         if (diffDetailsOpt) {
             auto& diffDetails = diffDetailsOpt->get();
             // apply custom color scheme if given
             if (diffDetails.customColors.has_value()) {
+                // TODO: honor beatmap override color scheme n stuff
                 if (overrideColorScheme) {
                     overrideColorScheme = ApplyOverrideColors(overrideColorScheme, diffDetails.customColors.value());
                 } else {
-                    overrideColorScheme = ApplyOverrideColors(previewBeatmapLevel->environmentInfo->colorScheme->colorScheme, diffDetails.customColors.value());
+                    auto envName = customLevel->GetEnvironmentName(characteristic, diff);
+                    auto envInfo = environmentsListModel->GetEnvironmentInfoBySerializedNameSafe(envName._environmentName);
+                    overrideColorScheme = ApplyOverrideColors(envInfo->colorScheme->colorScheme, diffDetails.customColors.value());
                 }
             }
 
@@ -86,21 +118,150 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelScenesTransitionSetupDataSO_Init,
         }
     }
 
-    StandardLevelScenesTransitionSetupDataSO_Init(
+    StandardLevelScenesTransitionSetupDataSO_Init_1(
         self,
         gameMode,
-        difficultyBeatmap,
-        previewBeatmapLevel,
+        beatmapKey,
+        beatmapLevel,
         overrideEnvironmentSettings,
         overrideColorScheme,
         beatmapOverrideColorScheme,
         gameplayModifiers,
         playerSpecificSettings,
         practiceSettings,
+        environmentsListModel,
+        audioClipAsyncLoader,
+        beatmapDataLoader,
+        backButtonText,
+        beatmapLevelsModel,
+        useTestNoteCutSoundEffects,
+        startPaused,
+        recordingToolData
+    );
+
+    characteristic->_containsRotationEvents = containsRotation;
+}
+
+
+
+MAKE_AUTO_HOOK_MATCH(
+    StandardLevelScenesTransitionSetupDataSO_Init_2,
+    static_cast<
+        void
+        (GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::*)(
+            ::StringW,
+            ::GlobalNamespace::IBeatmapLevelData*,
+            ByRef<::GlobalNamespace::BeatmapKey>,
+            ::GlobalNamespace::BeatmapLevel*,
+            ::GlobalNamespace::OverrideEnvironmentSettings*,
+            ::GlobalNamespace::ColorScheme*,
+            ::GlobalNamespace::ColorScheme*,
+            ::GlobalNamespace::GameplayModifiers*,
+            ::GlobalNamespace::PlayerSpecificSettings*,
+            ::GlobalNamespace::PracticeSettings*,
+            ::GlobalNamespace::EnvironmentsListModel*,
+            ::GlobalNamespace::AudioClipAsyncLoader*,
+            ::GlobalNamespace::BeatmapDataLoader*,
+            ::StringW,
+            bool,
+            bool,
+            ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
+    )>(&GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init),
+    void,
+    GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
+    ::StringW gameMode,
+    ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
+    ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
+    ::GlobalNamespace::BeatmapLevel* beatmapLevel,
+    ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
+    ::GlobalNamespace::ColorScheme* overrideColorScheme,
+    ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme,
+    ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
+    ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+    ::GlobalNamespace::PracticeSettings* practiceSettings,
+    ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
+    ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
+    ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
+    ::StringW backButtonText,
+    bool useTestNoteCutSoundEffects,
+    bool startPaused,
+    ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
+) {
+    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
+    if (!customLevel) {
+        return StandardLevelScenesTransitionSetupDataSO_Init_2(
+            self,
+            gameMode,
+            beatmapLevelData,
+            beatmapKey,
+            beatmapLevel,
+            overrideEnvironmentSettings,
+            overrideColorScheme,
+            beatmapOverrideColorScheme,
+            gameplayModifiers,
+            playerSpecificSettings,
+            practiceSettings,
+            environmentsListModel,
+            audioClipAsyncLoader,
+            beatmapDataLoader,
+            backButtonText,
+            useTestNoteCutSoundEffects,
+            startPaused,
+            recordingToolData
+        );
+    }
+
+    auto characteristic = beatmapKey->beatmapCharacteristic;
+    auto diff = beatmapKey->difficulty;
+    bool containsRotation = characteristic->containsRotationEvents;
+
+    auto saveData = customLevel->standardLevelInfoSaveData;
+    if (saveData) {
+        auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, diff);
+        if (diffDetailsOpt) {
+            auto& diffDetails = diffDetailsOpt->get();
+            // apply custom color scheme if given
+            if (diffDetails.customColors.has_value()) {
+                // TODO: honor beatmap override color scheme n stuff
+                if (overrideColorScheme) {
+                    overrideColorScheme = ApplyOverrideColors(overrideColorScheme, diffDetails.customColors.value());
+                } else {
+                    auto envName = customLevel->GetEnvironmentName(characteristic, diff);
+                    auto envInfo = environmentsListModel->GetEnvironmentInfoBySerializedNameSafe(envName._environmentName);
+                    overrideColorScheme = ApplyOverrideColors(envInfo->colorScheme->colorScheme, diffDetails.customColors.value());
+                }
+            }
+
+            // map requests rotation events to be enabled or not, so we do that here
+            if (diffDetails.environmentType.has_value()) {
+                auto& envType = diffDetails.environmentType.value();
+                if (envType == "allDirections") {
+                    characteristic->_containsRotationEvents = true;
+                } else if (envType == "default"){
+                    characteristic->_containsRotationEvents = false;
+                }
+            }
+        }
+    }
+
+    StandardLevelScenesTransitionSetupDataSO_Init_2(
+        self,
+        gameMode,
+        beatmapLevelData,
+        beatmapKey,
+        beatmapLevel,
+        overrideEnvironmentSettings,
+        overrideColorScheme,
+        beatmapOverrideColorScheme,
+        gameplayModifiers,
+        playerSpecificSettings,
+        practiceSettings,
+        environmentsListModel,
+        audioClipAsyncLoader,
+        beatmapDataLoader,
         backButtonText,
         useTestNoteCutSoundEffects,
         startPaused,
-        beatmapDataCache,
         recordingToolData
     );
 

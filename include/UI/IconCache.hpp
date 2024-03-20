@@ -7,8 +7,6 @@
 #include "System/IDisposable.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
 
-struct Hook_BeatmapCharacteristicSegmentedControlController_SetData;
-
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, IconCache, System::Object, classof(System::IDisposable*),
     DECLARE_CTOR(ctor);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);
@@ -70,8 +68,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, IconCache, System::Object, classo
 
         UnityEngine::Sprite* GetDeleteIcon();
         __declspec(property(get=GetDeleteIcon)) UnityEngine::Sprite* DeleteIcon;
+
+        static IconCache* get_instance() { return _instance; }
     private:
-        friend struct ::Hook_BeatmapCharacteristicSegmentedControlController_SetData;
         static IconCache* _instance;
         static constexpr size_t MAX_ICON_CACHE_COUNT = 50;
         /// @brief keeps track of the last used icons, and if the cache has too many used icons, the least used will be removed
