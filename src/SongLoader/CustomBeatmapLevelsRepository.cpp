@@ -22,7 +22,7 @@ namespace SongCore::SongLoader {
     void CustomBeatmapLevelsRepository::RemoveLevelPack(GlobalNamespace::BeatmapLevelPack* pack) {
         auto existing = GetBeatmapLevelPackByPackId(pack->packID);
         if (existing) {
-            _levelPacks->Remove(pack);
+            _levelPacks->Remove(existing);
         } else {
             WARNING("A pack with id {} was not added, not removing!", pack->packID);
         }
