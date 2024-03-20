@@ -35,12 +35,8 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^5.1.1",
-      "additionalData": {
-        "extraFiles": [
-          "src/inline-hook"
-        ]
-      }
+      "versionRange": "^5.1.2",
+      "additionalData": {}
     },
     {
       "id": "paper",
@@ -54,17 +50,17 @@
     },
     {
       "id": "bsml",
-      "versionRange": "^0.4.9",
+      "versionRange": "^0.4.14",
       "additionalData": {}
     },
     {
       "id": "lapiz",
-      "versionRange": "^0.2.4",
+      "versionRange": "^0.2.5",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.17.1",
+      "versionRange": "^0.17.2",
       "additionalData": {}
     },
     {
