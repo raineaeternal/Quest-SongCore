@@ -24,7 +24,7 @@ namespace SongCore {
             static constexpr auto logger = Paper::ConstLoggerContext(MOD_ID "_Install_" #name_);    \
             ::Hooking::InstallOrigHook<Hook_##name_>(logger);                                       \
         }                                                                                           \
-        Auto_Hook_##name_() { ::Hooks::AddInstallFunc(Auto_Hook_##name_##_Install); }               \
+        Auto_Hook_##name_() { ::SongCore::Hooking::AddInstallFunc(Auto_Hook_##name_##_Install); }   \
     };                                                                                              \
     static Auto_Hook_##name_ Auto_Hook_Instance_##name_
 
@@ -34,7 +34,7 @@ namespace SongCore {
             static constexpr auto logger = Paper::ConstLoggerContext(MOD_ID "_Install_" #name_);    \
             ::Hooking::InstallHook<Hook_##name_>(logger);                                           \
         }                                                                                           \
-        Auto_Hook_##name_() { ::Hooks::AddInstallFunc(Auto_Hook_##name_##_Install); }               \
+        Auto_Hook_##name_() { ::SongCore::Hooking::AddInstallFunc(Auto_Hook_##name_##_Install); }   \
     };                                                                                              \
     static Auto_Hook_##name_ Auto_Hook_Instance_##name_
 
