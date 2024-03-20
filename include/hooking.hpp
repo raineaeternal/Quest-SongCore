@@ -1,6 +1,7 @@
 #pragma once
 
 #include "beatsaber-hook/shared/utils/hooking.hpp"
+#include <concepts>
 
 namespace SongCore {
     class Hooking {
@@ -16,6 +17,19 @@ namespace SongCore {
             for (auto& func : installFuncs) func();
         }
     };
+
+    template<auto mPtr>
+    concept has_metadata = requires() {
+        { ::il2cpp_utils::il2cpp_type_check::MetadataGetter<mPtr>::methodInfo() } -> std::same_as<MethodInfo const*>;
+    };
+
+    template<auto mPtr>
+    requires(has_metadata<mPtr>)
+    using Metadata = ::il2cpp_utils::il2cpp_type_check::MetadataGetter<mPtr>;
+
+    /// @brief checks whether the function is match hookable, which requires the function to be at least 5 (5 * 4 = 20 bytes) instructions and not have an address of 0 (abstract/virtual funcs)
+    template<auto mPtr>
+    concept match_hookable = has_metadata<mPtr> && Metadata<mPtr>::size >= (0x5 * sizeof(int32_t)) && Metadata<mPtr>::addrs != 0xffffffff;
 }
 
 #define HOOK_AUTO_INSTALL_ORIG(name_)                                                               \
@@ -41,6 +55,7 @@ namespace SongCore {
 #define MAKE_AUTO_HOOK_MATCH(name_, mPtr, retval, ...)                                                                                              \
     struct Hook_##name_ {                                                                                                                           \
         using funcType = retval (*)(__VA_ARGS__);                                                                                                   \
+        static_assert(SongCore::match_hookable<mPtr>);                                                                                              \
         static_assert(std::is_same_v<funcType, ::Hooking::InternalMethodCheck<decltype(mPtr)>::funcType>, "Hook method signature does not match!"); \
         constexpr static const char* name() { return #name_; }                                                                                      \
         static const MethodInfo* getInfo() { return ::il2cpp_utils::il2cpp_type_check::MetadataGetter<mPtr>::methodInfo(); }                        \
@@ -55,6 +70,7 @@ namespace SongCore {
 #define MAKE_AUTO_HOOK_ORIG_MATCH(name_, mPtr, retval, ...)                                                                                         \
     struct Hook_##name_ {                                                                                                                           \
         using funcType = retval (*)(__VA_ARGS__);                                                                                                   \
+        static_assert(SongCore::match_hookable<mPtr>);                                                                                              \
         static_assert(std::is_same_v<funcType, ::Hooking::InternalMethodCheck<decltype(mPtr)>::funcType>, "Hook method signature does not match!"); \
         constexpr static const char* name() { return #name_; }                                                                                      \
         static const MethodInfo* getInfo() { return ::il2cpp_utils::il2cpp_type_check::MetadataGetter<mPtr>::methodInfo(); }                        \
