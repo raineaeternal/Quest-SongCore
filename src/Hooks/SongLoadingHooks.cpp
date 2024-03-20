@@ -1,88 +1,26 @@
 #include "hooking.hpp"
 #include "logging.hpp"
-#include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
 
-#include "shared/CustomJSONData.hpp"
+#include "CustomJSONData.hpp"
 #include "UnityEngine/Object.hpp"
 #include "System/Version.hpp"
 #include "GlobalNamespace/BeatmapSaveDataHelpers.hpp"
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
+#include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
 
 #include "GlobalNamespace/AdditionalContentModel.hpp"
 #include "GlobalNamespace/BeatmapLevelsModel.hpp"
-#include "GlobalNamespace/BeatmapLevelPackCollection.hpp"
-#include "GlobalNamespace/BeatmapLevelPackCollectionSO.hpp"
-#include "GlobalNamespace/BeatmapLevelPackCollectionContainerSO.hpp"
 #include "GlobalNamespace/FileHelpers.hpp"
+#include "SongLoader/CustomBeatmapLevelsRepository.hpp"
 #include "System/Threading/Tasks/Task_1.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
 
 #include <regex>
 
-MAKE_AUTO_HOOK_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
-    DEBUG("BeatmapSaveDataHelpers_GetVersion");
-    auto truncatedText = data.operator std::string().substr(0, 50);
-    static const std::regex versionRegex (R"("_?version"\s*:\s*"[0-9]+\.[0-9]+\.?[0-9]?")", std::regex_constants::optimize);
-    std::smatch matches;
-    if(std::regex_search(truncatedText, matches, versionRegex)) {
-        if(!matches.empty()) {
-            auto version = matches[0].str();
-            version = version.substr(0, version.length()-1);
-            version = version.substr(version.find_last_of('\"')+1, version.length());
-            try {
-                return System::Version::New_ctor(version);
-            } catch(const std::runtime_error& e) {
-                INFO("BeatmapSaveDataHelpers_GetVersion Invalid version: \"%s\"!", version.c_str());
-            }
-        }
-    }
-    return System::Version::New_ctor("2.0.0");
-}
-
-MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString, GlobalNamespace::StandardLevelInfoSaveData *, StringW stringData) {
+MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString, GlobalNamespace::StandardLevelInfoSaveData*, StringW stringData) {
     DEBUG("StandardLevelInfoSaveData_DeserializeFromJSONString");
 
-    SafePtr<GlobalNamespace::StandardLevelInfoSaveData> original;
-
-    // replacing the 2.x.x version with 2.0.0 is assumed safe because
-    // minor/patch versions should NOT break the schema and therefore deemed
-    // readable by RSL even if the new fields are not parsed
-    // short circuit
-    // 1.0.0 and 2.0.0 are supported by basegame through string equality
-    // checks if (!stringData->Contains("1.0.0") &&
-    // !stringData->Contains("2.0.0")) { https://regex101.com/r/jJAvvE/3
-    // Verified result: https://godbolt.org/z/MvfW3eh7q
-    // Checks if version is 2.0.0 range and then replaces it with 2.0.0
-    // for compatibility
-    static const std::regex versionRegex(
-        R"(\"_version\"\s*:\s*\"(2\.\d\.\d)\")",
-        std::regex_constants::ECMAScript | std::regex_constants::optimize);
-
-    std::smatch matches;
-    std::string cppStr(stringData);
-
-    std::string sub(cppStr.substr(0, 100));
-
-    if (std::regex_search(cppStr, matches, versionRegex)) {
-        // Does not match supported version
-        if (matches.size() >= 1) {
-
-            // match group is index 1 because we're matching for (2.x.x)
-            auto badVersion = matches[1].str();
-            DEBUG("Performing fixup for version {}", badVersion);
-
-            // mutates the string does not copy
-            cppStr.replace(matches[1].first, matches[1].second, "2.0.0");
-
-            original = StandardLevelInfoSaveData_DeserializeFromJSONString(
-                StringW(cppStr));
-        }
-    }
-
-    if (!original || !original.ptr()) {
-        DEBUG("No fixup performed for map version");
-        original = StandardLevelInfoSaveData_DeserializeFromJSONString(stringData);
-    }
+    SafePtr<GlobalNamespace::StandardLevelInfoSaveData> original = StandardLevelInfoSaveData_DeserializeFromJSONString(stringData);
 
     if (!original || !original.ptr()) {
         DEBUG("Orig call did not produce valid savedata!");
@@ -183,32 +121,32 @@ using namespace System::Threading;
 using namespace System::Threading::Tasks;
 using namespace System::Collections::Generic;
 
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_UpdateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::UpdateAllLoadedBeatmapLevelPacks, void, BeatmapLevelsModel* self) {
-    auto list = ListW<IBeatmapLevelPack*>::New();
-    if(self->ostAndExtrasPackCollection)
-        list.insert_range(self->ostAndExtrasPackCollection->beatmapLevelPacks);
-    if(self->_dlcLevelPackCollectionContainer && self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection)
-        list.insert_range(self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection->beatmapLevelPacks);
-    self->_allLoadedBeatmapLevelWithoutCustomLevelPackCollection = BeatmapLevelPackCollection::New_ctor(list->ToArray())->i___GlobalNamespace__IBeatmapLevelPackCollection();
-    if(self->customLevelPackCollection)
-        list.insert_range(self->customLevelPackCollection->beatmapLevelPacks);
-    self->_allLoadedBeatmapLevelPackCollection = BeatmapLevelPackCollection::New_ctor(list->ToArray())->i___GlobalNamespace__IBeatmapLevelPackCollection();
+// we return our own levels repository to which we can add packs we please
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::CreateAllLoadedBeatmapLevelPacks, BeatmapLevelsRepository*, BeatmapLevelsModel* self) {
+    auto result = BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks(self);
+
+    auto custom = SongCore::SongLoader::CustomBeatmapLevelsRepository::New_ctor();
+    for (auto pack : ArrayW<GlobalNamespace::BeatmapLevelPack*>(result->beatmapLevelPacks)) {
+        custom->AddLevelPack(pack);
+    }
+
+    return custom;
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetLevelEntitlementStatusAsync, &AdditionalContentModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
+MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetLevelEntitlementStatusAsync, &AdditionalContentModel::GetLevelEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
     if(levelId.starts_with("custom_level_"))
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
     return AdditionalContentModel_GetLevelEntitlementStatusAsync(self, levelId, cancellationToken);
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetPackEntitlementStatusAsync, &AdditionalContentModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
+MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetPackEntitlementStatusAsync, &AdditionalContentModel::GetPackEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
     if(levelPackId.starts_with("custom_levelPack_"))
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
     return AdditionalContentModel_GetPackEntitlementStatusAsync(self, levelPackId, cancellationToken);
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<IBeatmapLevelPackCollection*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
-    return Task_1<IBeatmapLevelPackCollection*>::FromResult(self->customLevelPackCollection);
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
+    return Task_1<GlobalNamespace::BeatmapLevelsRepository*>::FromResult(self->_allLoadedBeatmapLevelsRepository);
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
