@@ -6,6 +6,7 @@
 #include "UnityEngine/Vector3.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "TMPro/TMP_Text.hpp"
+#include <algorithm>
 
 MAKE_AUTO_HOOK_MATCH(
     LevelListTableCell_SetDataFromLevelAsync,
@@ -22,16 +23,28 @@ MAKE_AUTO_HOOK_MATCH(
 
     self->_songBpmText->text = std::to_string((int)level->beatsPerMinute);
     auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level);
-    if (customLevel.has_value()) {
-        self->_songAuthorText->richText = true;
-        if (!System::String::IsNullOrWhiteSpace(level->allMappers[0])) {
-            auto songAuthorName = level->songAuthorName;
-            auto levelAuthorName = level->allMappers[0];
+    self->_songAuthorText->richText = true;
 
-            auto color = "ff69b4";
+    std::vector<StringW> allAuthors;
+    allAuthors.insert(allAuthors.begin(), level->allMappers->begin(), level->allMappers.end());
+    allAuthors.insert(allAuthors.begin(), level->allLighters->begin(), level->allLighters.end());
 
-            self->_songAuthorText->text = fmt::format("<size=80%><noparse>{}</noparse></size> <size=90%>[<color=#{}><noparse>{}</noparse></color>]</size>", songAuthorName, color, levelAuthorName);
+    if (!allAuthors.empty()) {
+        for (auto& author : allAuthors) {
+            author = author->Replace(u"<", u"<\u200B")->Replace(u">", u"\u200B>");
         }
+
+        auto songAuthorName = level->songAuthorName;
+        std::stringstream levelAuthors;
+        levelAuthors << std::string(allAuthors.front());
+        for (auto itr = std::next(allAuthors.begin()); itr != allAuthors.end(); itr++) {
+            levelAuthors << ", " << static_cast<std::string>(*itr);
+        }
+        auto levelAuthorName = levelAuthors.str();
+
+        auto color = "ff69b4";
+
+        self->_songAuthorText->text = fmt::format("<size=80%>{}</size> <size=90%>[<color=#{}>{}</color>]</size>", songAuthorName, color, levelAuthorName);
     }
 
     if (isFavorite) {
