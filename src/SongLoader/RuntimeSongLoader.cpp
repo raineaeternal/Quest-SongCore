@@ -305,7 +305,7 @@ namespace SongCore::SongLoader {
                     auto saveData = _levelLoader->GetStandardSaveData(levelPath);
                     if (saveData) {
                         std::string hash;
-                        level = _levelLoader->LoadCustomBeatmapLevel(levelPath.string(), isWip, saveData, hash);
+                        level = _levelLoader->LoadCustomBeatmapLevel(levelPath, isWip, saveData, hash);
                     }
                 }
 
@@ -327,8 +327,7 @@ namespace SongCore::SongLoader {
                 // update progress
                 _loadedSongs++;
             } catch (std::exception const& e) {
-                ERROR("Caught exception of type {} while loading song @ path '{}', song will be skipped!", typeid(e).name(), levelPath.string());
-                ERROR("Exception what: {}", e.what());
+                ERROR("Caught exception of type {} while loading song @ path '{}', song will be skipped! what: {}", typeid(e).name(), levelPath.string(), e.what());
             } catch (...) {
                 ERROR("Caught exception of unknown type (current_exception typeid: {}) while loading song @ path '{}', song will be skipped!", typeid(std::current_exception()).name(), levelPath.string());
             }
@@ -336,6 +335,10 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::RefreshLevelPacks() {
+        auto allLoaded = il2cpp_utils::cast<SongLoader::CustomBeatmapLevelsRepository>(_beatmapLevelsModel->_allLoadedBeatmapLevelsRepository);
+        for (auto pack : _customBeatmapLevelsRepository->BeatmapLevelPacks) {
+            allLoaded->RemoveLevelPack(pack);
+        }
         _customBeatmapLevelsRepository->ClearLevelPacks();
 
         _customBeatmapLevelsRepository->AddLevelPack(_customLevelPack);
@@ -343,8 +346,9 @@ namespace SongCore::SongLoader {
 
         InvokeCustomLevelPacksWillRefresh(_customBeatmapLevelsRepository);
 
-        // FIXME: set this somewhere?
-        // _beatmapLevelsModel->_customLevelPackCollection = _customLevelPackCollection->i___GlobalNamespace__IBeatmapLevelPackCollection();
+        for (auto pack : _customBeatmapLevelsRepository->BeatmapLevelPacks) {
+            allLoaded->AddLevelPack(pack);
+        }
         _beatmapLevelsModel->UpdateLoadedPreviewLevels();
 
         InvokeCustomLevelPacksRefreshed(_customBeatmapLevelsRepository);
