@@ -125,6 +125,7 @@ namespace SongCore::UI {
 
         if (_runtimeSongLoader->AreSongsLoaded) {
             RuntimeSongLoaderOnSongLoaded(_runtimeSongLoader->AllLevels);
+        } else if (_runtimeSongLoader->AreSongsRefreshing) {
             RuntimeSongLoaderOnSongRefresh();
         }
     }
