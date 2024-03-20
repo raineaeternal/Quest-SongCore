@@ -8,11 +8,15 @@
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
 #include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
 
-#include "GlobalNamespace/AdditionalContentModel.hpp"
+#include "GlobalNamespace/OculusPlatformAdditionalContentModel.hpp"
 #include "GlobalNamespace/BeatmapLevelsModel.hpp"
+#include "GlobalNamespace/BeatmapLevelLoader.hpp"
+#include "GlobalNamespace/BeatmapLevelDataLoader.hpp"
 #include "GlobalNamespace/FileHelpers.hpp"
 #include "SongLoader/CustomBeatmapLevelsRepository.hpp"
 #include "System/Threading/Tasks/Task_1.hpp"
+#include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
+#include "System/Collections/Generic/IReadOnlyList_1.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
 
 #include <regex>
@@ -126,23 +130,34 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &
     auto result = BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks(self);
 
     auto custom = SongCore::SongLoader::CustomBeatmapLevelsRepository::New_ctor();
-    for (auto pack : ArrayW<GlobalNamespace::BeatmapLevelPack*>(result->beatmapLevelPacks)) {
-        custom->AddLevelPack(pack);
+    auto levelPacks = result->beatmapLevelPacks;
+    auto packCount = levelPacks->i___System__Collections__Generic__IReadOnlyCollection_1_T_()->Count;
+    for (int i = 0; i < packCount; i++) {
+        custom->AddLevelPack(levelPacks->get_Item(i));
     }
 
     return custom;
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetLevelEntitlementStatusAsync, &AdditionalContentModel::GetLevelEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
-    if(levelId.starts_with("custom_level_"))
-        return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
-    return AdditionalContentModel_GetLevelEntitlementStatusAsync(self, levelId, cancellationToken);
+// hook to ensure a beatmaps data is actually fully unloaded
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelLoader_HandleItemWillBeRemovedFromCache, &BeatmapLevelLoader::HandleItemWillBeRemovedFromCache, void, BeatmapLevelLoader* self, StringW beatmapLevelId, IBeatmapLevelData* beatmapLevel) {
+    DEBUG("BeatmapLevelLoader_HandleItemWillBeRemovedFromCache");
+    BeatmapLevelLoader_HandleItemWillBeRemovedFromCache(self, beatmapLevelId, beatmapLevel);
+
+    if (beatmapLevelId.starts_with(u"custom_level_"))
+        self->_beatmapLevelDataLoader->TryUnload(beatmapLevelId);
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetPackEntitlementStatusAsync, &AdditionalContentModel::GetPackEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
+MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetLevelEntitlementStatusInternalAsync, &OculusPlatformAdditionalContentModel::GetLevelEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, OculusPlatformAdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
+    if(levelId.starts_with("custom_level_"))
+        return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
+    return OculusPlatformAdditionalContentModel_GetLevelEntitlementStatusInternalAsync(self, levelId, cancellationToken);
+}
+
+MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetPackEntitlementStatusInternalAsync, &OculusPlatformAdditionalContentModel::GetPackEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, OculusPlatformAdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
     if(levelPackId.starts_with("custom_levelPack_"))
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
-    return AdditionalContentModel_GetPackEntitlementStatusAsync(self, levelPackId, cancellationToken);
+    return OculusPlatformAdditionalContentModel_GetPackEntitlementStatusInternalAsync(self, levelPackId, cancellationToken);
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
