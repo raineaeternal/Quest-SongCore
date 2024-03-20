@@ -61,8 +61,7 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
                 if (sliderData->sliderType == GlobalNamespace::SliderData::Type::Burst) {
                     noteData->ChangeToBurstSliderHead();
                 } else {
-                    // FIXME: what does base game do here now?
-                    noteData->ChangeToSliderHead();
+                    noteData->MarkAsSliderHead();
                 }
             }
         }
@@ -106,8 +105,7 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
             if (GlobalNamespace::BeatmapObjectsInTimeRowProcessor::SliderTailPositionOverlapsWithNote(slider, noteData)) {
                 slider->SetHasTailNote(true);
                 slider->SetTailBeforeJumpLineLayer(noteData->beforeJumpNoteLineLayer);
-                // FIXME: what does base game do here now?
-                noteData->ChangeToSliderTail();
+                noteData->MarkAsSliderTail();
             }
         }
     }
