@@ -16,8 +16,7 @@
 #include "GlobalNamespace/StandardLevelDetailViewController.hpp"
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 #include "GlobalNamespace/LevelSelectionNavigationController.hpp"
-#include "GlobalNamespace/CustomBeatmapLevel.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, PlayButtonsUpdater, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
     DECLARE_CTOR(ctor, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect);
@@ -25,9 +24,6 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, PlayButtonsUpdater, System::Objec
     DECLARE_INSTANCE_FIELD_PRIVATE(PlayButtonInteractable*, _playButtonInteractable);
     DECLARE_INSTANCE_FIELD_PRIVATE(Capabilities*, _capabilities);
     DECLARE_INSTANCE_FIELD_PRIVATE(LevelSelect*, _levelSelect);
-
-    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::CustomBeatmapLevel*, _lastSelectedCustomLevel);
-    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::IDifficultyBeatmap*, _lastSelectedDifficultyBeatmap);
 
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::UI::Button*, _playButton);
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::UI::Button*, _practiceButton);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SongLoader/CustomBeatmapLevelsRepository.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "System/Object.hpp"
 #include "System/IDisposable.hpp"
@@ -20,5 +21,5 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdat
     DECLARE_CTOR(ctor, RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::LevelFilteringNavigationController* levelFilteringNavigationController, GlobalNamespace::LevelCollectionViewController* levelCollectionViewController);
 
     private:
-        void CustomLevelPacksRefreshed(CustomBeatmapLevelPackCollection* collection);
+        void CustomLevelPacksRefreshed(CustomBeatmapLevelsRepository* levelsRepository);
 )

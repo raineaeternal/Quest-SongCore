@@ -1,6 +1,7 @@
 #include "SongLoader/NavigationControllerUpdater.hpp"
 
 #include "GlobalNamespace/LevelCollectionTableView.hpp"
+#include "SongLoader/CustomBeatmapLevelsRepository.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "logging.hpp"
 
@@ -15,19 +16,19 @@ namespace SongCore::SongLoader {
 
     void NavigationControllerUpdater::Initialize() {
         _runtimeSongLoader->CustomLevelPacksRefreshed += {&NavigationControllerUpdater::CustomLevelPacksRefreshed, this};
-        if (_runtimeSongLoader->AreSongsLoaded) CustomLevelPacksRefreshed(_runtimeSongLoader->CustomBeatmapLevelPackCollection);
+        if (_runtimeSongLoader->AreSongsLoaded) CustomLevelPacksRefreshed(_runtimeSongLoader->CustomBeatmapLevelsRepository);
     }
 
     void NavigationControllerUpdater::Dispose() {
         _runtimeSongLoader->CustomLevelPacksRefreshed -= {&NavigationControllerUpdater::CustomLevelPacksRefreshed, this};
     }
 
-    void NavigationControllerUpdater::CustomLevelPacksRefreshed(CustomBeatmapLevelPackCollection* collection) {
+    void NavigationControllerUpdater::CustomLevelPacksRefreshed(CustomBeatmapLevelsRepository* collection) {
         INFO("Updating levelFilteringNavigationController");
 
         // get the selected level to keep the selection after the songs update
         auto tableView = _levelCollectionViewController->_levelCollectionTableView;
-        auto selectedLevel = tableView->_selectedPreviewBeatmapLevel;
+        auto selectedLevel = tableView->_selectedBeatmapLevel;
         _levelFilteringNavigationController->UpdateCustomSongs();
         if (selectedLevel) { // if no level, don't keep selection
             tableView->SelectLevel(selectedLevel);

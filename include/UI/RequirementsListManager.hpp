@@ -7,9 +7,7 @@
 #include "UnityEngine/UI/Button.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "GlobalNamespace/StandardLevelDetailViewController.hpp"
-#include "GlobalNamespace/CustomBeatmapLevel.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
-#include "GlobalNamespace/IBeatmapLevel.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 
 #include "LevelSelect.hpp"
 #include "Capabilities.hpp"

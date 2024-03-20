@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SongLoader/CustomBeatmapLevel.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "lapiz/shared/macros.hpp"
@@ -68,7 +69,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     void ShowMessage(std::string message);
 
     void RuntimeSongLoaderOnSongRefresh();
-    void RuntimeSongLoaderOnSongLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> customLevels);
+    void RuntimeSongLoaderOnSongLoaded(std::span<SongLoader::CustomBeatmapLevel* const> customLevels);
     void ShowCanvasForSeconds(float time);
     void HideCanvas();
     void UpdateLoadingBarColor();

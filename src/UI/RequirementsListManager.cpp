@@ -2,8 +2,6 @@
 
 #include "CustomJSONData.hpp"
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
-#include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
-#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/RectTransform.hpp"
@@ -107,7 +105,7 @@ namespace SongCore::UI {
             cell->subText = contributor.role;
             UnityEngine::Sprite* icon = nullptr;
             if (!contributor.iconPath.empty()) {
-                std::filesystem::path levelPath(eventArgs.customPreviewBeatmapLevel->customLevelPath);
+                std::filesystem::path levelPath(eventArgs.customBeatmapLevel->customLevelPath);
                 icon = _iconCache->GetIconForPath(levelPath / contributor.iconPath);
             }
             cell->icon = icon ? icon : _iconCache->InfoIcon;
@@ -197,7 +195,7 @@ namespace SongCore::UI {
 
             auto cell = GetCellInfo();
             cell->text = EnvironmentInfo;
-            cell->subText = eventArgs.previewBeatmapLevel->environmentInfo->environmentName;
+            cell->subText = eventArgs.customBeatmapLevel->GetEnvironmentName(eventArgs.beatmapKey.beatmapCharacteristic, eventArgs.beatmapKey.difficulty)._environmentName;
             cell->icon = _iconCache->EnvironmentIcon;
             _requirementsCells.push_back(cell);
         }

@@ -1,4 +1,5 @@
 #include "UI/ProgressBar.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "bsml/shared/BSML-Lite.hpp"
 #include "UnityEngine/Texture2D.hpp"
@@ -157,7 +158,7 @@ namespace SongCore::UI {
         _canvasDisplayTimer = std::nullopt;
     }
 
-    void ProgressBar::RuntimeSongLoaderOnSongLoaded(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> customLevels) {
+    void ProgressBar::RuntimeSongLoaderOnSongLoaded(std::span<SongLoader::CustomBeatmapLevel* const> customLevels) {
         _showingMessage = true;
         std::string songOrSongs = customLevels.size() == 1 ? "song" : "songs";
         _headerText->text = fmt::format("{} {} loaded", customLevels.size(), songOrSongs);

@@ -3,10 +3,6 @@
 #include "LevelSelect.hpp"
 #include "logging.hpp"
 
-#include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
-#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
-#include "GlobalNamespace/BeatmapDifficulty.hpp"
-
 #include "bsml/shared/Helpers/delegates.hpp"
 #include <string_view>
 
