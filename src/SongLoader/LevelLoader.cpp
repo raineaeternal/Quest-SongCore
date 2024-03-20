@@ -177,11 +177,12 @@ namespace SongCore::SongLoader {
         auto difficultyBeatmapSetDatas = saveData->difficultyBeatmapSets;
         for (auto beatmapSetData : difficultyBeatmapSetDatas) {
             auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(beatmapSetData->beatmapCharacteristicName);
-            if (characteristic) {
+            if (!characteristic) continue;
+
             for (auto diffData : beatmapSetData->difficultyBeatmaps) {
                     GlobalNamespace::BeatmapDifficulty diff;
                     GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
-                        diffData,
+                        diffData->difficulty,
                         byref(diff)
                     );
 
@@ -199,7 +200,6 @@ namespace SongCore::SongLoader {
                         )
                     );
                 }
-            }
         }
 
         return GlobalNamespace::FileSystemBeatmapLevelData::New_ctor(
@@ -232,7 +232,7 @@ namespace SongCore::SongLoader {
                 for (auto diffData : beatmapSetData->difficultyBeatmaps) {
                     GlobalNamespace::BeatmapDifficulty diff;
                     GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
-                        diffData,
+                        diffData->difficulty,
                         byref(diff)
                     );
 
