@@ -215,7 +215,7 @@ namespace SongCore::SongLoader {
             _cachedMediaAsyncLoader->i___GlobalNamespace__ISpriteAsyncLoader(),
             GlobalNamespace::AudioClipAsyncLoader::CreateDefault(),
             levelPath.string(),
-            (levelPath / std::string(saveData->coverImageFilename)).string(),
+            saveData->coverImageFilename,
             saveData->songFilename
         );
     }
