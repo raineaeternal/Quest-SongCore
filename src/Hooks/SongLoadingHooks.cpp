@@ -2,10 +2,13 @@
 #include "logging.hpp"
 
 #include "CustomJSONData.hpp"
+#include "SongCore.hpp"
+
 #include "UnityEngine/Object.hpp"
 #include "System/Version.hpp"
 #include "GlobalNamespace/BeatmapSaveDataHelpers.hpp"
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
+#include "GlobalNamespace/LevelFilteringNavigationController.hpp"
 #include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
 
 #include "GlobalNamespace/OculusPlatformAdditionalContentModel.hpp"
@@ -171,4 +174,34 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
     StringW fileName = UnityEngine::Networking::UnityWebRequest::EscapeURL(str.substr(index, str.size()));
     std::replace(fileName.begin(), fileName.end(), u'+', u' '); // '+' breaks stuff even though it's supposed to be valid encoding ¯\_(ツ)_/¯
     return u"file://" + dir + fileName;
+}
+
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
+    if (levelID.starts_with(u"custom_level_")) {
+        auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+        auto data = level->beatmapLevelData;
+        if (data) {
+            return Task_1<LoadBeatmapLevelDataResult>::New_ctor(LoadBeatmapLevelDataResult::Success(data));
+        }
+    }
+
+    return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, token);
+}
+
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
+    if (levelID.starts_with(u"custom_level_")) {
+        auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+        return Task_1<bool>::New_ctor(level->beatmapLevelData != nullptr);
+    }
+
+    return BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync(self, levelID, token);
+}
+
+MAKE_AUTO_HOOK_MATCH(LevelFilteringNavigationController_UpdateSecondChildControllerContent, &LevelFilteringNavigationController::UpdateSecondChildControllerContent, void, LevelFilteringNavigationController* self, SelectLevelCategoryViewController::LevelCategory levelCategory) {
+    auto repository = SongCore::API::Loading::GetCustomBeatmapLevelsRepository();
+    if (repository) {
+        self->_customLevelPacks = repository->beatmapLevelPacks;
+    }
+
+    LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
 }
