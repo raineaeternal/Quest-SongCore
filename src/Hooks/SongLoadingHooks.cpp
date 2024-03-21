@@ -215,12 +215,3 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &
 
     return BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync(self, levelID, token);
 }
-
-MAKE_AUTO_HOOK_MATCH(LevelFilteringNavigationController_UpdateSecondChildControllerContent, &LevelFilteringNavigationController::UpdateSecondChildControllerContent, void, LevelFilteringNavigationController* self, SelectLevelCategoryViewController::LevelCategory levelCategory) {
-    auto repository = SongCore::API::Loading::GetCustomBeatmapLevelsRepository();
-    if (repository) {
-        self->_customLevelPacks = repository->beatmapLevelPacks;
-    }
-
-    LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
-}
