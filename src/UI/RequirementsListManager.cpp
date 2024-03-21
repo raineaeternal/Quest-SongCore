@@ -223,6 +223,7 @@ namespace SongCore::UI {
         cell->text = fmt::format("Play button disabled");
         cell->icon = _iconCache->WarningIcon;
         cell->subText = "The following mods are responsible:";
+        _disablingModInfoCells.push_back(cell);
 
         for (auto& modInfo : disablingModInfos) {
             static auto NoReason = ConstString("No reason given");
@@ -230,6 +231,7 @@ namespace SongCore::UI {
             cell->text = modInfo.modID;
             cell->icon = _iconCache->WarningIcon;
             cell->subText = modInfo.reason.empty() ? NoReason : StringW(modInfo.reason);
+            _disablingModInfoCells.push_back(cell);
         }
     }
 
