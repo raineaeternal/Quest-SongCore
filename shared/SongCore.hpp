@@ -229,7 +229,7 @@ namespace SongCore::API {
             /// @brief if this is a custom level, this should be set
             std::optional<BasicCustomLevelDetailsGroup> customLevelDetails = std::nullopt;
 
-            /// @brief the selected levelpack, may or may not be a custom pack
+            /// @brief the selected levelpack, may or may not be a custom pack, can be null in favorites & search views!
             union {
                 SongCore::SongLoader::CustomLevelPack* customLevelPack = nullptr;
                 GlobalNamespace::BeatmapLevelPack* levelPack;

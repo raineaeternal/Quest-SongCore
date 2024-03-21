@@ -58,8 +58,8 @@ namespace SongCore {
         eventArgs.beatmapKey = GetSelectedBeatmapKey();
         eventArgs.isCustom = false;
 
-        // if anything isn't set, early return because the selection performed was invalid
-        if (!eventArgs.levelPack) return;
+        // if no beatmap level selected, return
+        if (!eventArgs.beatmapKey.beatmapCharacteristic) return;
         if (!eventArgs.beatmapLevel) return;
 
         eventArgs.levelID = static_cast<std::string>(eventArgs.beatmapKey.levelId);
