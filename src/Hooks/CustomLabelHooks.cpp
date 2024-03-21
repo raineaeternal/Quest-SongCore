@@ -70,6 +70,27 @@ MAKE_AUTO_HOOK_MATCH(
     SetCustomDifficultyLabels(self->_beatmapDifficultySegmentedControlController, customLevel, self->beatmapKey);
 }
 
+// after characteristic is selected, we need to update the diff labels again
+MAKE_AUTO_HOOK_MATCH(
+    StandardLevelDetailView_HandleBeatmapCharacteristicSegmentedControlControllerDidSelectBeatmapCharacteristic,
+    &GlobalNamespace::StandardLevelDetailView::HandleBeatmapCharacteristicSegmentedControlControllerDidSelectBeatmapCharacteristic,
+    void,
+    GlobalNamespace::StandardLevelDetailView* self,
+    GlobalNamespace::BeatmapCharacteristicSegmentedControlController* controller,
+    GlobalNamespace::BeatmapCharacteristicSO* beatmapCharacteristic
+) {
+    StandardLevelDetailView_HandleBeatmapCharacteristicSegmentedControlControllerDidSelectBeatmapCharacteristic(
+        self,
+        controller,
+        beatmapCharacteristic
+    );
+
+    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(self->_beatmapLevel).value_or(nullptr);
+    if (!customLevel) return;
+
+    SetCustomDifficultyLabels(self->_beatmapDifficultySegmentedControlController, customLevel, self->beatmapKey);
+}
+
 void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegmentedControlController* self, SongCore::SongLoader::CustomBeatmapLevel* customLevel) {
     auto saveData = customLevel->standardLevelInfoSaveData;
     if (!saveData) return;
