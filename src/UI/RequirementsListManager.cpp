@@ -44,11 +44,14 @@ namespace SongCore::UI {
         _levelSelect->LevelWasSelected += {&RequirementsListManager::LevelWasSelected, this};
         _playButtonInteractable->PlayButtonDisablingModsChanged += {&RequirementsListManager::PlayButtonDisablingModsChanged, this};
         auto levelDetailView = _levelDetailViewController->_standardLevelDetailView;
-        BSML::parse_and_construct("<bg><action-button id='_requirementButton' text='?' anchor-pos-x='31' anchor-pos-y='0' pref-width='12' pref-height='9' on-click='ShowRequirements'/></bg>", levelDetailView->transform, this);
+        auto toggleRect = levelDetailView->_favoriteToggle->transform.cast<UnityEngine::RectTransform>();
+
+        BSML::parse_and_construct("<bg><action-button id='_requirementButton' text='?' anchor-pos-x='43' anchor-pos-y='10' pref-width='12' pref-height='9' on-click='ShowRequirements'/></bg>", toggleRect->parent, this);
         _requirementButton->transform->parent->localScale *= 0.7f;
         _colorsOptions->onModalHide = std::bind(&RequirementsListManager::ShowRequirements, this);
 
-        levelDetailView->_favoriteToggle->transform.cast<UnityEngine::RectTransform>()->anchoredPosition = {3, -2};
+        toggleRect->anchoredPosition = {3, -8};
+        toggleRect->sizeDelta = {10, 5};
 
         PlayButtonDisablingModsChanged(_playButtonInteractable->PlayButtonDisablingModInfos);
     }
