@@ -23,55 +23,69 @@ static inline UnityEngine::Vector3 operator*(UnityEngine::Vector3 vec, float v) 
 }
 
 namespace SongCore::UI {
-    void RequirementsListManager::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, ColorsOptions* colorsOptions, Capabilities* capabilities, LevelSelect* levelSelect, IconCache* iconCache) {
+    void RequirementsListManager::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, ColorsOptions* colorsOptions, Capabilities* capabilities, LevelSelect* levelSelect, PlayButtonInteractable* playButtonInteractable, IconCache* iconCache) {
         INVOKE_CTOR();
         _levelDetailViewController = levelDetailViewController;
         _colorsOptions = colorsOptions;
         _capabilities = capabilities;
         _levelSelect = levelSelect;
+        _playButtonInteractable = playButtonInteractable;
         _iconCache = iconCache;
 
-        _requirementsCells = ListW<BSML::CustomCellInfo*>::New();
-        _unusedRequirementCells = ListW<BSML::CustomCellInfo*>::New();
+        _displayCells = ListW<BSML::CustomCellInfo*>::New();
+        _levelInfoCells = ListW<BSML::CustomCellInfo*>::New();
+        _disablingModInfoCells = ListW<BSML::CustomCellInfo*>::New();
+        _unusedCells = ListW<BSML::CustomCellInfo*>::New();
+
         _showColorsOnModalHideAction = BSML::MakeSystemAction<>(std::bind(&RequirementsListManager::ShowColorsOptions, this));
     }
 
     void RequirementsListManager::Initialize() {
         _levelSelect->LevelWasSelected += {&RequirementsListManager::LevelWasSelected, this};
-
+        _playButtonInteractable->PlayButtonDisablingModsChanged += {&RequirementsListManager::PlayButtonDisablingModsChanged, this};
         auto levelDetailView = _levelDetailViewController->_standardLevelDetailView;
         BSML::parse_and_construct("<bg><action-button id='_requirementButton' text='?' anchor-pos-x='31' anchor-pos-y='0' pref-width='12' pref-height='9' on-click='ShowRequirements'/></bg>", levelDetailView->transform, this);
         _requirementButton->transform->parent->localScale *= 0.7f;
         _colorsOptions->onModalHide = std::bind(&RequirementsListManager::ShowRequirements, this);
 
         levelDetailView->_favoriteToggle->transform.cast<UnityEngine::RectTransform>()->anchoredPosition = {3, -2};
+
+        PlayButtonDisablingModsChanged(_playButtonInteractable->PlayButtonDisablingModInfos);
     }
 
     void RequirementsListManager::Dispose() {
         _levelSelect->LevelWasSelected -= {&RequirementsListManager::LevelWasSelected, this};
+        _playButtonInteractable->PlayButtonDisablingModsChanged -= {&RequirementsListManager::PlayButtonDisablingModsChanged, this};
     }
 
     void RequirementsListManager::UpdateRequirementButton() {
-        _requirementButton->gameObject->SetActive(!_requirementsCells.empty());
+        _requirementButton->gameObject->SetActive(!_displayCells.empty());
     }
 
     BSML::CustomCellInfo* RequirementsListManager::GetCellInfo() {
-        if (_unusedRequirementCells.empty()) return BSML::CustomCellInfo::New_ctor();
+        if (_unusedCells.empty()) return BSML::CustomCellInfo::New_ctor();
 
-        auto lastIdx = _unusedRequirementCells.size() - 1;
-        auto last = _unusedRequirementCells[lastIdx];
-        _unusedRequirementCells->Remove(last);
+        auto lastIdx = _unusedCells.size() - 1;
+        auto last = _unusedCells[lastIdx];
+        _unusedCells->Remove(last);
         return last;
     }
 
-    void RequirementsListManager::ClearRequirementCells() {
-        for (auto cellInfo : _requirementsCells) _unusedRequirementCells->Add(cellInfo);
-        _requirementsCells->Clear();
+    void RequirementsListManager::ClearCells(ListW<BSML::CustomCellInfo*> list) {
+        for (auto cellInfo : list) _unusedCells->Add(cellInfo);
+        list->Clear();
     }
+
+    void RequirementsListManager::UpdateDisplayCells() {
+        _displayCells.clear();
+        _displayCells.insert_range(_levelInfoCells);
+        _displayCells.insert_range(_disablingModInfoCells);
+    }
+
 
     void RequirementsListManager::UpdateRequirementCells(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
         DEBUG("Updating requirement cells");
-        ClearRequirementCells();
+        ClearCells(_levelInfoCells);
 
         if (!eventArgs.isCustom) {
             DEBUG("Last selected level was not custom! returning...");
@@ -96,7 +110,7 @@ namespace SongCore::UI {
             cell->text = fmt::format("<size=75%>{}", requirement);
             cell->subText = installed ? RequirementFound : RequirementMissing;
             cell->icon = installed ? _iconCache->HaveReqIcon : _iconCache->MissingReqIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
         }
 
         for (auto& contributor : levelDetails.contributors) {
@@ -109,7 +123,7 @@ namespace SongCore::UI {
                 icon = _iconCache->GetIconForPath(levelPath / contributor.iconPath);
             }
             cell->icon = icon ? icon : _iconCache->InfoIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
         }
 
         if (eventArgs.isWIP) {
@@ -120,7 +134,7 @@ namespace SongCore::UI {
             cell->text = WipText;
             cell->subText = WipSubText;
             cell->icon = _iconCache->WarningIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
         }
 
         if (diffDetails.customColors.has_value()) {
@@ -131,7 +145,7 @@ namespace SongCore::UI {
             cell->text = CustomColorsText;
             cell->subText = CustomColorsSubText;
             cell->icon = _iconCache->ColorsIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
 
             _colorsOptions->Parse();
             _colorsOptions->SetColors(diffDetails.customColors.value());
@@ -144,7 +158,7 @@ namespace SongCore::UI {
             cell->text = fmt::format("<size=75%>{}", warning);
             cell->subText = Warning;
             cell->icon = _iconCache->WarningIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
         }
 
         for (auto& information : diffDetails.information) {
@@ -154,7 +168,7 @@ namespace SongCore::UI {
             cell->text = fmt::format("<size=75%>{}", information);
             cell->subText = Info;
             cell->icon = _iconCache->InfoIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
         }
 
         for (auto& suggestion : diffDetails.suggestions) {
@@ -166,7 +180,7 @@ namespace SongCore::UI {
             cell->text = suggestion;
             cell->subText = installed ? SuggestionFound : SuggestionMissing;
             cell->icon = installed ? _iconCache->HaveSuggestionIcon : _iconCache->MissingSuggestionIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
         }
 
         if (diffDetails.oneSaber.has_value()) {
@@ -186,18 +200,36 @@ namespace SongCore::UI {
             cell->text = fmt::format("<size=75%>{} {}", saberCountText, enabledText);
             cell->subText = fmt::format("Map changes saber count, click here to {}", enableSubText);
             cell->icon = oneSaber ? _iconCache->OneSaberIcon : _iconCache->StandardIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
         }
 
         // add environment info here if list isn't empty
-        if (!_requirementsCells.empty()) {
+        if (!_levelInfoCells.empty()) {
             static ConstString EnvironmentInfo("<size=75%>Environment");
 
             auto cell = GetCellInfo();
             cell->text = EnvironmentInfo;
             cell->subText = eventArgs.customBeatmapLevel->GetEnvironmentName(eventArgs.beatmapKey.beatmapCharacteristic, eventArgs.beatmapKey.difficulty)._environmentName;
             cell->icon = _iconCache->EnvironmentIcon;
-            _requirementsCells.push_back(cell);
+            _levelInfoCells.push_back(cell);
+        }
+    }
+
+    void RequirementsListManager::UpdateDisablingModInfoCells(std::span<PlayButtonInteractable::PlayButtonDisablingModInfo const> disablingModInfos) {
+        ClearCells(_disablingModInfoCells);
+        if (disablingModInfos.empty()) return;
+
+        auto cell = GetCellInfo();
+        cell->text = fmt::format("Play button disabled");
+        cell->icon = _iconCache->WarningIcon;
+        cell->subText = "The following mods are responsible:";
+
+        for (auto& modInfo : disablingModInfos) {
+            static auto NoReason = ConstString("No reason given");
+            auto cell = GetCellInfo();
+            cell->text = modInfo.modID;
+            cell->icon = _iconCache->WarningIcon;
+            cell->subText = modInfo.reason.empty() ? NoReason : StringW(modInfo.reason);
         }
     }
 
@@ -218,7 +250,7 @@ namespace SongCore::UI {
     }
 
     void RequirementsListManager::RequirementCellSelected(HMUI::TableView* tableView, int cellIndex) {
-        auto cell = _requirementsCells[cellIndex];
+        auto cell = _displayCells[cellIndex];
         auto selectedIcon = cell->icon;
 
         if (selectedIcon == _iconCache->ColorsIcon) {
@@ -233,10 +265,17 @@ namespace SongCore::UI {
 
     void RequirementsListManager::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
         UpdateRequirementCells(eventArgs);
+        UpdateDisplayCells();
+        UpdateRequirementButton();
+    }
+
+    void RequirementsListManager::PlayButtonDisablingModsChanged(std::span<PlayButtonInteractable::PlayButtonDisablingModInfo const> disablingModInfos) {
+        UpdateDisablingModInfoCells(disablingModInfos);
+        UpdateDisplayCells();
         UpdateRequirementButton();
     }
 
     ListW<BSML::CustomCellInfo*> RequirementsListManager::get_requirementsCells() {
-        return _requirementsCells;
+        return _displayCells;
     }
 }
