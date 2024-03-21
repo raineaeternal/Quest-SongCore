@@ -15,6 +15,7 @@
 #include "GlobalNamespace/FileSystemPreviewMediaData.hpp"
 #include "GlobalNamespace/FileSystemBeatmapLevelData.hpp"
 #include "GlobalNamespace/FileDifficultyBeatmap.hpp"
+#include "GlobalNamespace/AudioClipAsyncLoader.hpp"
 #include "System/ValueTuple_2.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
 #include <filesystem>
@@ -25,6 +26,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapCharacteristicCollection*, _beatmapCharacteristicCollection);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::AdditionalContentModel*, _additionalContentModel);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::EnvironmentsListModel*, _environmentsListModel);
+    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::AudioClipAsyncLoader*, _clipLoader);
 
     public:
         /// @brief gets the savedata from the path
