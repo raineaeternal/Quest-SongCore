@@ -21,14 +21,14 @@ namespace SongCore::UI {
         _practiceButton = _levelDetailViewController->_standardLevelDetailView->practiceButton;
         _anyDisablingModInfos = !_playButtonInteractable->PlayButtonDisablingModInfos.empty();
 
-        _playButtonInteractable->PlayButtonDisablingModsChanged += {&PlayButtonsUpdater::HandleDisablingModInfosChanged};
+        _playButtonInteractable->PlayButtonDisablingModsChanged += {&PlayButtonsUpdater::HandleDisablingModInfosChanged, this};
         _levelSelect->LevelWasSelected += {&PlayButtonsUpdater::LevelWasSelected, this};
 
         HandleDisablingModInfosChanged(_playButtonInteractable->PlayButtonDisablingModInfos);
     }
 
     void PlayButtonsUpdater::Dispose() {
-        _playButtonInteractable->PlayButtonDisablingModsChanged -= {&PlayButtonsUpdater::HandleDisablingModInfosChanged};
+        _playButtonInteractable->PlayButtonDisablingModsChanged -= {&PlayButtonsUpdater::HandleDisablingModInfosChanged, this};
         _levelSelect->LevelWasSelected -= {&PlayButtonsUpdater::LevelWasSelected, this};
     }
 
