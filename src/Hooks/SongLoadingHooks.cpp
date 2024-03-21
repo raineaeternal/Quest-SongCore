@@ -128,7 +128,6 @@ using namespace GlobalNamespace;
 using namespace System::Threading;
 using namespace System::Threading::Tasks;
 using namespace System::Collections::Generic;
-using namespace BeatmapSaveDataVersion3;
 
 // we return our own levels repository to which we can add packs we please
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::CreateAllLoadedBeatmapLevelPacks, BeatmapLevelsRepository*, BeatmapLevelsModel* self) {
