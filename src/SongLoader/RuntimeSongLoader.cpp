@@ -240,12 +240,31 @@ namespace SongCore::SongLoader {
         _customWIPLevelPack->SetLevels(customWIPLevelValues);
         _customWIPLevelPack->SortLevels();
 
-        _allLoadedLevels.clear();
-        _allLoadedLevels.reserve(actualCount);
+        {
+            std::vector<CustomBeatmapLevel*> allLevels;
+            allLevels.reserve(actualCount);
 
-        // insert wip levels before other loaded levels
-        _allLoadedLevels.insert(_allLoadedLevels.begin(), customWIPLevelValues.begin(), customWIPLevelValues.end());
-        _allLoadedLevels.insert(_allLoadedLevels.begin(), customLevelValues.begin(), customLevelValues.end());
+            // insert wip levels before other loaded levels
+            allLevels.insert(allLevels.begin(), customWIPLevelValues.begin(), customWIPLevelValues.end());
+            allLevels.insert(allLevels.begin(), customLevelValues.begin(), customLevelValues.end());
+
+            std::unordered_map<std::string, CustomBeatmapLevel*> levelIdsToLevels;
+            std::unordered_map<std::string, CustomBeatmapLevel*> hashesToLevels;
+            levelIdsToLevels.reserve(actualCount);
+            hashesToLevels.reserve(actualCount);
+
+            for (auto const level : allLevels) {
+                std::string levelID(level->levelID);
+                levelIdsToLevels[levelID] = level;
+                hashesToLevels[std::string(GetHashFromLevelID(levelID))] = level;
+            }
+
+            // touch collections as short as possible by using move
+            _allLoadedLevels = std::move(allLevels);
+            _levelIdsToLevels = std::move(levelIdsToLevels);
+            _hashesToLevels = std::move(hashesToLevels);
+        }
+
         INFO("Updated collections after load in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - collectionUpdateStartTime).count());
 
         _areSongsLoaded = true;
@@ -391,10 +410,9 @@ namespace SongCore::SongLoader {
 
         if (error_code) WARNING("Error occurred during removal of {}: {}", levelPath.string(), error_code.message());
         if (!targetDict->TryRemove(csPath, byref(level))) WARNING("Failed to remove beatmap for {} from dictionary!", levelPath.string());
-        // remove from loaded levels vector
-        auto itr = std::find(_allLoadedLevels.begin(), _allLoadedLevels.end(), level);
-        if (itr != _allLoadedLevels.end())
-            _allLoadedLevels.erase(itr);
+
+        // since a (soft) refresh is required after a reload, there's no need to remove from the c++ collections
+        // like _allLoadedLevels, _levelIdsToLevels, _hashesToLevels
 
         bool deletedInvoked = false;
         // let consumers of our api know a song was deleted
@@ -421,25 +439,17 @@ namespace SongCore::SongLoader {
     }
 
     CustomBeatmapLevel* RuntimeSongLoader::GetLevelByLevelID(std::string_view levelID) {
+        // check levelids map first, if not found iterate all levels
+        auto itr = _levelIdsToLevels.find(std::string(levelID));
+        if (itr != _levelIdsToLevels.end()) return itr->second;
         return GetLevelByFunction([levelID](auto level){ return level->levelID == levelID; });
     }
 
     CustomBeatmapLevel* RuntimeSongLoader::GetLevelByHash(std::string_view hash) {
-        static auto LevelIDToHash = [](StringW levelID){
-            std::u16string_view hash(levelID);
+        auto itr = _hashesToLevels.find(std::string(hash));
+        if (itr != _hashesToLevels.end()) return itr->second;
 
-            // strip prefix
-            hash = hash.substr(CUSTOM_LEVEL_PREFIX_ID.size());
-
-            // if WIP, strip that off
-            if (levelID.ends_with(u" WIP")) {
-                hash = hash.substr(0, hash.size() - 4);
-            }
-
-            return utf8::utf16to8(hash);
-        };
-
-        return GetLevelByFunction([hash](auto level){ return LevelIDToHash(level->levelID) == hash; });
+        return GetLevelByFunction([hash](auto level){ return GetHashFromLevelID(std::string(level->levelID)) == hash; });
     }
 
     CustomBeatmapLevel* RuntimeSongLoader::GetLevelByFunction(std::function<bool(CustomBeatmapLevel*)> searchFunction) {
@@ -456,6 +466,19 @@ namespace SongCore::SongLoader {
         return SongCore::API::Loading::GetPreferredCustomWIPLevelPath();
     }
 
+    std::string_view RuntimeSongLoader::GetHashFromLevelID(std::string_view levelid) {
+        if (!levelid.starts_with("custom_level_")) return levelid;
+        levelid = levelid.substr(13);
+        if (levelid.ends_with(" WIP")) levelid = levelid.substr(0, levelid.size() - 4);
+        return levelid;
+    }
+
+    std::u16string_view RuntimeSongLoader::GetHashFromLevelID(std::u16string_view levelid) {
+        if (!levelid.starts_with(u"custom_level_")) return levelid;
+        levelid = levelid.substr(13);
+        if (levelid.ends_with(u" WIP")) levelid = levelid.substr(0, levelid.size() - 4);
+        return levelid;
+    }
 
 // macro to wrap an event invoke into something that always executes on main thread. could we just check whether we are on main thread and invoke in place? sure, but where's the fun in that!
 #define EVENT_MAIN_THREAD_INVOKE_WRAPPER(event, ...) do { \

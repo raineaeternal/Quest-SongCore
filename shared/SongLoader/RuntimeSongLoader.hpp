@@ -168,6 +168,14 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         /// @param environmentsNames the names to look for
         /// @return environmentinfo array
         ArrayW<GlobalNamespace::EnvironmentInfoSO*> GetEnvironmentInfos(std::span<StringW const> environmentsNames);
+
+        /// @brief helper method to get the hash from the level id
+        /// @return string view to the hash, or the entire levelid if not a custom level
+        static std::string_view GetHashFromLevelID(std::string_view levelid);
+
+        /// @brief helper method to get the hash from the level id
+        /// @return string view to the hash, or the entire levelid if not a custom level
+        static std::u16string_view GetHashFromLevelID(std::u16string_view levelid);
     private:
         /// @brief internal struct to keep track of levelpath and wip status of a song before it got loaded
         struct LevelPathAndWip {
@@ -222,6 +230,10 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         std::atomic<bool> _areSongsLoaded;
         /// @brief all loaded levels
         std::vector<CustomBeatmapLevel*> _allLoadedLevels;
+        /// @brief collection holding the level ids to levels
+        std::unordered_map<std::string, CustomBeatmapLevel*> _levelIdsToLevels;
+        /// @brief collection holding the hashes to levels
+        std::unordered_map<std::string, CustomBeatmapLevel*> _hashesToLevels;
 
         static RuntimeSongLoader* _instance;
 
