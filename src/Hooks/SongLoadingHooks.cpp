@@ -1,3 +1,4 @@
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "hooking.hpp"
 #include "logging.hpp"
 #include "tasks.hpp"
@@ -165,8 +166,18 @@ MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetPackEntitlemen
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
-    GlobalNamespace::BeatmapLevelsRepository* customCollection = SongCore::API::Loading::GetCustomBeatmapLevelsRepository();
-    return Task_1<GlobalNamespace::BeatmapLevelsRepository*>::FromResult(customCollection);
+    // if songs are loaded and not refreshing, return the repo with fromresult
+    if (SongCore::API::Loading::AreSongsLoaded() && !SongCore::API::Loading::AreSongsRefreshing()) {
+        return Task_1<GlobalNamespace::BeatmapLevelsRepository*>::FromResult(static_cast<GlobalNamespace::BeatmapLevelsRepository*>(SongCore::API::Loading::GetCustomBeatmapLevelsRepository()));
+    }
+
+    // levels weren't loaded or we are refreshing right now, so make the user wait
+    return SongCore::StartTask<GlobalNamespace::BeatmapLevelsRepository*>([](SongCore::CancellationToken cancelToken) -> GlobalNamespace::BeatmapLevelsRepository*{
+        using namespace std::chrono_literals;
+        auto loader = SongCore::SongLoader::RuntimeSongLoader::get_instance();
+        while (loader->AreSongsRefreshing && !cancelToken.IsCancellationRequested) std::this_thread::sleep_for(100ms);
+        return loader->CustomBeatmapLevelsRepository;
+    }, std::forward<SongCore::CancellationToken>(cancellationToken));
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
