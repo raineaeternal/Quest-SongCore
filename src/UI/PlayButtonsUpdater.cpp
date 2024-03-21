@@ -9,9 +9,9 @@
 DEFINE_TYPE(SongCore::UI, PlayButtonsUpdater);
 
 namespace SongCore::UI {
-    void PlayButtonsUpdater::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController,  PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect) {
+    void PlayButtonsUpdater::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect) {
         _levelDetailViewController = levelDetailViewController;
-        _playButtonInteractable;
+        _playButtonInteractable = playButtonInteractable;
         _capabilities = capabilities;
         _levelSelect = levelSelect;
     }
@@ -21,10 +21,14 @@ namespace SongCore::UI {
         _practiceButton = _levelDetailViewController->_standardLevelDetailView->practiceButton;
         _anyDisablingModInfos = !_playButtonInteractable->PlayButtonDisablingModInfos.empty();
 
+        _playButtonInteractable->PlayButtonDisablingModsChanged += {&PlayButtonsUpdater::HandleDisablingModInfosChanged};
         _levelSelect->LevelWasSelected += {&PlayButtonsUpdater::LevelWasSelected, this};
+
+        HandleDisablingModInfosChanged(_playButtonInteractable->PlayButtonDisablingModInfos);
     }
 
     void PlayButtonsUpdater::Dispose() {
+        _playButtonInteractable->PlayButtonDisablingModsChanged -= {&PlayButtonsUpdater::HandleDisablingModInfosChanged};
         _levelSelect->LevelWasSelected -= {&PlayButtonsUpdater::LevelWasSelected, this};
     }
 
