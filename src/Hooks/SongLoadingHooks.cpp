@@ -164,7 +164,8 @@ MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetPackEntitlemen
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
-    return Task_1<GlobalNamespace::BeatmapLevelsRepository*>::FromResult(self->_allLoadedBeatmapLevelsRepository);
+    GlobalNamespace::BeatmapLevelsRepository* customCollection = SongCore::API::Loading::GetCustomBeatmapLevelsRepository();
+    return Task_1<GlobalNamespace::BeatmapLevelsRepository*>::FromResult(customCollection);
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
