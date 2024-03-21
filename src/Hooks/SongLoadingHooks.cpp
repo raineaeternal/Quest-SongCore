@@ -1,5 +1,6 @@
 #include "hooking.hpp"
 #include "logging.hpp"
+#include "tasks.hpp"
 
 #include "CustomJSONData.hpp"
 #include "SongCore.hpp"
@@ -127,6 +128,7 @@ using namespace GlobalNamespace;
 using namespace System::Threading;
 using namespace System::Threading::Tasks;
 using namespace System::Collections::Generic;
+using namespace BeatmapSaveDataVersion3;
 
 // we return our own levels repository to which we can add packs we please
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::CreateAllLoadedBeatmapLevelPacks, BeatmapLevelsRepository*, BeatmapLevelsModel* self) {
@@ -177,22 +179,28 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
     return u"file://" + dir + fileName;
 }
 
-MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
-        auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
-        auto data = level->beatmapLevelData;
-        if (data) {
-            return Task_1<LoadBeatmapLevelDataResult>::New_ctor(LoadBeatmapLevelDataResult::Success(data));
-        }
+        return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
+            static auto Error = LoadBeatmapLevelDataResult(true, nullptr);
+            auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+            if (!level || token.IsCancellationRequested) return Error;
+            auto data = level->beatmapLevelData;
+            if (!data) return Error;
+            return LoadBeatmapLevelDataResult::Success(data);
+        }, std::forward<SongCore::CancellationToken>(token));
     }
 
     return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, token);
 }
 
-MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
-        auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
-        return Task_1<bool>::New_ctor(level->beatmapLevelData != nullptr);
+        return SongCore::StartTask<bool>([=](SongCore::CancellationToken token){
+            auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+            if (!level) return false;
+            return level->beatmapLevelData != nullptr;
+        }, std::forward<SongCore::CancellationToken>(token));
     }
 
     return BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync(self, levelID, token);
