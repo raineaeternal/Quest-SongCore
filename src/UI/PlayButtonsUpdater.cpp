@@ -2,11 +2,15 @@
 #include "CustomJSONData.hpp"
 #include "LevelSelect.hpp"
 #include "logging.hpp"
+#include "hooking.hpp"
 
 #include "bsml/shared/Helpers/delegates.hpp"
 #include <string_view>
 
 DEFINE_TYPE(SongCore::UI, PlayButtonsUpdater);
+
+bool IsPracticeButtonInteractable = true;
+bool IsPlayButtonInteractable = true;
 
 namespace SongCore::UI {
     void PlayButtonsUpdater::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect) {
@@ -19,6 +23,7 @@ namespace SongCore::UI {
     void PlayButtonsUpdater::Initialize() {
         _playButton = _levelDetailViewController->_standardLevelDetailView->actionButton;
         _practiceButton = _levelDetailViewController->_standardLevelDetailView->practiceButton;
+
         _anyDisablingModInfos = !_playButtonInteractable->PlayButtonDisablingModInfos.empty();
 
         _playButtonInteractable->PlayButtonDisablingModsChanged += {&PlayButtonsUpdater::HandleDisablingModInfosChanged, this};
@@ -30,6 +35,9 @@ namespace SongCore::UI {
     void PlayButtonsUpdater::Dispose() {
         _playButtonInteractable->PlayButtonDisablingModsChanged -= {&PlayButtonsUpdater::HandleDisablingModInfosChanged, this};
         _levelSelect->LevelWasSelected -= {&PlayButtonsUpdater::LevelWasSelected, this};
+
+        IsPracticeButtonInteractable = true;
+        IsPlayButtonInteractable = true;
     }
 
     bool PlayButtonsUpdater::IsPlayerAllowedToStart() {
@@ -43,10 +51,13 @@ namespace SongCore::UI {
     void PlayButtonsUpdater::UpdatePlayButtonsState() {
         auto interactable = IsPlayerAllowedToStart();
 
+        IsPracticeButtonInteractable = interactable;
+        IsPlayButtonInteractable = interactable && !_levelIsWIP;
+
         // if we allow player to start at all, practice button is enabled
-        _practiceButton->set_interactable(interactable);
+        _practiceButton->set_interactable(IsPracticeButtonInteractable);
         // we want it to be "allow to start" and "not wip"
-        _playButton->set_interactable(interactable && !_levelIsWIP);
+        _playButton->set_interactable(IsPlayButtonInteractable);
     }
 
     void PlayButtonsUpdater::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
@@ -70,5 +81,22 @@ namespace SongCore::UI {
         _anyDisablingModInfos = !disablingModInfos.empty();
 
         UpdatePlayButtonsState();
+    }
+}
+
+// since the game decided to update button interactability more often, we also have to hook things
+MAKE_AUTO_HOOK_MATCH(
+    StandardLevelDetailView_ShowContent,
+    &GlobalNamespace::StandardLevelDetailView::ShowContent,
+    void,
+    GlobalNamespace::StandardLevelDetailView* self,
+    GlobalNamespace::StandardLevelDetailViewController::ContentType contentType,
+    float_t progress
+) {
+    StandardLevelDetailView_ShowContent(self, contentType, progress);
+
+    if (contentType == GlobalNamespace::StandardLevelDetailViewController::ContentType::OwnedAndReady) {
+        self->practiceButton->set_interactable(IsPracticeButtonInteractable);
+        self->actionButton->set_interactable(IsPlayButtonInteractable);
     }
 }
