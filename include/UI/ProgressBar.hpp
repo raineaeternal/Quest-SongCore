@@ -60,6 +60,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     float _pluginTextSize;
     std::optional<float> _canvasDisplayTimer;
 
+    bool _updateSongCounter;
     bool _showingMessage;
     bool _beGay;
     float _gayTime;

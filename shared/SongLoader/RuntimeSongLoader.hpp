@@ -120,6 +120,14 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         float get_Progress() const { return (float)_loadedSongs / (float)_totalSongs; }
         __declspec(property(get=get_Progress)) float Progress;
 
+        /// @brief gets the total amount of songs to be loaded, may decrease as songs throw errors during load
+        size_t get_TotalSongs() const { return (size_t)_totalSongs; }
+        __declspec(property(get=get_TotalSongs)) size_t TotalSongs;
+
+        /// @brief gets the current amount of succesfully loaded songs
+        size_t get_LoadedSongs() const { return (size_t)_loadedSongs; }
+        __declspec(property(get=get_LoadedSongs)) size_t LoadedSongs;
+
         /// @brief provides access into a span of all loaded levels
         std::span<CustomBeatmapLevel* const> get_AllLevels() const { return _allLoadedLevels; };
         __declspec(property(get=get_AllLevels)) std::span<CustomBeatmapLevel* const> AllLevels;
@@ -152,7 +160,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
 
         /// @brief gets a level by the hash
         /// @return nullptr if level not found
-        CustomBeatmapLevel* GetLevelByHash(std::string_view levelID);
+        CustomBeatmapLevel* GetLevelByHash(std::string_view hash);
 
         /// @brief gets a level by a search function
         /// @return nullptr if level not found

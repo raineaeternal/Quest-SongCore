@@ -50,18 +50,18 @@ namespace SongCore::UI {
 
         _canvasScale = UnityEngine::Vector2(100, 50);
         _authorNamePos = UnityEngine::Vector2(10, 31);
-        _headerPos = UnityEngine::Vector2(10, 15);
-        _headerSize = UnityEngine::Vector2(100, 20);
+        _headerPos = UnityEngine::Vector2(0, 15);
+        _headerSize = UnityEngine::Vector2(120, 20);
 
-        HeaderText = "Loading songs...";
+        HeaderText = "Loading songs <size=60%><mspace=0.35em>[0000/0000]</mspace></size>";
         PluginText = "SongCore Loader";
 
         _headerTextSize = 15.0f;
         _pluginTextSize = 9.0f;
 
-        _pluginTextPos = UnityEngine::Vector2(10, 23);
+        _pluginTextPos = UnityEngine::Vector2(20, -10);
 
-        _loadingBarSize = UnityEngine::Vector2(100, 10);
+        _loadingBarSize = UnityEngine::Vector2(120, 10);
         _bgColor = UnityEngine::Color(0, 0, 0, 0.2f);
 
         _gradient = GetGradient();
@@ -97,6 +97,7 @@ namespace SongCore::UI {
         rect->anchoredPosition = _pluginTextPos;
         _pluginNameText->text = PluginText;
         _pluginNameText->fontSize = _pluginTextSize;
+        _pluginNameText->set_alignment(::TMPro::TextAlignmentOptions::Right);
 
         _headerText = BSML::Lite::CreateText(_canvas->transform.cast<UnityEngine::RectTransform>(), HeaderText, _headerPos);
         rect = _headerText->transform.cast<UnityEngine::RectTransform>();
@@ -105,6 +106,7 @@ namespace SongCore::UI {
         rect->sizeDelta = _headerSize;
         _headerText->text = HeaderText;
         _headerText->fontSize = _headerTextSize;
+        _pluginNameText->set_alignment(::TMPro::TextAlignmentOptions::Left);
 
         _loadingBg = UnityEngine::GameObject::New_ctor("Background")->AddComponent<UnityEngine::UI::Image *>();
         rect = _loadingBg->transform.cast<UnityEngine::RectTransform>();
@@ -155,6 +157,7 @@ namespace SongCore::UI {
 
     void ProgressBar::RuntimeSongLoaderOnSongRefresh() {
         _showingMessage = true;
+        _updateSongCounter = true;
         _canvas->enabled = true;
         _headerText->text = HeaderText;
         _canvasDisplayTimer = std::nullopt;
@@ -162,8 +165,8 @@ namespace SongCore::UI {
 
     void ProgressBar::RuntimeSongLoaderOnSongLoaded(std::span<SongLoader::CustomBeatmapLevel* const> customLevels) {
         _showingMessage = true;
-        std::string songOrSongs = customLevels.size() == 1 ? "song" : "songs";
-        _headerText->text = fmt::format("{} {} loaded", customLevels.size(), songOrSongs);
+        _updateSongCounter = false;
+        _headerText->text = fmt::format("Loaded Songs! <size=60%><mspace=0.35em>[{:04d} total]</mspace></size>", customLevels.size());
         _beGay = true;
         _gradient = GetGradient();
         ShowCanvasForSeconds(5);
@@ -193,6 +196,10 @@ namespace SongCore::UI {
                 _canvas->enabled = false;
                 _beGay = false; // :pensive:
             }
+        }
+
+        if (_updateSongCounter) {
+            _headerText->text = fmt::format("Loading songs <size=60%><mspace=0.35em>[{:04d}/{:04d}]</mspace></size>", _runtimeSongLoader->LoadedSongs, _runtimeSongLoader->TotalSongs);
         }
 
         _loadingBar->fillAmount = _runtimeSongLoader->Progress;
