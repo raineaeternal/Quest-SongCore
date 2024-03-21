@@ -143,8 +143,7 @@ namespace SongCore::SongLoader {
         auto allLighters = ArrayW<StringW>::Empty();
 
         auto previewMediaData = GetPreviewMediaData(levelPath, saveData);
-        auto beatmapLevelData = GetBeatmapLevelData(levelPath, levelId, saveData);
-        auto beatmapBasicDatas = GetBeatmapBasicDataDict(environmentNameList, colorSchemes, saveData);
+        auto [beatmapLevelData, beatmapBasicData] = GetBeatmapLevelAndBasicData(levelPath, levelId, environmentNameList, colorSchemes, saveData);
 
         auto result = CustomBeatmapLevel::New(
             levelPath.string(),
@@ -165,49 +164,88 @@ namespace SongCore::SongLoader {
             songDuration,
             GlobalNamespace::PlayerSensitivityFlag::Unknown,
             previewMediaData->i___GlobalNamespace__IPreviewMediaData(),
-            beatmapBasicDatas->i___System__Collections__Generic__IReadOnlyDictionary_2_TKey_TValue_()
+            beatmapBasicData->i___System__Collections__Generic__IReadOnlyDictionary_2_TKey_TValue_()
         );
 
         return result;
     }
 
-    GlobalNamespace::FileSystemBeatmapLevelData* LevelLoader::GetBeatmapLevelData(std::filesystem::path const& levelPath, std::string_view levelID, CustomJSONData::CustomLevelInfoSaveData* saveData) {
-        auto dataDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>::New_ctor();
+    std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, LevelLoader::BeatmapBasicDataDict*> LevelLoader::GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, std::span<GlobalNamespace::EnvironmentName const> environmentNames, std::span<GlobalNamespace::ColorScheme* const> colorSchemes, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+        auto fileDifficultyBeatmapsDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>::New_ctor();
+        auto basicDataDict = LevelLoader::BeatmapBasicDataDict::New_ctor();
+        bool saveDataHadEnvNames = saveData->environmentNames.size() > 0;
 
-        auto difficultyBeatmapSetDatas = saveData->difficultyBeatmapSets;
-        for (auto beatmapSetData : difficultyBeatmapSetDatas) {
-            auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(beatmapSetData->beatmapCharacteristicName);
-            if (!characteristic) continue;
+        for (auto beatmapSet : saveData->difficultyBeatmapSets) {
+            auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(beatmapSet->beatmapCharacteristicName);
+            if (!characteristic) {
+                WARNING("Got null characteristic for characteristic name {}, skipping...", beatmapSet->beatmapCharacteristicName);
+                continue;
+            }
 
-            for (auto diffData : beatmapSetData->difficultyBeatmaps) {
-                    GlobalNamespace::BeatmapDifficulty diff;
-                    GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
-                        diffData->difficulty,
-                        byref(diff)
-                    );
+            for (auto difficultyBeatmap : beatmapSet->difficultyBeatmaps) {
+                GlobalNamespace::BeatmapDifficulty difficulty;
+                auto parseSuccess = GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
+                    difficultyBeatmap->difficulty,
+                    byref(difficulty)
+                );
 
-                    auto beatmapPath = levelPath / std::string(diffData->beatmapFilename);
-
-                    dataDict->Add(
-                        CharacteristicDifficultyPair(
-                            characteristic,
-                            diff
-                        ),
-                        GlobalNamespace::FileDifficultyBeatmap::New_ctor(
-                            "",
-                            beatmapPath.string(),
-                            ""
-                        )
-                    );
+                if (!parseSuccess) {
+                    WARNING("Failed to parse a diff string: {}, skipping...", difficultyBeatmap->difficulty);
+                    continue;
                 }
+
+                auto beatmapPath = levelPath / std::string(difficultyBeatmap->beatmapFilename);
+                if (!std::filesystem::exists(beatmapPath)) {
+                    WARNING("Diff file '{}' does not exist, skipping...", beatmapPath.string());
+                    continue;
+                }
+
+                auto const dictKey = CharacteristicDifficultyPair(
+                    characteristic,
+                    difficulty
+                );
+
+                fileDifficultyBeatmapsDict->Add(
+                    dictKey,
+                    GlobalNamespace::FileDifficultyBeatmap::New_ctor(
+                        "",
+                        beatmapPath.string(),
+                        ""
+                    )
+                );
+
+                // if we have env names, use the idx, otherwise use whether the char had rotation (no rot means use default env, otherwise use rotation env)
+                int envNameIndex = saveDataHadEnvNames ? difficultyBeatmap->environmentNameIdx : characteristic->containsRotationEvents ? 1 : 0;
+                envNameIndex = std::clamp<int>(envNameIndex, 0, environmentNames.size());
+                int colorSchemeIndex = difficultyBeatmap->beatmapColorSchemeIdx;
+                auto colorScheme = (colorSchemeIndex >= 0 && colorSchemeIndex < colorSchemes.size()) ? colorSchemes[colorSchemeIndex] : nullptr;
+
+                basicDataDict->Add(
+                    dictKey,
+                    GlobalNamespace::BeatmapBasicData::New_ctor(
+                        difficultyBeatmap->noteJumpMovementSpeed,
+                        difficultyBeatmap->noteJumpStartBeatOffset,
+                        environmentNames[envNameIndex],
+                        colorScheme,
+                        0,
+                        0,
+                        0,
+                        ArrayW<StringW>::Empty(),
+                        ArrayW<StringW>::Empty()
+                    )
+                );
+            }
         }
 
-        return GlobalNamespace::FileSystemBeatmapLevelData::New_ctor(
-            levelID,
-            (levelPath / std::string(saveData->songFilename)).string(),
-            "",
-            dataDict
-        );
+        return {
+            GlobalNamespace::FileSystemBeatmapLevelData::New_ctor(
+                levelID,
+                (levelPath / std::string(saveData->songFilename)).string(),
+                "",
+                fileDifficultyBeatmapsDict
+            ),
+            basicDataDict
+        };
     }
 
     GlobalNamespace::FileSystemPreviewMediaData* LevelLoader::GetPreviewMediaData(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
@@ -218,54 +256,6 @@ namespace SongCore::SongLoader {
             saveData->coverImageFilename,
             saveData->songFilename
         );
-    }
-
-    LevelLoader::BeatmapBasicDataDict* LevelLoader::GetBeatmapBasicDataDict(std::span<GlobalNamespace::EnvironmentName const> environmentNames, std::span<GlobalNamespace::ColorScheme* const> colorSchemes, CustomJSONData::CustomLevelInfoSaveData* saveData) {
-        auto dataDict = LevelLoader::BeatmapBasicDataDict::New_ctor();
-        auto difficultyBeatmapSetDatas = saveData->difficultyBeatmapSets;
-        bool anyEnvNames = saveData->environmentNames.size() > 0;
-
-        for (auto beatmapSetData : difficultyBeatmapSetDatas) {
-            auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(beatmapSetData->beatmapCharacteristicName);
-
-            if (characteristic) {
-                for (auto diffData : beatmapSetData->difficultyBeatmaps) {
-                    GlobalNamespace::BeatmapDifficulty diff;
-                    GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
-                        diffData->difficulty,
-                        byref(diff)
-                    );
-
-                    // if we have env names, use the idx, otherwise use whether the char had rotation (no rot means use default env, otherwise use rotation env)
-                    int envNameIndex = anyEnvNames ? diffData->environmentNameIdx : characteristic->containsRotationEvents ? 1 : 0;
-                    envNameIndex = std::clamp<int>(envNameIndex, 0, environmentNames.size());
-                    int colorSchemeIndex = diffData->beatmapColorSchemeIdx;
-                    auto colorScheme = (colorSchemeIndex >= 0 && colorSchemeIndex < colorSchemes.size()) ? colorSchemes[colorSchemeIndex] : nullptr;
-
-                    dataDict->Add(
-                        CharacteristicDifficultyPair(
-                            characteristic,
-                            diff
-                        ),
-                        GlobalNamespace::BeatmapBasicData::New_ctor(
-                            diffData->noteJumpMovementSpeed,
-                            diffData->noteJumpStartBeatOffset,
-                            environmentNames[envNameIndex],
-                            colorScheme,
-                            0,
-                            0,
-                            0,
-                            ArrayW<StringW>::Empty(),
-                            ArrayW<StringW>::Empty()
-                        )
-                    );
-                }
-            } else {
-                WARNING("Could not get a valid characteristic for name {}", beatmapSetData->beatmapCharacteristicName);
-            }
-        }
-
-        return dataDict;
     }
 
     GlobalNamespace::EnvironmentInfoSO* LevelLoader::GetEnvironmentInfo(StringW environmentName, bool allDirections) {

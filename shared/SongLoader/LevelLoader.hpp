@@ -1,8 +1,9 @@
 #pragma once
 
-#include "CustomJSONData.hpp"
 #include "custom-types/shared/macros.hpp"
+#include "CustomJSONData.hpp"
 #include "CustomBeatmapLevel.hpp"
+
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "GlobalNamespace/BeatmapLevelColorSchemeSaveData.hpp"
@@ -16,6 +17,7 @@
 #include "GlobalNamespace/FileDifficultyBeatmap.hpp"
 #include "System/ValueTuple_2.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
+#include <filesystem>
 
 DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
     DECLARE_CTOR(ctor, GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel, GlobalNamespace::EnvironmentsListModel* environmentsListModel);
@@ -44,11 +46,8 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
         /// @brief preview media data from filesystem
         GlobalNamespace::FileSystemPreviewMediaData* GetPreviewMediaData(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData);
 
-        /// @brief beatmap level data from filesystem
-        GlobalNamespace::FileSystemBeatmapLevelData* GetBeatmapLevelData(std::filesystem::path const& levelPath, std::string_view levelID, CustomJSONData::CustomLevelInfoSaveData* saveData);
-
-        /// @brief load the basic beatmap data from the save data
-        BeatmapBasicDataDict* GetBeatmapBasicDataDict(std::span<GlobalNamespace::EnvironmentName const> environmentNames, std::span<GlobalNamespace::ColorScheme* const> colorSchemes, CustomJSONData::CustomLevelInfoSaveData* saveData);
+        /// @brief beatmap level data from filesystem & basic beatmap data from savedata
+        std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, BeatmapBasicDataDict*> GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, std::span<GlobalNamespace::EnvironmentName const> environmentNames, std::span<GlobalNamespace::ColorScheme* const> colorSchemes, CustomJSONData::CustomLevelInfoSaveData* saveData);
 
         /// @brief gets the environment info for the environmentName and whether it's all directions or not
         GlobalNamespace::EnvironmentInfoSO* GetEnvironmentInfo(StringW environmentName, bool allDirections);
