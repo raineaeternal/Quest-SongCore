@@ -9,7 +9,6 @@
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/BeatmapLevelColorSchemeSaveData.hpp"
-#include "GlobalNamespace/AudioClipAsyncLoader.hpp"
 #include "GlobalNamespace/PlayerSaveData.hpp"
 #include "GlobalNamespace/EnvironmentName.hpp"
 #include "GlobalNamespace/BeatmapBasicData.hpp"
@@ -23,6 +22,7 @@ namespace SongCore::SongLoader {
         _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
         _additionalContentModel = il2cpp_utils::try_cast<GlobalNamespace::AdditionalContentModel>(additionalContentModel).value_or(nullptr);
         _environmentsListModel = environmentsListModel;
+        _clipLoader = GlobalNamespace::AudioClipAsyncLoader::CreateDefault();
     }
 
     SongCore::CustomJSONData::CustomLevelInfoSaveData* LevelLoader::GetStandardSaveData(std::filesystem::path const& path) {
@@ -251,7 +251,7 @@ namespace SongCore::SongLoader {
     GlobalNamespace::FileSystemPreviewMediaData* LevelLoader::GetPreviewMediaData(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
         return GlobalNamespace::FileSystemPreviewMediaData::New_ctor(
             _cachedMediaAsyncLoader->i___GlobalNamespace__ISpriteAsyncLoader(),
-            GlobalNamespace::AudioClipAsyncLoader::CreateDefault(),
+            _clipLoader,
             levelPath.string(),
             saveData->coverImageFilename,
             saveData->songFilename
