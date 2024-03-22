@@ -172,7 +172,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsyn
     }
 
     // levels weren't loaded or we are refreshing right now, so make the user wait
-    return SongCore::StartTask<GlobalNamespace::BeatmapLevelsRepository*>([](SongCore::CancellationToken cancelToken) -> GlobalNamespace::BeatmapLevelsRepository*{
+    return SongCore::StartTask<GlobalNamespace::BeatmapLevelsRepository*>([](SongCore::CancellationToken cancelToken) -> GlobalNamespace::BeatmapLevelsRepository* {
         using namespace std::chrono_literals;
         auto loader = SongCore::SongLoader::RuntimeSongLoader::get_instance();
         while (loader->AreSongsRefreshing && !cancelToken.IsCancellationRequested) std::this_thread::sleep_for(100ms);
