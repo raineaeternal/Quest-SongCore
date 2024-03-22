@@ -3,12 +3,14 @@
 #include "logging.hpp"
 
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
+#include "GlobalNamespace/MultiplayerLevelScenesTransitionSetupDataSO.hpp"
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/EnvironmentsListModel.hpp"
 #include "GlobalNamespace/ColorSchemeSO.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/RecordingToolManager.hpp"
+#include "UnityEngine/Color.hpp"
 #include "System/Nullable_1.hpp"
 
 #include "SongLoader/CustomBeatmapLevel.hpp"
@@ -94,18 +96,6 @@ MAKE_AUTO_HOOK_MATCH(
         auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, diff);
         if (diffDetailsOpt) {
             auto& diffDetails = diffDetailsOpt->get();
-            // apply custom color scheme if given
-            if (diffDetails.customColors.has_value()) {
-                // TODO: honor beatmap override color scheme n stuff
-                if (overrideColorScheme) {
-                    overrideColorScheme = ApplyOverrideColors(overrideColorScheme, diffDetails.customColors.value());
-                } else {
-                    auto envName = customLevel->GetEnvironmentName(characteristic, diff);
-                    auto envInfo = environmentsListModel->GetEnvironmentInfoBySerializedNameSafe(envName._environmentName);
-                    overrideColorScheme = ApplyOverrideColors(envInfo->colorScheme->colorScheme, diffDetails.customColors.value());
-                }
-            }
-
             // map requests rotation events to be enabled or not, so we do that here
             if (diffDetails.environmentType.has_value()) {
                 auto& envType = diffDetails.environmentType.value();
@@ -141,8 +131,6 @@ MAKE_AUTO_HOOK_MATCH(
 
     characteristic->_containsRotationEvents = containsRotation;
 }
-
-
 
 MAKE_AUTO_HOOK_MATCH(
     StandardLevelScenesTransitionSetupDataSO_Init_2,
@@ -220,18 +208,6 @@ MAKE_AUTO_HOOK_MATCH(
         auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, diff);
         if (diffDetailsOpt) {
             auto& diffDetails = diffDetailsOpt->get();
-            // apply custom color scheme if given
-            if (diffDetails.customColors.has_value()) {
-                // TODO: honor beatmap override color scheme n stuff
-                if (overrideColorScheme) {
-                    overrideColorScheme = ApplyOverrideColors(overrideColorScheme, diffDetails.customColors.value());
-                } else {
-                    auto envName = customLevel->GetEnvironmentName(characteristic, diff);
-                    auto envInfo = environmentsListModel->GetEnvironmentInfoBySerializedNameSafe(envName._environmentName);
-                    overrideColorScheme = ApplyOverrideColors(envInfo->colorScheme->colorScheme, diffDetails.customColors.value());
-                }
-            }
-
             // map requests rotation events to be enabled or not, so we do that here
             if (diffDetails.environmentType.has_value()) {
                 auto& envType = diffDetails.environmentType.value();
@@ -268,9 +244,100 @@ MAKE_AUTO_HOOK_MATCH(
     characteristic->_containsRotationEvents = containsRotation;
 }
 
-GlobalNamespace::ColorScheme* ApplyOverrideColors(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails::CustomColors const& customColors) {
+// Hooks and methods to fix override color scheme stuff
+
+void FixupAndApplyColorScheme(GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self);
+void FixupAndApplyColorScheme(GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO* self);
+GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::SongLoader::CustomBeatmapLevel* level, GlobalNamespace::BeatmapKey& beatmapKey);
+
+MAKE_AUTO_HOOK_MATCH(
+    StandardLevelScenesTransitionSetupDataSO_InitColorInfo,
+    &GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::InitColorInfo,
+    void,
+    GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
+    ::GlobalNamespace::ColorScheme* overrideColorScheme,
+    ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme
+) {
+    StandardLevelScenesTransitionSetupDataSO_InitColorInfo(self, overrideColorScheme, beatmapOverrideColorScheme);
+    FixupAndApplyColorScheme(self);
+}
+
+MAKE_AUTO_HOOK_MATCH(
+    MultiplayerLevelScenesTransitionSetupDataSO_InitColorInfo,
+    &GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO::InitColorInfo,
+    void,
+    GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO* self,
+    ::GlobalNamespace::ColorScheme* overrideColorScheme
+) {
+    MultiplayerLevelScenesTransitionSetupDataSO_InitColorInfo(self, overrideColorScheme);
+    FixupAndApplyColorScheme(self);
+}
+
+static bool operator==(UnityEngine::Color lhs, UnityEngine::Color rhs) {
+    return !(
+        lhs.r != rhs.r &&
+        lhs.g != rhs.g &&
+        lhs.b != rhs.b &&
+        lhs.a != rhs.a
+    );
+}
+
+#define FIX_BOOST(colortype) if (colorScheme->_##colortype##Boost == DefaultColor) colorScheme->_##colortype##Boost = colorScheme->colortype
+
+void Fixup(GlobalNamespace::ColorScheme* colorScheme) {
+    static auto DefaultColor = ::UnityEngine::Color();
+    FIX_BOOST(environmentColor0);
+    FIX_BOOST(environmentColor1);
+    FIX_BOOST(environmentColorW);
+}
+
+void FixupAndApplyColorScheme(GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self) {
+    auto level = self->beatmapLevel;
+    auto beatmapKey = self->beatmapKey;
+
+    auto colorScheme = self->colorScheme;
+    Fixup(colorScheme);
+
+    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level).value_or(nullptr);
+    if (!customLevel) return;
+
+    auto overrideColorScheme = GetOverrideColorScheme(colorScheme, customLevel, beatmapKey);
+    if (overrideColorScheme) {
+        self->colorScheme = overrideColorScheme;
+        self->usingOverrideColorScheme = true;
+    }
+}
+
+void FixupAndApplyColorScheme(GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO* self) {
+    auto level = self->beatmapLevel;
+    auto beatmapKey = self->beatmapKey;
+
+    auto colorScheme = self->colorScheme;
+    Fixup(colorScheme);
+
+    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level).value_or(nullptr);
+    if (!customLevel) return;
+
+    auto overrideColorScheme = GetOverrideColorScheme(colorScheme, customLevel, beatmapKey);
+    if (overrideColorScheme) {
+        self->colorScheme = overrideColorScheme;
+        self->usingOverrideColorScheme = true;
+    }
+}
+
+GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::SongLoader::CustomBeatmapLevel* level, GlobalNamespace::BeatmapKey& beatmapKey) {
     // if we're not allowed to apply any colors, don't do anything
-    if (!config.customSongObstacleColors && !config.customSongEnvironmentColors && !config.customSongNoteColors) return baseColorScheme;
+    if (!config.customSongObstacleColors && !config.customSongEnvironmentColors && !config.customSongNoteColors) return nullptr;
+
+    auto saveData = level->standardLevelInfoSaveData;
+    if (!saveData) return nullptr;
+
+    auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(beatmapKey.beatmapCharacteristic->serializedName, beatmapKey.difficulty);
+    if (!diffDetailsOpt.has_value()) return nullptr;
+    auto& diffDetails = diffDetailsOpt->get();
+
+    if (!diffDetails.customColors.has_value()) return nullptr;
+    auto& customColors = diffDetails.customColors.value();
 
     // we just grab all colors by default
     UnityEngine::Color saberAColor = baseColorScheme->saberAColor;
@@ -312,7 +379,7 @@ GlobalNamespace::ColorScheme* ApplyOverrideColors(GlobalNamespace::ColorScheme* 
         environmentColor0,
         environmentColor1,
         environmentColorW,
-        baseColorScheme->supportsEnvironmentColorBoost,
+        true,
         environmentColor0Boost,
         environmentColor1Boost,
         environmentColorWBoost,
