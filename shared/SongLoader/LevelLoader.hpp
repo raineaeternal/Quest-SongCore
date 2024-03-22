@@ -1,7 +1,7 @@
 #pragma once
 
 #include "custom-types/shared/macros.hpp"
-#include "CustomJSONData.hpp"
+#include "../CustomJSONData.hpp"
 #include "CustomBeatmapLevel.hpp"
 
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"

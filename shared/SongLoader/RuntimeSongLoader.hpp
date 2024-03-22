@@ -9,7 +9,6 @@
 
 #include "custom-types/shared/macros.hpp"
 
-#include "logging.hpp"
 #include "LevelLoader.hpp"
 #include "CustomLevelPack.hpp"
 #include "CustomBeatmapLevel.hpp"
