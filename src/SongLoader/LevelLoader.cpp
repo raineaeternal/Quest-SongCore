@@ -15,6 +15,8 @@
 
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
 
+#define THROW_ON_MISSING_DATA
+
 namespace SongCore::SongLoader {
     void LevelLoader::ctor(GlobalNamespace::CachedMediaAsyncLoader* cachedMediaAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel, GlobalNamespace::EnvironmentsListModel* environmentsListModel) {
         INVOKE_CTOR();
@@ -178,8 +180,12 @@ namespace SongCore::SongLoader {
         for (auto beatmapSet : saveData->difficultyBeatmapSets) {
             auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(beatmapSet->beatmapCharacteristicName);
             if (!characteristic) {
-                WARNING("Got null characteristic for characteristic name {}, skipping...", beatmapSet->beatmapCharacteristicName);
-                continue;
+                #ifdef THROW_ON_MISSING_DATA
+                    throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", beatmapSet->beatmapCharacteristicName));
+                #else
+                    WARNING("Got null characteristic for characteristic name {}, skipping...", beatmapSet->beatmapCharacteristicName);
+                    continue;
+                #endif
             }
 
             for (auto difficultyBeatmap : beatmapSet->difficultyBeatmaps) {
@@ -190,14 +196,22 @@ namespace SongCore::SongLoader {
                 );
 
                 if (!parseSuccess) {
-                    WARNING("Failed to parse a diff string: {}, skipping...", difficultyBeatmap->difficulty);
-                    continue;
+                    #ifdef THROW_ON_MISSING_DATA
+                        throw std::runtime_error(fmt::format("Failed to parse a diff string: {}", difficultyBeatmap->difficulty));
+                    #else
+                        WARNING("Failed to parse a diff string: {}, skipping...", difficultyBeatmap->difficulty);
+                        continue;
+                    #endif
                 }
 
                 auto beatmapPath = levelPath / std::string(difficultyBeatmap->beatmapFilename);
                 if (!std::filesystem::exists(beatmapPath)) {
-                    WARNING("Diff file '{}' does not exist, skipping...", beatmapPath.string());
-                    continue;
+                    #ifdef THROW_ON_MISSING_DATA
+                        throw std::runtime_error(fmt::format("Diff file '{}' does not exist", beatmapPath.string()));
+                    #else
+                        WARNING("Diff file '{}' does not exist, skipping...", beatmapPath.string());
+                        continue;
+                    #endif
                 }
 
                 auto const dictKey = CharacteristicDifficultyPair(
