@@ -63,12 +63,10 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::B
 }
 
 MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString, GlobalNamespace::StandardLevelInfoSaveData*, StringW stringData) {
-    DEBUG("StandardLevelInfoSaveData_DeserializeFromJSONString");
-
     SafePtr<GlobalNamespace::StandardLevelInfoSaveData> original = StandardLevelInfoSaveData_DeserializeFromJSONString(stringData);
 
     if (!original || !original.ptr()) {
-        DEBUG("Orig call did not produce valid savedata!");
+        INFO("Orig call did not produce valid savedata!");
         return nullptr;
     }
 
@@ -177,6 +175,8 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &
         custom->AddLevelPack(levelPacks->get_Item(i));
     }
 
+    custom->FixBackingDictionaries();
+
     return custom;
 }
 
@@ -250,4 +250,23 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &
     }
 
     return BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync(self, levelID, token);
+}
+
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_GetBeatmapLevel, &BeatmapLevelsModel::GetBeatmapLevel, BeatmapLevel*, BeatmapLevelsModel* self, StringW levelID) {
+    if (levelID.starts_with(u"custom_level_")) {
+        return SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+    }
+    return BeatmapLevelsModel_GetBeatmapLevel(self, levelID);
+}
+
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelPack_CreateLevelPackForFiltering, &BeatmapLevelPack::CreateLevelPackForFiltering, BeatmapLevelPack*, ArrayW<BeatmapLevel*> beatmapLevels) {
+    // a set considers 2 elements equivalent if !(a < b) && !(b < a) which for pointers is ideal since 2 same pointers are the same level
+    std::set<BeatmapLevel*> levelSet;
+    for (auto level : beatmapLevels) levelSet.insert(level);
+
+    ArrayW<BeatmapLevel*> uniqueLevels(levelSet.size());
+    for (auto idx = 0; auto level : levelSet) uniqueLevels[idx++] = level;
+    INFO("Filtered levels for uniqueness, had an array of size {}, now {}", beatmapLevels.size(), uniqueLevels.size());
+
+    return BeatmapLevelPack_CreateLevelPackForFiltering(uniqueLevels);
 }

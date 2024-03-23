@@ -1,4 +1,5 @@
 #include "SongLoader/CustomBeatmapLevelsRepository.hpp"
+#include "System/Collections/Generic/Dictionary_2.hpp"
 #include "logging.hpp"
 
 DEFINE_TYPE(SongCore::SongLoader, CustomBeatmapLevelsRepository);
@@ -30,5 +31,25 @@ namespace SongCore::SongLoader {
 
     void CustomBeatmapLevelsRepository::ClearLevelPacks() {
         _levelPacks.clear();
+    }
+
+    void CustomBeatmapLevelsRepository::FixBackingDictionaries() {
+        _idToBeatmapLevelPack->Clear();
+        _beatmapLevelIdToBeatmapLevelPackId->Clear();
+        _idToBeatmapLevel->Clear();
+
+        // for every pack
+        for (auto pack : _levelPacks) {
+            auto packID = pack->packID;
+            _idToBeatmapLevelPack->TryAdd(packID, pack);
+
+            // for every level
+            for (auto level : pack->beatmapLevels) {
+                auto levelID = level->levelID;
+
+                _beatmapLevelIdToBeatmapLevelPackId->TryAdd(levelID, packID);
+                _idToBeatmapLevel->TryAdd(levelID, level);
+            }
+        }
     }
 }
