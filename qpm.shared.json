@@ -51,7 +51,7 @@
       },
       {
         "id": "bsml",
-        "versionRange": "^0.4.14",
+        "versionRange": "^0.4.15",
         "additionalData": {}
       },
       {
@@ -61,7 +61,7 @@
       },
       {
         "id": "custom-types",
-        "versionRange": "^0.17.2",
+        "versionRange": "^0.17.3",
         "additionalData": {}
       },
       {
@@ -87,28 +87,28 @@
     {
       "dependency": {
         "id": "bsml",
-        "versionRange": "=0.4.14",
+        "versionRange": "=0.4.15",
         "additionalData": {
-          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.14/libbsml.so",
-          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.14/debug_libbsml.so",
+          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.15/libbsml.so",
+          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.15/debug_libbsml.so",
           "overrideSoName": "libbsml.so",
-          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.14/BSML.qmod",
-          "branchName": "version/v0_4_14",
+          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.15/BSML.qmod",
+          "branchName": "version/v0_4_15",
           "cmake": true
         }
       },
-      "version": "0.4.14"
+      "version": "0.4.15"
     },
     {
       "dependency": {
         "id": "paper",
-        "versionRange": "=3.6.1",
+        "versionRange": "=3.6.3",
         "additionalData": {
-          "soLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.1/libpaperlog.so",
-          "debugSoLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.1/debug_libpaperlog.so",
+          "soLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.3/libpaperlog.so",
+          "debugSoLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.3/debug_libpaperlog.so",
           "overrideSoName": "libpaperlog.so",
-          "modLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.1/paperlog.qmod",
-          "branchName": "version/v3_6_1",
+          "modLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.3/paperlog.qmod",
+          "branchName": "version/v3_6_3",
           "compileOptions": {
             "systemIncludes": [
               "shared/utfcpp/source"
@@ -117,7 +117,7 @@
           "cmake": false
         }
       },
-      "version": "3.6.1"
+      "version": "3.6.3"
     },
     {
       "dependency": {
@@ -145,13 +145,13 @@
     {
       "dependency": {
         "id": "custom-types",
-        "versionRange": "=0.17.2",
+        "versionRange": "=0.17.3",
         "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.2/libcustom-types.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.2/debug_libcustom-types.so",
+          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.3/libcustom-types.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.3/debug_libcustom-types.so",
           "overrideSoName": "libcustom-types.so",
-          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.2/CustomTypes.qmod",
-          "branchName": "version/v0_17_2",
+          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.3/CustomTypes.qmod",
+          "branchName": "version/v0_17_3",
           "compileOptions": {
             "cppFlags": [
               "-Wno-invalid-offsetof"
@@ -160,7 +160,7 @@
           "cmake": true
         }
       },
-      "version": "0.17.2"
+      "version": "0.17.3"
     },
     {
       "dependency": {
