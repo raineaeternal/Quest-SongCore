@@ -31,7 +31,10 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
         // insert this notedata after next highest line layer
         bool addedToList = false;
         for (auto j = 0; j < list.size(); j++) {
-            if (list[j]->noteLineLayer > noteData->noteLineLayer) {
+            auto item = list[j];
+            // there's a bug in the game that causes null notedatas somehow because of a divide by 0, rather than crash we're just going to skip the notes
+            if (!item) continue;
+            if (item->noteLineLayer > noteData->noteLineLayer) {
                 list.insert_at(j, noteData);
                 addedToList = true;
                 break;
@@ -43,7 +46,8 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
 
     for (ListW<GlobalNamespace::NoteData*> list : notesInColumnsReusableProcessingListOfLists) {
         for (int noteLineLayer = 0; auto noteData : list) {
-            noteData->SetBeforeJumpNoteLineLayer(GlobalNamespace::NoteLineLayer(noteLineLayer++));
+            // same null check for that bug just to be sure
+            if (noteData) noteData->SetBeforeJumpNoteLineLayer(GlobalNamespace::NoteLineLayer(noteLineLayer++));
         }
     }
 
