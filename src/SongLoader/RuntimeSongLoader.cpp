@@ -166,7 +166,7 @@ namespace SongCore::SongLoader {
 
         // travel the given song paths to collect levels to load
         CollectLevels(config.RootCustomLevelPaths, false, levels);
-        CollectLevels(config.RootCustomWIPLevelPaths, false, levels);
+        CollectLevels(config.RootCustomWIPLevelPaths, true, levels);
 
         if (fullRefresh) {
             CustomLevels->Clear();
