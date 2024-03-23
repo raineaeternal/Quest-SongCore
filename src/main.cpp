@@ -59,14 +59,6 @@ SONGCORE_EXPORT_FUNC void setup(CModInfo* info) {
     INFO("Completed setup!");
 }
 
-MAKE_HOOK(abort_hook, nullptr, void) {
-    auto logger = Paper::ConstLoggerContext("abort_hook");
-    logger.info("abort called");
-    logger.Backtrace(40);
-
-    abort_hook();
-}
-
 // Called later on in the game loading - a good time to install function hooks
 SONGCORE_EXPORT_FUNC void late_load() {
     il2cpp_functions::Init();
@@ -96,12 +88,6 @@ SONGCORE_EXPORT_FUNC void late_load() {
 
     SongCore::Hooking::InstallHooks();
     auto z = Lapiz::Zenject::Zenjector::Get();
-
-    auto libc = dlopen("libc.so", RTLD_NOW);
-    auto abrt = dlsym(libc, "abort");
-
-    auto logger = Paper::ConstLoggerContext("abort_hook_install");
-    INSTALL_HOOK_DIRECT(logger, abort_hook, abrt);
 
     // load cached hashes n stuff
     if (!SongCore::Utils::LoadSongInfoCache()) SongCore::Utils::SaveSongInfoCache();
