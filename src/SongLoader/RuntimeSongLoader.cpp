@@ -33,6 +33,13 @@ using namespace std::chrono;
 namespace SongCore::SongLoader {
     RuntimeSongLoader* RuntimeSongLoader::_instance = nullptr;
 
+    std::string lowerString(std::string_view str) {
+        std::string result;
+        result.resize(str.size());
+        std::transform(str.begin(), str.end(), result.begin(), tolower);
+        return result;
+    }
+
     void RuntimeSongLoader::ctor(GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, LevelLoader* levelLoader) {
         INVOKE_CTOR();
 
@@ -254,7 +261,8 @@ namespace SongCore::SongLoader {
             hashesToLevels.reserve(actualCount);
 
             for (auto const level : allLevels) {
-                std::string levelID(level->levelID);
+                std::string levelID = lowerString(static_cast<std::string>(level->levelID));
+
                 levelIdsToLevels[levelID] = level;
                 hashesToLevels[std::string(GetHashFromLevelID(levelID))] = level;
             }
@@ -445,16 +453,18 @@ namespace SongCore::SongLoader {
 
     CustomBeatmapLevel* RuntimeSongLoader::GetLevelByLevelID(std::string_view levelID) {
         // check levelids map first, if not found iterate all levels
-        auto itr = _levelIdsToLevels.find(std::string(levelID));
+        std::string idString(lowerString(levelID));
+        auto itr = _levelIdsToLevels.find(idString);
         if (itr != _levelIdsToLevels.end()) return itr->second;
         return GetLevelByFunction([levelID](auto level){ return level->levelID == levelID; });
     }
 
-    CustomBeatmapLevel* RuntimeSongLoader::GetLevelByHash(std::string_view hash) {
-        auto itr = _hashesToLevels.find(std::string(hash));
+    CustomBeatmapLevel* RuntimeSongLoader::GetLevelByHash(std::string_view hash_view) {
+        std::string hashString = lowerString(hash_view);
+        auto itr = _hashesToLevels.find(hashString);
         if (itr != _hashesToLevels.end()) return itr->second;
 
-        return GetLevelByFunction([hash](auto level){ return GetHashFromLevelID(std::string(level->levelID)) == hash; });
+        return GetLevelByFunction([hashString](auto level){ return GetHashFromLevelID(lowerString(std::string(level->levelID))) == hashString; });
     }
 
     CustomBeatmapLevel* RuntimeSongLoader::GetLevelByFunction(std::function<bool(CustomBeatmapLevel*)> searchFunction) {
@@ -474,15 +484,13 @@ namespace SongCore::SongLoader {
     std::string_view RuntimeSongLoader::GetHashFromLevelID(std::string_view levelid) {
         if (!levelid.starts_with("custom_level_")) return levelid;
         levelid = levelid.substr(13);
-        if (levelid.ends_with(" WIP")) levelid = levelid.substr(0, levelid.size() - 4);
-        return levelid;
+        return levelid.substr(0, levelid.find(' '));
     }
 
     std::u16string_view RuntimeSongLoader::GetHashFromLevelID(std::u16string_view levelid) {
         if (!levelid.starts_with(u"custom_level_")) return levelid;
         levelid = levelid.substr(13);
-        if (levelid.ends_with(u" WIP")) levelid = levelid.substr(0, levelid.size() - 4);
-        return levelid;
+        return levelid.substr(0, levelid.find(u' '));
     }
 
 // macro to wrap an event invoke into something that always executes on main thread. could we just check whether we are on main thread and invoke in place? sure, but where's the fun in that!
