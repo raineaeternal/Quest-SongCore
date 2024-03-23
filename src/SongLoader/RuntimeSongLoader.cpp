@@ -370,9 +370,14 @@ namespace SongCore::SongLoader {
 
         InvokeCustomLevelPacksWillRefresh(_customBeatmapLevelsRepository);
 
+        _customBeatmapLevelsRepository->FixBackingDictionaries();
+
         for (auto pack : _customBeatmapLevelsRepository->BeatmapLevelPacks) {
             allLoaded->AddLevelPack(pack);
         }
+
+        allLoaded->FixBackingDictionaries();
+
         _beatmapLevelsModel->UpdateLoadedPreviewLevels();
 
         InvokeCustomLevelPacksRefreshed(_customBeatmapLevelsRepository);
