@@ -119,24 +119,18 @@ namespace SongCore::SongLoader {
             if (songDuration <= 0 || songDuration == std::numeric_limits<float>::infinity()) songDuration = 0.0f;
         }
 
-        auto environmentNameList = ListW<GlobalNamespace::EnvironmentName>::New();
+        std::vector<GlobalNamespace::EnvironmentName> environmentNameList;
         if (environmentInfos.size() == 0) {
-            environmentNameList->Add(
-                GlobalNamespace::EnvironmentName(
-                    environmentInfo->serializedName
-                )
+            environmentNameList.emplace_back(
+                environmentInfo->serializedName
             );
-            environmentNameList->Add(
-                GlobalNamespace::EnvironmentName(
-                    allDirectionsEnvironmentInfo->serializedName
-                )
+            environmentNameList.emplace_back(
+                allDirectionsEnvironmentInfo->serializedName
             );
         } else {
             for (auto info : environmentInfos) {
-                environmentNameList->Add(
-                    GlobalNamespace::EnvironmentName(
-                        info->serializedName
-                    )
+                environmentNameList.emplace_back(
+                    info->serializedName
                 );
             }
         }
