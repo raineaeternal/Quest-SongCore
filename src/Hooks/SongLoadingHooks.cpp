@@ -211,7 +211,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetPackEntitlemen
 
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
     // if songs are loaded and not refreshing, return the repo with fromresult
-    if (SongCore::API::Loading::AreSongsLoaded() && !SongCore::API::Loading::AreSongsRefreshing()) {
+    if (SongCore::API::Loading::AreSongsLoaded()) {
         return Task_1<GlobalNamespace::BeatmapLevelsRepository*>::FromResult(static_cast<GlobalNamespace::BeatmapLevelsRepository*>(SongCore::API::Loading::GetCustomBeatmapLevelsRepository()));
     }
 
