@@ -158,7 +158,7 @@ namespace SongCore::SongLoader {
             previewStartTime,
             previewDuration,
             songDuration,
-            GlobalNamespace::PlayerSensitivityFlag::Unknown,
+            GlobalNamespace::PlayerSensitivityFlag::Safe,
             previewMediaData->i___GlobalNamespace__IPreviewMediaData(),
             beatmapBasicData->i___System__Collections__Generic__IReadOnlyDictionary_2_TKey_TValue_()
         );
