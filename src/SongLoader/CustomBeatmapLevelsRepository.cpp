@@ -31,6 +31,9 @@ namespace SongCore::SongLoader {
 
     void CustomBeatmapLevelsRepository::ClearLevelPacks() {
         _levelPacks.clear();
+        _idToBeatmapLevelPack->Clear();
+        _beatmapLevelIdToBeatmapLevelPackId->Clear();
+        _idToBeatmapLevel->Clear();
     }
 
     void CustomBeatmapLevelsRepository::FixBackingDictionaries() {
