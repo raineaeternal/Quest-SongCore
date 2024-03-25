@@ -241,12 +241,14 @@ namespace SongCore::UI {
     void RequirementsListManager::ShowRequirements() {
         if (!_requirementModal) {
             BSML::parse_and_construct(Assets::requirements_bsml, _requirementButton->transform, this);
+            _modalPosition = _requirementModal->transform->position;
         }
 
         _listTableData->tableView->ReloadData();
         _listTableData->tableView->ScrollToCellWithIdx(0, ::HMUI::TableView::ScrollPositionType::Beginning, true);
 
         _requirementModal->onHide = nullptr;
+        _requirementModal->transform->position = _modalPosition;
         _requirementModal->Show();
     }
 

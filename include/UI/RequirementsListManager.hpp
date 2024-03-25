@@ -31,6 +31,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, RequirementsListManager, System::
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::UI::Button*, _requirementButton);
     DECLARE_INSTANCE_FIELD_PRIVATE(BSML::CustomListTableData*, _listTableData);
     DECLARE_INSTANCE_FIELD_PRIVATE(BSML::ModalView*, _requirementModal);
+    DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Vector3, _modalPosition);
     DECLARE_INSTANCE_FIELD_PRIVATE(System::Action*, _showColorsOnModalHideAction);
 
     DECLARE_INSTANCE_FIELD_PRIVATE(ListW<BSML::CustomCellInfo*>, _displayCells);
