@@ -285,3 +285,19 @@ MAKE_AUTO_HOOK_MATCH(BeatmapLevelPack_CreateLevelPackForFiltering, &BeatmapLevel
 
     return BeatmapLevelPack_CreateLevelPackForFiltering(uniqueLevels);
 }
+
+// fix error message on custom levels, as the game doesn't correctly display the error message here on quest due to an ifd out check
+MAKE_AUTO_HOOK_ORIG_MATCH(
+    PlatformLeaderboardViewController_Refresh,
+    &PlatformLeaderboardViewController::Refresh,
+    void,
+    PlatformLeaderboardViewController* self,
+    bool showLoadingIndicator,
+    bool clear
+) {
+    auto levelId = self->_beatmapKey.levelId;
+    if (levelId.starts_with(u"custom_level_"))
+        self->_loadingControl->ShowText(BGLib::Polyglot::Localization::Get("CUSTOM_LEVELS_LEADERBOARDS_NOT_SUPPORTED"), false);
+    else
+        PlatformLeaderboardViewController_Refresh(self, showLoadingIndicator, clear);
+}
