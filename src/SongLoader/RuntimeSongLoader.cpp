@@ -410,7 +410,7 @@ namespace SongCore::SongLoader {
             return;
         } else if(!level) {
             WARNING("Somehow the stored beatmap level was null, just removing from the dictionary and nothing else...");
-            targetDict->TryRemove(csPath, byref(level));
+            targetDict->System_Collections_Generic_IDictionary_TKey_TValue__Remove(csPath);
             return;
         }
 
@@ -421,7 +421,7 @@ namespace SongCore::SongLoader {
         std::filesystem::remove_all(levelPath, error_code);
 
         if (error_code) WARNING("Error occurred during removal of {}: {}", levelPath.string(), error_code.message());
-        if (!targetDict->TryRemove(csPath, byref(level))) WARNING("Failed to remove beatmap for {} from dictionary!", levelPath.string());
+        if (!targetDict->System_Collections_Generic_IDictionary_TKey_TValue__Remove(csPath)) WARNING("Failed to remove beatmap for {} from dictionary!", levelPath.string());
 
         // since a (soft) refresh is required after a reload, there's no need to remove from the c++ collections
         // like _allLoadedLevels, _levelIdsToLevels, _hashesToLevels
