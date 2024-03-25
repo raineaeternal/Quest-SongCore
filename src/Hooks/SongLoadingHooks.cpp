@@ -302,8 +302,11 @@ MAKE_AUTO_HOOK_ORIG_MATCH(
     bool clear
 ) {
     auto levelId = self->_beatmapKey.levelId;
-    if (levelId.starts_with(u"custom_level_"))
+    if (levelId.starts_with(u"custom_level_")) {
+        self->StopAllCoroutines();
+        self->ClearContent();
         self->_loadingControl->ShowText(BGLib::Polyglot::Localization::Get("CUSTOM_LEVELS_LEADERBOARDS_NOT_SUPPORTED"), false);
-    else
+    } else {
         PlatformLeaderboardViewController_Refresh(self, showLoadingIndicator, clear);
+    }
 }
