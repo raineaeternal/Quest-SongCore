@@ -25,5 +25,6 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdat
     DECLARE_CTOR(ctor, GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::LevelFilteringNavigationController* levelFilteringNavigationController, GlobalNamespace::LevelCollectionNavigationController* levelCollectionNavigationViewController, GlobalNamespace::LevelCollectionViewController* levelCollectionViewController);
 
     private:
+        void SongsWillRefresh();
         void CustomLevelPacksRefreshed(CustomBeatmapLevelsRepository* levelsRepository);
 )
