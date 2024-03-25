@@ -12,6 +12,9 @@
 #include "UnityEngine/CanvasGroup.hpp"
 #include "TMPro/TMP_Text.hpp"
 
+#include "System/Action_1.hpp"
+#include "System/Action_2.hpp"
+#include "GlobalNamespace/StandardLevelDetailViewController.hpp"
 #include "UnityEngine/Vector2.hpp"
 #include "UnityEngine/Vector3.hpp"
 #include "UnityEngine/Rect.hpp"
@@ -25,9 +28,15 @@
 #include "bsml/shared/BSML/Components/TextGradientUpdater.hpp"
 
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std::vector<Il2CppClass *>({classof(::Zenject::IInitializable *), classof(::System::IDisposable *), classof(::Zenject::ITickable *)}),
-    DECLARE_CTOR(ctor);
-    DECLARE_INJECT_METHOD(void, Inject, SongLoader::RuntimeSongLoader* runtimeSongLoader);
-    DECLARE_INSTANCE_FIELD(SongCore::SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
+    DECLARE_CTOR(ctor, SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController);
+    DECLARE_INSTANCE_FIELD(SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
+    DECLARE_INSTANCE_FIELD(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
+
+    using PlayButtonAction = System::Action_1<UnityW<GlobalNamespace::StandardLevelDetailViewController>>;
+    using PracticeButtonAction = System::Action_2<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::BeatmapLevel*>;
+
+    DECLARE_INSTANCE_FIELD_PRIVATE(PlayButtonAction*, _playButtonAction);
+    DECLARE_INSTANCE_FIELD_PRIVATE(PracticeButtonAction*, _practiceButtonAction);
 
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Canvas*, _canvas);
     DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::CanvasGroup*, _canvasGroup);
@@ -74,6 +83,8 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     void ShowCanvasForSeconds(float time);
     void HideCanvas();
     void UpdateLoadingBarColor();
+
+    void DisableImmediately();
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &::Zenject::IInitializable::Initialize);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &::System::IDisposable::Dispose);

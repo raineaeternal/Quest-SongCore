@@ -43,7 +43,10 @@ namespace SongCore::UI {
         }
     }
 
-    void ProgressBar::ctor() {
+    void ProgressBar::ctor(SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController) {
+        _runtimeSongLoader = runtimeSongLoader;
+        _levelDetailViewController = levelDetailViewController;
+
         _pos = UnityEngine::Vector3(0, 0.05f, 3);
         _rot = UnityEngine::Vector3(90, 0, 0);
         _scale = UnityEngine::Vector3(0.02f, 0.02f, 0.0f);
@@ -67,11 +70,28 @@ namespace SongCore::UI {
         _gradient = GetGradient();
     }
 
-    void ProgressBar::Inject(SongLoader::RuntimeSongLoader* runtimeSongLoader) {
-        _runtimeSongLoader = runtimeSongLoader;
-    }
-
     void ProgressBar::Initialize() {
+        _playButtonAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>>(
+            std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>)>(
+                [this](UnityW<GlobalNamespace::StandardLevelDetailViewController>){
+                    _canvasDisplayTimer = std::nullopt;
+                    _showingMessage = false;
+                }
+            )
+        );
+
+        _practiceButtonAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::BeatmapLevel*>(
+            std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::BeatmapLevel*)>(
+                [this](UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::BeatmapLevel*){
+                    _canvasDisplayTimer = std::nullopt;
+                    _showingMessage = false;
+                }
+            )
+        );
+
+        _levelDetailViewController->add_didPressActionButtonEvent(_playButtonAction);
+        _levelDetailViewController->add_didPressPracticeButtonEvent(_practiceButtonAction);
+
         _runtimeSongLoader->SongsWillRefresh += {&ProgressBar::RuntimeSongLoaderOnSongRefresh, this};
         _runtimeSongLoader->SongsLoaded += {&ProgressBar::RuntimeSongLoaderOnSongLoaded, this};
 
@@ -216,6 +236,9 @@ namespace SongCore::UI {
 
         _runtimeSongLoader->SongsWillRefresh -= {&ProgressBar::RuntimeSongLoaderOnSongRefresh, this};
         _runtimeSongLoader->SongsLoaded -= {&ProgressBar::RuntimeSongLoaderOnSongLoaded, this};
+
+        _levelDetailViewController->remove_didPressActionButtonEvent(_playButtonAction);
+        _levelDetailViewController->remove_didPressPracticeButtonEvent(_practiceButtonAction);
     }
 
     void ProgressBar::UpdateLoadingBarColor() {
@@ -231,5 +254,14 @@ namespace SongCore::UI {
         } else {
             _loadingBar->color = {1, 1, 1, 0.5f};
         }
+    }
+
+    void ProgressBar::DisableImmediately() {
+        _canvasDisplayTimer = std::nullopt;
+        _showingMessage = false;
+        _beGay = false; // :pensive:
+
+        if (_canvas) _canvas->enabled = false;
+        if (_canvasGroup) _canvasGroup->alpha = 0.0f;
     }
 }
