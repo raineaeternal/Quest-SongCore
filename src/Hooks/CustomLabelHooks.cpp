@@ -144,6 +144,8 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     auto labels = ListW<StringW>::New();
 
     auto success = !difficulties.empty();
+    int selectedCellIdx = self->_difficultySegmentedControl->selectedCellNumber;
+
     for (auto difficulty : difficulties) {
         auto difficultyDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
         if (!difficultyDetailsOpt.has_value()) { success = false; break; }
@@ -158,5 +160,6 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
 
     if (success) { // we found labels
         self->_difficultySegmentedControl->SetTexts(labels->i___System__Collections__Generic__IReadOnlyList_1_T_());
+        self->_difficultySegmentedControl->SelectCellWithNumber(selectedCellIdx);
     }
 }
