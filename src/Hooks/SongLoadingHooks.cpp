@@ -253,10 +253,12 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &
 }
 
 MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_GetBeatmapLevel, &BeatmapLevelsModel::GetBeatmapLevel, BeatmapLevel*, BeatmapLevelsModel* self, StringW levelID) {
-    if (levelID.starts_with(u"custom_level_")) {
-        return SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+    auto result = BeatmapLevelsModel_GetBeatmapLevel(self, levelID);
+    if (!result && levelID.starts_with(u"custom_level_")) {
+        result = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
     }
-    return BeatmapLevelsModel_GetBeatmapLevel(self, levelID);
+
+    return result;
 }
 
 MAKE_AUTO_HOOK_MATCH(BeatmapLevelPack_CreateLevelPackForFiltering, &BeatmapLevelPack::CreateLevelPackForFiltering, BeatmapLevelPack*, ArrayW<BeatmapLevel*> beatmapLevels) {

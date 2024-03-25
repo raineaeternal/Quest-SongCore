@@ -136,7 +136,6 @@ namespace SongCore::SongLoader {
         }
 
         InvokeSongsWillRefresh();
-        _areSongsLoaded = false;
 
         std::unique_lock<std::shared_mutex> writingLock(_currentRefreshMutex);
         _currentlyLoadingFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshSongs_internal, this, std::forward<bool>(fullRefresh));
@@ -169,6 +168,7 @@ namespace SongCore::SongLoader {
     void RuntimeSongLoader::RefreshSongs_internal(bool fullRefresh) {
         auto refreshStartTime = high_resolution_clock::now();
         std::set<LevelPathAndWip> levels;
+        _areSongsLoaded = false;
         _loadedSongs = 0;
 
         // travel the given song paths to collect levels to load
@@ -275,8 +275,6 @@ namespace SongCore::SongLoader {
 
         INFO("Updated collections after load in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - collectionUpdateStartTime).count());
 
-        _areSongsLoaded = true;
-
         bool finishedOnMainThread = false;
         // finish things up on the main thread for safety with loading
         BSML::MainThreadScheduler::Schedule([this, &finishedOnMainThread](){
@@ -290,6 +288,7 @@ namespace SongCore::SongLoader {
         });
 
         while (!finishedOnMainThread) std::this_thread::sleep_for(10ms);
+        _areSongsLoaded = true;
         INFO("Refresh performed in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - refreshStartTime).count());
     }
 
