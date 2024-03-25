@@ -25,6 +25,8 @@ namespace SongCore::SongLoader {
 
     void NavigationControllerUpdater::CustomLevelPacksRefreshed(CustomBeatmapLevelsRepository* collection) {
         INFO("Updating levelFilteringNavigationController");
+        // if this is null, the controller wasn't setup yet, just make sure the packs are setup
+        if (!_levelFilteringNavigationController->_allBeatmapLevelPacks) _levelFilteringNavigationController->SetupBeatmapLevelPacks();
 
         // get the selected level to keep the selection after the songs update
         auto tableView = _levelCollectionViewController->_levelCollectionTableView;
