@@ -1,6 +1,7 @@
 #include "UI/PlayButtonsUpdater.hpp"
 #include "CustomJSONData.hpp"
 #include "LevelSelect.hpp"
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "logging.hpp"
 #include "hooking.hpp"
 
@@ -13,7 +14,8 @@ bool IsPracticeButtonInteractable = true;
 bool IsPlayButtonInteractable = true;
 
 namespace SongCore::UI {
-    void PlayButtonsUpdater::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect) {
+    void PlayButtonsUpdater::ctor(SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect) {
+        _runtimeSongLoader = runtimeSongLoader;
         _levelDetailViewController = levelDetailViewController;
         _playButtonInteractable = playButtonInteractable;
         _capabilities = capabilities;
@@ -25,7 +27,10 @@ namespace SongCore::UI {
         _practiceButton = _levelDetailViewController->_standardLevelDetailView->practiceButton;
 
         _anyDisablingModInfos = !_playButtonInteractable->PlayButtonDisablingModInfos.empty();
+        _isRefreshing = _runtimeSongLoader->AreSongsRefreshing;
 
+        _runtimeSongLoader->SongsWillRefresh += {&PlayButtonsUpdater::SongsWillRefresh, this};
+        _runtimeSongLoader->SongsLoaded += {&PlayButtonsUpdater::SongsLoaded, this};
         _playButtonInteractable->PlayButtonDisablingModsChanged += {&PlayButtonsUpdater::HandleDisablingModInfosChanged, this};
         _levelSelect->LevelWasSelected += {&PlayButtonsUpdater::LevelWasSelected, this};
 
@@ -33,6 +38,8 @@ namespace SongCore::UI {
     }
 
     void PlayButtonsUpdater::Dispose() {
+        _runtimeSongLoader->SongsWillRefresh += {&PlayButtonsUpdater::SongsWillRefresh, this};
+        _runtimeSongLoader->SongsLoaded += {&PlayButtonsUpdater::SongsLoaded, this};
         _playButtonInteractable->PlayButtonDisablingModsChanged -= {&PlayButtonsUpdater::HandleDisablingModInfosChanged, this};
         _levelSelect->LevelWasSelected -= {&PlayButtonsUpdater::LevelWasSelected, this};
 
@@ -41,6 +48,7 @@ namespace SongCore::UI {
     }
 
     bool PlayButtonsUpdater::IsPlayerAllowedToStart() {
+        if (_isRefreshing) return false;
         if (_anyDisablingModInfos) return false;
         if (!_levelIsCustom) return true;
         if (_missingRequirements) return false;
@@ -58,6 +66,16 @@ namespace SongCore::UI {
         _practiceButton->set_interactable(IsPracticeButtonInteractable);
         // we want it to be "allow to start" and "not wip"
         _playButton->set_interactable(IsPlayButtonInteractable);
+    }
+
+    void PlayButtonsUpdater::SongsWillRefresh() {
+        _isRefreshing = true;
+        UpdatePlayButtonsState();
+    }
+
+    void PlayButtonsUpdater::SongsLoaded(std::span<SongLoader::CustomBeatmapLevel* const> levels) {
+        _isRefreshing = false;
+        UpdatePlayButtonsState();
     }
 
     void PlayButtonsUpdater::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {

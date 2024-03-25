@@ -19,7 +19,8 @@
 #include "SongLoader/CustomBeatmapLevel.hpp"
 
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, PlayButtonsUpdater, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
-    DECLARE_CTOR(ctor, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect);
+    DECLARE_CTOR(ctor, SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect);
+    DECLARE_INSTANCE_FIELD_PRIVATE(SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
     DECLARE_INSTANCE_FIELD_PRIVATE(PlayButtonInteractable*, _playButtonInteractable);
     DECLARE_INSTANCE_FIELD_PRIVATE(Capabilities*, _capabilities);
@@ -32,6 +33,8 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, PlayButtonsUpdater, System::Objec
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);
 
     private:
+        void SongsWillRefresh();
+        void SongsLoaded(std::span<SongLoader::CustomBeatmapLevel* const> levels);
         void LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs);
 
         bool IsPlayerAllowedToStart();
@@ -39,6 +42,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, PlayButtonsUpdater, System::Objec
 
         /// @brief whether there are any disabling mod infos
         bool _anyDisablingModInfos;
+        bool _isRefreshing;
         bool _levelIsCustom;
         bool _levelIsWIP;
         bool _missingRequirements;
