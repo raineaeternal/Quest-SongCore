@@ -12,8 +12,8 @@ namespace SongCore::SongLoader {
     }
 
     void CustomBeatmapLevelsRepository::AddLevelPack(GlobalNamespace::BeatmapLevelPack* pack) {
-        auto existing = GetBeatmapLevelPackByPackId(pack->packID);
-        if (!existing) {
+        auto itr = std::find_if(_levelPacks.begin(), _levelPacks.end(), [pack](auto x){ return x->packID == pack->packID; });
+        if (itr == _levelPacks.end()) {
             _levelPacks->Add(pack);
         } else {
             WARNING("A pack with id {} was already added, not adding again!", pack->packID);
@@ -21,9 +21,9 @@ namespace SongCore::SongLoader {
     }
 
     void CustomBeatmapLevelsRepository::RemoveLevelPack(GlobalNamespace::BeatmapLevelPack* pack) {
-        auto existing = GetBeatmapLevelPackByPackId(pack->packID);
-        if (existing) {
-            _levelPacks->Remove(existing);
+        auto itr = std::find_if(_levelPacks.begin(), _levelPacks.end(), [pack](auto x){ return x->packID == pack->packID; });
+        if (itr != _levelPacks.end()) {
+            _levelPacks->Remove(*itr);
         } else {
             WARNING("A pack with id {} was not added, not removing!", pack->packID);
         }
