@@ -12,9 +12,12 @@
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
 #include "GlobalNamespace/LevelFilteringNavigationController.hpp"
 #include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
+#include "GlobalNamespace/PlatformLeaderboardViewController.hpp"
+#include "GlobalNamespace/LoadingControl.hpp"
 
 #include "GlobalNamespace/OculusPlatformAdditionalContentModel.hpp"
 #include "GlobalNamespace/BeatmapLevelsModel.hpp"
+#include "GlobalNamespace/BeatmapLevelsEntitlementModel.hpp"
 #include "GlobalNamespace/BeatmapLevelLoader.hpp"
 #include "GlobalNamespace/BeatmapLevelDataLoader.hpp"
 #include "GlobalNamespace/FileHelpers.hpp"
@@ -23,6 +26,7 @@
 #include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
 #include "System/Collections/Generic/IReadOnlyList_1.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
+#include "BGLib/Polyglot/Localization.hpp"
 
 #include <regex>
 
@@ -195,18 +199,20 @@ MAKE_AUTO_HOOK_MATCH(BeatmapLevelLoader_HandleItemWillBeRemovedFromCache, &Beatm
         self->_beatmapLevelDataLoader->TryUnload(beatmapLevelId);
 }
 
-// override entitelement for custom levels
-MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetLevelEntitlementStatusInternalAsync, &OculusPlatformAdditionalContentModel::GetLevelEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, OculusPlatformAdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
-    if(levelId.starts_with("custom_level_"))
+// ifd out on quest, just check for custom_level_ prepend and say owned if so
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsEntitlementModel_GetLevelEntitlementStatusAsync, &BeatmapLevelsEntitlementModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, BeatmapLevelsEntitlementModel* self, StringW levelID, CancellationToken token) {
+    if (levelID.starts_with(u"custom_level_")) {
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
-    return OculusPlatformAdditionalContentModel_GetLevelEntitlementStatusInternalAsync(self, levelId, cancellationToken);
+    }
+    return BeatmapLevelsEntitlementModel_GetLevelEntitlementStatusAsync(self, levelID, token);
 }
 
-// override entitelement for custom level packs
-MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetPackEntitlementStatusInternalAsync, &OculusPlatformAdditionalContentModel::GetPackEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, OculusPlatformAdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
-    if(levelPackId.starts_with("custom_levelPack_"))
+// ifd out on quest, just check for custom_levelPack_ prepend and say owned if so
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsEntitlementModel_GetPackEntitlementStatusAsync, &BeatmapLevelsEntitlementModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, BeatmapLevelsEntitlementModel* self, StringW levelPackID, CancellationToken token) {
+    if (levelPackID.starts_with(u"custom_levelPack_")) {
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
-    return OculusPlatformAdditionalContentModel_GetPackEntitlementStatusInternalAsync(self, levelPackId, cancellationToken);
+    }
+    return BeatmapLevelsEntitlementModel_GetPackEntitlementStatusAsync(self, levelPackID, token);
 }
 
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
