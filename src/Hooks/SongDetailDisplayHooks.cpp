@@ -47,6 +47,8 @@ MAKE_AUTO_HOOK_MATCH(
         self->_songAuthorText->text = fmt::format("<size=80%>{}</size> <size=90%>[<color=#{}>{}</color>]</size>", songAuthorName, color, levelAuthorName);
     }
 
+    self->_songNameText->text = fmt::format("{}<size=80%>[{}]</size>", level->songName, level->songSubName);
+
     if (isFavorite) {
         static auto favoriteSize = UnityEngine::Vector3(1.4,1.4,1.4);
 
