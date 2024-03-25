@@ -26,12 +26,14 @@
 
 #include <regex>
 
+// if the version was still null, override!
 MAKE_AUTO_HOOK_MATCH(VersionSerializedData_get_v, &GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData::get_v, StringW, GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData* self) {
     auto result = VersionSerializedData_get_v(self);
     if (result) return result;
     return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion()->ToString();
 }
 
+// version getting override implementation
 System::Version* GetVersion(StringW data) {
     if (!data) return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
 
@@ -54,19 +56,22 @@ System::Version* GetVersion(StringW data) {
     return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
 }
 
+// version getting override
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersionAsync, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersionAsync, System::Threading::Tasks::Task_1<System::Version*>*, StringW data) {
     return SongCore::StartTask<System::Version*>(std::bind(GetVersion, data));
 }
 
+// version getting override
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
     return GetVersion(data);
 }
 
+// create a custom level save data
 MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString, GlobalNamespace::StandardLevelInfoSaveData*, StringW stringData) {
     SafePtr<GlobalNamespace::StandardLevelInfoSaveData> original = StandardLevelInfoSaveData_DeserializeFromJSONString(stringData);
 
     if (!original || !original.ptr()) {
-        INFO("Orig call did not produce valid savedata!");
+        WARNING("Orig call did not produce valid savedata!");
         return nullptr;
     }
 
@@ -154,6 +159,7 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
     return customSaveData;
 }
 
+// custom songs tab is disabled by default on quest, reenable
 MAKE_AUTO_HOOK_ORIG_MATCH(SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels, &GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator::get_enableCustomLevels, bool, GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator* self) {
     DEBUG("SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels override returning true");
     return true;
@@ -189,12 +195,14 @@ MAKE_AUTO_HOOK_MATCH(BeatmapLevelLoader_HandleItemWillBeRemovedFromCache, &Beatm
         self->_beatmapLevelDataLoader->TryUnload(beatmapLevelId);
 }
 
+// override entitelement for custom levels
 MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetLevelEntitlementStatusInternalAsync, &OculusPlatformAdditionalContentModel::GetLevelEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, OculusPlatformAdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
     if(levelId.starts_with("custom_level_"))
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
     return OculusPlatformAdditionalContentModel_GetLevelEntitlementStatusInternalAsync(self, levelId, cancellationToken);
 }
 
+// override entitelement for custom level packs
 MAKE_AUTO_HOOK_ORIG_MATCH(OculusPlatformAdditionalContentModel_GetPackEntitlementStatusInternalAsync, &OculusPlatformAdditionalContentModel::GetPackEntitlementStatusInternalAsync, Task_1<EntitlementStatus>*, OculusPlatformAdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
     if(levelPackId.starts_with("custom_levelPack_"))
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
@@ -216,6 +224,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsyn
     }, std::forward<SongCore::CancellationToken>(cancellationToken));
 }
 
+// reading files sucks for file paths
 MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
     std::u16string str = filePath;
     int index = str.find_last_of('/') + 1;
@@ -225,6 +234,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
     return u"file://" + dir + fileName;
 }
 
+// get the level data async
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
@@ -240,6 +250,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &Beatmap
     return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, token);
 }
 
+// get the level data async
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return SongCore::StartTask<bool>([=](SongCore::CancellationToken token){
@@ -252,6 +263,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &
     return BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync(self, levelID, token);
 }
 
+// override getting beatmap level if original method didn't return anything
 MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_GetBeatmapLevel, &BeatmapLevelsModel::GetBeatmapLevel, BeatmapLevel*, BeatmapLevelsModel* self, StringW levelID) {
     auto result = BeatmapLevelsModel_GetBeatmapLevel(self, levelID);
     if (!result && levelID.starts_with(u"custom_level_")) {
@@ -261,6 +273,7 @@ MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_GetBeatmapLevel, &BeatmapLevelsModel::Ge
     return result;
 }
 
+// input array can have duplicates, we change the input for that reason
 MAKE_AUTO_HOOK_MATCH(BeatmapLevelPack_CreateLevelPackForFiltering, &BeatmapLevelPack::CreateLevelPackForFiltering, BeatmapLevelPack*, ArrayW<BeatmapLevel*> beatmapLevels) {
     // a set considers 2 elements equivalent if !(a < b) && !(b < a) which for pointers is ideal since 2 same pointers are the same level
     std::set<BeatmapLevel*> levelSet;
