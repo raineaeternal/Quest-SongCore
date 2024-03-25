@@ -5,6 +5,7 @@
 #include "SongLoader/CustomBeatmapLevel.hpp"
 #include "UnityEngine/Vector3.hpp"
 #include "UnityEngine/Transform.hpp"
+#include "UnityEngine/RectTransform.hpp"
 #include "TMPro/TMP_Text.hpp"
 #include <algorithm>
 
@@ -47,7 +48,9 @@ MAKE_AUTO_HOOK_MATCH(
         self->_songAuthorText->text = fmt::format("<size=80%>{}</size> <size=90%>[<color=#{}>{}</color>]</size>", songAuthorName, color, levelAuthorName);
     }
 
-    self->_songNameText->text = fmt::format("{}<size=80%>[{}]</size>", level->songName, level->songSubName);
+    auto size = self->_songNameText->rectTransform->sizeDelta;
+    size.y = 6.5f;
+    self->_songNameText->rectTransform->sizeDelta = size;
 
     if (isFavorite) {
         static auto favoriteSize = UnityEngine::Vector3(1.4,1.4,1.4);
