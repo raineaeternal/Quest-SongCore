@@ -31,7 +31,6 @@ namespace SongCore::Utils {
     float GetLengthFromWavRiff(std::filesystem::path const& path) {
         std::ifstream reader(path, std::ios::in | std::ios::binary);
 
-        // TODO: endianness??
         // parse wav header
         WavHeader header;
         reader.read((char*)&header, sizeof(WavHeader));
