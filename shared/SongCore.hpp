@@ -2,17 +2,13 @@
 
 #include "./_config.h"
 
+#include "SongLoader/CustomBeatmapLevel.hpp"
+#include "SongLoader/CustomBeatmapLevelsRepository.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
-#include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 
-#include "SongLoader/CustomBeatmapLevelPackCollection.hpp"
-#include "SongLoader/CustomBeatmapLevelCollection.hpp"
 #include "SongLoader/CustomLevelPack.hpp"
-
-#include "GlobalNamespace/CustomBeatmapLevel.hpp"
-#include "GlobalNamespace/CustomDifficultyBeatmapSet.hpp"
-#include "GlobalNamespace/CustomDifficultyBeatmap.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 
 #include "CustomJSONData.hpp"
 
@@ -124,22 +120,22 @@ namespace SongCore::API {
 
         /// @brief delete a song by providing its preview beatmap level
         /// @return a future you can use to check whether the deletion is done. if the songloader didn't exist yet it will give you a future that's not valid
-        SONGCORE_EXPORT std::future<void> DeleteSong(GlobalNamespace::CustomPreviewBeatmapLevel* beatmapLevel);
+        SONGCORE_EXPORT std::future<void> DeleteSong(::SongCore::SongLoader::CustomBeatmapLevel* beatmapLevel);
 
         /// @brief event ran when songs are done refreshing
-        SONGCORE_EXPORT UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>>& GetSongsLoadedEvent();
+        SONGCORE_EXPORT UnorderedEventCallback<std::span<::SongCore::SongLoader::CustomBeatmapLevel* const>>& GetSongsLoadedEvent();
 
         /// @brief event ran when song refreshing will start
         SONGCORE_EXPORT UnorderedEventCallback<>& GetSongsWillRefreshEvent();
 
         /// @brief event ran before the beatmap levels model is updated, ideal for adding your own packs to the collection ordering them differently, or removing packs you don't want in there
-        SONGCORE_EXPORT UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*>& GetCustomLevelPacksWillRefreshEvent();
+        SONGCORE_EXPORT UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksWillRefreshEvent();
 
         /// @brief event ran after the beatmap levels model got updated
-        SONGCORE_EXPORT UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*>& GetCustomLevelPacksRefreshedEvent();
+        SONGCORE_EXPORT UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksRefreshedEvent();
 
         /// @brief event ran before a song is actually deleted in case you want to keep track of the deleted songs
-        SONGCORE_EXPORT UnorderedEventCallback<GlobalNamespace::CustomPreviewBeatmapLevel*>& GetSongWillBeDeletedEvent();
+        SONGCORE_EXPORT UnorderedEventCallback<::SongCore::SongLoader::CustomBeatmapLevel*>& GetSongWillBeDeletedEvent();
 
         /// @brief event ran after a song was deleted. At this point there's no way of knowing what song it was so it's advised to look at `GetSongWillBeDeletedEvent`
         SONGCORE_EXPORT UnorderedEventCallback<>& GetSongDeletedEvent();
@@ -177,7 +173,7 @@ namespace SongCore::API {
 
         /// @brief provides a span of all levels the songloader currently knows about
         /// @return if songloader not setup returns an empty span
-        SONGCORE_EXPORT std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> GetAllLevels();
+        SONGCORE_EXPORT std::span<::SongCore::SongLoader::CustomBeatmapLevel* const> GetAllLevels();
 
         /// @brief Getter for the custom level pack songcore creates
         /// @return created pack, or nullptr if the songloader didn't exist
@@ -187,25 +183,25 @@ namespace SongCore::API {
         /// @return created pack, or nullptr if the songloader didn't exist
         SONGCORE_EXPORT SongLoader::CustomLevelPack* GetCustomWIPLevelPack();
 
-        /// @brief getter for the custom level pack collection songcore creates
-        /// @return created pack collection, or nullptr if the songloader didn't exist
-        SONGCORE_EXPORT SongLoader::CustomBeatmapLevelPackCollection* GetCustomLevelPackCollection();
+        /// @brief getter for the custom level repository songcore creates
+        /// @return created repository, or nullptr if the songloader didn't exist
+        SONGCORE_EXPORT SongLoader::CustomBeatmapLevelsRepository* GetCustomBeatmapLevelsRepository();
 
         /// @brief gets a level by the levelpath
         /// @return nullptr if level not found
-        SONGCORE_EXPORT GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByPath(std::filesystem::path const& levelPath);
+        SONGCORE_EXPORT ::SongCore::SongLoader::CustomBeatmapLevel* GetLevelByPath(std::filesystem::path const& levelPath);
 
         /// @brief gets a level by the levelId
         /// @return nullptr if level not found
-        SONGCORE_EXPORT GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByLevelID(std::string_view levelID);
+        SONGCORE_EXPORT ::SongCore::SongLoader::CustomBeatmapLevel* GetLevelByLevelID(std::string_view levelID);
 
         /// @brief gets a level by the hash
         /// @return nullptr if level not found
-        SONGCORE_EXPORT GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByHash(std::string_view hash);
+        SONGCORE_EXPORT ::SongCore::SongLoader::CustomBeatmapLevel* GetLevelByHash(std::string_view hash);
 
         /// @brief gets a level by a search function
         /// @return nullptr if level not found
-        SONGCORE_EXPORT GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByFunction(std::function<bool(GlobalNamespace::CustomPreviewBeatmapLevel*)> searchFunction);
+        SONGCORE_EXPORT ::SongCore::SongLoader::CustomBeatmapLevel* GetLevelByFunction(std::function<bool(::SongCore::SongLoader::CustomBeatmapLevel*)> searchFunction);
     }
 
     namespace LevelSelect {
@@ -233,34 +229,20 @@ namespace SongCore::API {
             /// @brief if this is a custom level, this should be set
             std::optional<BasicCustomLevelDetailsGroup> customLevelDetails = std::nullopt;
 
-            /// @brief the selected levelpack, may or may not be a custom pack
+            /// @brief the selected levelpack, may or may not be a custom pack, can be null in favorites & search views!
             union {
                 SongCore::SongLoader::CustomLevelPack* customLevelPack = nullptr;
-                GlobalNamespace::IBeatmapLevelPack* levelPack;
+                GlobalNamespace::BeatmapLevelPack* levelPack;
             };
 
+            /// @brief selected beatmap level
             union {
-                GlobalNamespace::CustomPreviewBeatmapLevel* customPreviewBeatmapLevel = nullptr;
-                GlobalNamespace::IPreviewBeatmapLevel* previewBeatmapLevel;
+                ::SongCore::SongLoader::CustomBeatmapLevel* customBeatmapLevel = nullptr;
+                GlobalNamespace::BeatmapLevel* beatmapLevel;
             };
 
-            /// @brief equivalent to levels in the left list in song selection
-            union {
-                GlobalNamespace::CustomBeatmapLevel* customBeatmapLevel = nullptr;
-                GlobalNamespace::IBeatmapLevel* beatmapLevel;
-            };
-
-            /// @brief describing characteristics (a set of diffs)
-            union {
-                GlobalNamespace::CustomDifficultyBeatmapSet* customDifficultyBeatmapSet = nullptr;
-                GlobalNamespace::IDifficultyBeatmapSet* difficultyBeatmapSet;
-            };
-
-            /// @brief diff of the map
-            union {
-                GlobalNamespace::CustomDifficultyBeatmap* customDifficultyBeatmap = nullptr;
-                GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap;
-            };
+            /// @brief selected beatmap key
+            GlobalNamespace::BeatmapKey beatmapKey;
         };
 
         SONGCORE_EXPORT UnorderedEventCallback<LevelWasSelectedEventArgs const&>& GetLevelWasSelectedEvent();

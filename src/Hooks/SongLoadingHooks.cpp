@@ -1,27 +1,47 @@
+#include "SongLoader/RuntimeSongLoader.hpp"
 #include "hooking.hpp"
 #include "logging.hpp"
-#include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
+#include "tasks.hpp"
 
-#include "shared/CustomJSONData.hpp"
+#include "CustomJSONData.hpp"
+#include "SongCore.hpp"
+
 #include "UnityEngine/Object.hpp"
 #include "System/Version.hpp"
 #include "GlobalNamespace/BeatmapSaveDataHelpers.hpp"
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
+#include "GlobalNamespace/LevelFilteringNavigationController.hpp"
+#include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
+#include "GlobalNamespace/PlatformLeaderboardViewController.hpp"
+#include "GlobalNamespace/LoadingControl.hpp"
 
-#include "GlobalNamespace/AdditionalContentModel.hpp"
+#include "GlobalNamespace/OculusPlatformAdditionalContentModel.hpp"
 #include "GlobalNamespace/BeatmapLevelsModel.hpp"
-#include "GlobalNamespace/BeatmapLevelPackCollection.hpp"
-#include "GlobalNamespace/BeatmapLevelPackCollectionSO.hpp"
-#include "GlobalNamespace/BeatmapLevelPackCollectionContainerSO.hpp"
+#include "GlobalNamespace/BeatmapLevelsEntitlementModel.hpp"
+#include "GlobalNamespace/BeatmapLevelLoader.hpp"
+#include "GlobalNamespace/BeatmapLevelDataLoader.hpp"
 #include "GlobalNamespace/FileHelpers.hpp"
+#include "SongLoader/CustomBeatmapLevelsRepository.hpp"
 #include "System/Threading/Tasks/Task_1.hpp"
+#include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
+#include "System/Collections/Generic/IReadOnlyList_1.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
+#include "BGLib/Polyglot/Localization.hpp"
 
 #include <regex>
 
-MAKE_AUTO_HOOK_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
-    DEBUG("BeatmapSaveDataHelpers_GetVersion");
-    auto truncatedText = data.operator std::string().substr(0, 50);
+// if the version was still null, override!
+MAKE_AUTO_HOOK_MATCH(VersionSerializedData_get_v, &GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData::get_v, StringW, GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData* self) {
+    auto result = VersionSerializedData_get_v(self);
+    if (result) return result;
+    return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion()->ToString();
+}
+
+// version getting override implementation
+System::Version* GetVersion(StringW data) {
+    if (!data) return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
+
+    auto truncatedText = static_cast<std::string>(data).substr(0, 50);
     static const std::regex versionRegex (R"("_?version"\s*:\s*"[0-9]+\.[0-9]+\.?[0-9]?")", std::regex_constants::optimize);
     std::smatch matches;
     if(std::regex_search(truncatedText, matches, versionRegex)) {
@@ -32,60 +52,30 @@ MAKE_AUTO_HOOK_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::Beatma
             try {
                 return System::Version::New_ctor(version);
             } catch(const std::runtime_error& e) {
-                INFO("BeatmapSaveDataHelpers_GetVersion Invalid version: \"%s\"!", version.c_str());
+                ERROR("BeatmapSaveDataHelpers_GetVersion Invalid version: '{}'!", version);
             }
         }
     }
-    return System::Version::New_ctor("2.0.0");
+
+    return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
 }
 
-MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString, GlobalNamespace::StandardLevelInfoSaveData *, StringW stringData) {
-    DEBUG("StandardLevelInfoSaveData_DeserializeFromJSONString");
+// version getting override
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersionAsync, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersionAsync, System::Threading::Tasks::Task_1<System::Version*>*, StringW data) {
+    return SongCore::StartTask<System::Version*>(std::bind(GetVersion, data));
+}
 
-    SafePtr<GlobalNamespace::StandardLevelInfoSaveData> original;
+// version getting override
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
+    return GetVersion(data);
+}
 
-    // replacing the 2.x.x version with 2.0.0 is assumed safe because
-    // minor/patch versions should NOT break the schema and therefore deemed
-    // readable by RSL even if the new fields are not parsed
-    // short circuit
-    // 1.0.0 and 2.0.0 are supported by basegame through string equality
-    // checks if (!stringData->Contains("1.0.0") &&
-    // !stringData->Contains("2.0.0")) { https://regex101.com/r/jJAvvE/3
-    // Verified result: https://godbolt.org/z/MvfW3eh7q
-    // Checks if version is 2.0.0 range and then replaces it with 2.0.0
-    // for compatibility
-    static const std::regex versionRegex(
-        R"(\"_version\"\s*:\s*\"(2\.\d\.\d)\")",
-        std::regex_constants::ECMAScript | std::regex_constants::optimize);
-
-    std::smatch matches;
-    std::string cppStr(stringData);
-
-    std::string sub(cppStr.substr(0, 100));
-
-    if (std::regex_search(cppStr, matches, versionRegex)) {
-        // Does not match supported version
-        if (matches.size() >= 1) {
-
-            // match group is index 1 because we're matching for (2.x.x)
-            auto badVersion = matches[1].str();
-            DEBUG("Performing fixup for version {}", badVersion);
-
-            // mutates the string does not copy
-            cppStr.replace(matches[1].first, matches[1].second, "2.0.0");
-
-            original = StandardLevelInfoSaveData_DeserializeFromJSONString(
-                StringW(cppStr));
-        }
-    }
+// create a custom level save data
+MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString, GlobalNamespace::StandardLevelInfoSaveData*, StringW stringData) {
+    SafePtr<GlobalNamespace::StandardLevelInfoSaveData> original = StandardLevelInfoSaveData_DeserializeFromJSONString(stringData);
 
     if (!original || !original.ptr()) {
-        DEBUG("No fixup performed for map version");
-        original = StandardLevelInfoSaveData_DeserializeFromJSONString(stringData);
-    }
-
-    if (!original || !original.ptr()) {
-        DEBUG("Orig call did not produce valid savedata!");
+        WARNING("Orig call did not produce valid savedata!");
         return nullptr;
     }
 
@@ -173,6 +163,7 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
     return customSaveData;
 }
 
+// custom songs tab is disabled by default on quest, reenable
 MAKE_AUTO_HOOK_ORIG_MATCH(SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels, &GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator::get_enableCustomLevels, bool, GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator* self) {
     DEBUG("SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels override returning true");
     return true;
@@ -183,34 +174,63 @@ using namespace System::Threading;
 using namespace System::Threading::Tasks;
 using namespace System::Collections::Generic;
 
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_UpdateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::UpdateAllLoadedBeatmapLevelPacks, void, BeatmapLevelsModel* self) {
-    auto list = ListW<IBeatmapLevelPack*>::New();
-    if(self->ostAndExtrasPackCollection)
-        list.insert_range(self->ostAndExtrasPackCollection->beatmapLevelPacks);
-    if(self->_dlcLevelPackCollectionContainer && self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection)
-        list.insert_range(self->_dlcLevelPackCollectionContainer->_beatmapLevelPackCollection->beatmapLevelPacks);
-    self->_allLoadedBeatmapLevelWithoutCustomLevelPackCollection = BeatmapLevelPackCollection::New_ctor(list->ToArray())->i___GlobalNamespace__IBeatmapLevelPackCollection();
-    if(self->customLevelPackCollection)
-        list.insert_range(self->customLevelPackCollection->beatmapLevelPacks);
-    self->_allLoadedBeatmapLevelPackCollection = BeatmapLevelPackCollection::New_ctor(list->ToArray())->i___GlobalNamespace__IBeatmapLevelPackCollection();
+// we return our own levels repository to which we can add packs we please
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::CreateAllLoadedBeatmapLevelPacks, BeatmapLevelsRepository*, BeatmapLevelsModel* self) {
+    auto result = BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks(self);
+
+    auto custom = SongCore::SongLoader::CustomBeatmapLevelsRepository::New_ctor();
+    auto levelPacks = result->beatmapLevelPacks;
+    auto packCount = levelPacks->i___System__Collections__Generic__IReadOnlyCollection_1_T_()->Count;
+    for (int i = 0; i < packCount; i++) {
+        custom->AddLevelPack(levelPacks->get_Item(i));
+    }
+
+    custom->FixBackingDictionaries();
+
+    return custom;
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetLevelEntitlementStatusAsync, &AdditionalContentModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelId, CancellationToken cancellationToken) {
-    if(levelId.starts_with("custom_level_"))
+// hook to ensure a beatmaps data is actually fully unloaded
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelLoader_HandleItemWillBeRemovedFromCache, &BeatmapLevelLoader::HandleItemWillBeRemovedFromCache, void, BeatmapLevelLoader* self, StringW beatmapLevelId, IBeatmapLevelData* beatmapLevel) {
+    DEBUG("BeatmapLevelLoader_HandleItemWillBeRemovedFromCache");
+    BeatmapLevelLoader_HandleItemWillBeRemovedFromCache(self, beatmapLevelId, beatmapLevel);
+
+    if (beatmapLevelId.starts_with(u"custom_level_"))
+        self->_beatmapLevelDataLoader->TryUnload(beatmapLevelId);
+}
+
+// ifd out on quest, just check for custom_level_ prepend and say owned if so
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsEntitlementModel_GetLevelEntitlementStatusAsync, &BeatmapLevelsEntitlementModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, BeatmapLevelsEntitlementModel* self, StringW levelID, CancellationToken token) {
+    if (levelID.starts_with(u"custom_level_")) {
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
-    return AdditionalContentModel_GetLevelEntitlementStatusAsync(self, levelId, cancellationToken);
+    }
+    return BeatmapLevelsEntitlementModel_GetLevelEntitlementStatusAsync(self, levelID, token);
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(AdditionalContentModel_GetPackEntitlementStatusAsync, &AdditionalContentModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, AdditionalContentModel* self, StringW levelPackId, CancellationToken cancellationToken) {
-    if(levelPackId.starts_with("custom_levelPack_"))
+// ifd out on quest, just check for custom_levelPack_ prepend and say owned if so
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsEntitlementModel_GetPackEntitlementStatusAsync, &BeatmapLevelsEntitlementModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, BeatmapLevelsEntitlementModel* self, StringW levelPackID, CancellationToken token) {
+    if (levelPackID.starts_with(u"custom_levelPack_")) {
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
-    return AdditionalContentModel_GetPackEntitlementStatusAsync(self, levelPackId, cancellationToken);
+    }
+    return BeatmapLevelsEntitlementModel_GetPackEntitlementStatusAsync(self, levelPackID, token);
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<IBeatmapLevelPackCollection*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
-    return Task_1<IBeatmapLevelPackCollection*>::FromResult(self->customLevelPackCollection);
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
+    // if songs are loaded and not refreshing, return the repo with fromresult
+    if (SongCore::API::Loading::AreSongsLoaded() && !SongCore::API::Loading::AreSongsRefreshing()) {
+        return Task_1<GlobalNamespace::BeatmapLevelsRepository*>::FromResult(static_cast<GlobalNamespace::BeatmapLevelsRepository*>(SongCore::API::Loading::GetCustomBeatmapLevelsRepository()));
+    }
+
+    // levels weren't loaded or we are refreshing right now, so make the user wait
+    return SongCore::StartTask<GlobalNamespace::BeatmapLevelsRepository*>([](SongCore::CancellationToken cancelToken) -> GlobalNamespace::BeatmapLevelsRepository* {
+        using namespace std::chrono_literals;
+        auto loader = SongCore::SongLoader::RuntimeSongLoader::get_instance();
+        while (loader->AreSongsRefreshing && !cancelToken.IsCancellationRequested) std::this_thread::sleep_for(100ms);
+        return loader->CustomBeatmapLevelsRepository;
+    }, std::forward<SongCore::CancellationToken>(cancellationToken));
 }
 
+// reading files sucks for file paths
 MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
     std::u16string str = filePath;
     int index = str.find_last_of('/') + 1;
@@ -218,4 +238,77 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
     StringW fileName = UnityEngine::Networking::UnityWebRequest::EscapeURL(str.substr(index, str.size()));
     std::replace(fileName.begin(), fileName.end(), u'+', u' '); // '+' breaks stuff even though it's supposed to be valid encoding ¯\_(ツ)_/¯
     return u"file://" + dir + fileName;
+}
+
+// get the level data async
+// TODO: rip out this level data loading from the SongLoader/LevelLoader.cpp and implement it async here to improve level loading speed and not do redundant things here
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
+    if (levelID.starts_with(u"custom_level_")) {
+        return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
+            static auto Error = LoadBeatmapLevelDataResult(true, nullptr);
+            auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+            if (!level || token.IsCancellationRequested) return Error;
+            auto data = level->beatmapLevelData;
+            if (!data) return Error;
+            return LoadBeatmapLevelDataResult::Success(data);
+        }, std::forward<SongCore::CancellationToken>(token));
+    }
+
+    return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, token);
+}
+
+// get the level data async
+// TODO: rip out this level data loading from the SongLoader/LevelLoader.cpp and implement it async here to improve level loading speed and not do redundant things here
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
+    if (levelID.starts_with(u"custom_level_")) {
+        return SongCore::StartTask<bool>([=](SongCore::CancellationToken token){
+            auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+            if (!level) return false;
+            return level->beatmapLevelData != nullptr;
+        }, std::forward<SongCore::CancellationToken>(token));
+    }
+
+    return BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync(self, levelID, token);
+}
+
+// override getting beatmap level if original method didn't return anything
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_GetBeatmapLevel, &BeatmapLevelsModel::GetBeatmapLevel, BeatmapLevel*, BeatmapLevelsModel* self, StringW levelID) {
+    auto result = BeatmapLevelsModel_GetBeatmapLevel(self, levelID);
+    if (!result && levelID.starts_with(u"custom_level_")) {
+        result = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+    }
+
+    return result;
+}
+
+// input array can have duplicates, we change the input for that reason
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelPack_CreateLevelPackForFiltering, &BeatmapLevelPack::CreateLevelPackForFiltering, BeatmapLevelPack*, ArrayW<BeatmapLevel*> beatmapLevels) {
+    // a set considers 2 elements equivalent if !(a < b) && !(b < a) which for pointers is ideal since 2 same pointers are the same level
+    std::set<BeatmapLevel*> levelSet;
+    for (auto level : beatmapLevels) levelSet.insert(level);
+
+    ArrayW<BeatmapLevel*> uniqueLevels(levelSet.size());
+    for (auto idx = 0; auto level : levelSet) uniqueLevels[idx++] = level;
+    INFO("Filtered levels for uniqueness, had an array of size {}, now {}", beatmapLevels.size(), uniqueLevels.size());
+
+    return BeatmapLevelPack_CreateLevelPackForFiltering(uniqueLevels);
+}
+
+// fix error message on custom levels, as the game doesn't correctly display the error message here on quest due to an ifd out check
+MAKE_AUTO_HOOK_ORIG_MATCH(
+    PlatformLeaderboardViewController_Refresh,
+    &PlatformLeaderboardViewController::Refresh,
+    void,
+    PlatformLeaderboardViewController* self,
+    bool showLoadingIndicator,
+    bool clear
+) {
+    auto levelId = self->_beatmapKey.levelId;
+    if (levelId.starts_with(u"custom_level_")) {
+        self->StopAllCoroutines();
+        self->ClearContent();
+        self->_loadingControl->ShowText(BGLib::Polyglot::Localization::Get("CUSTOM_LEVELS_LEADERBOARDS_NOT_SUPPORTED"), false);
+    } else {
+        PlatformLeaderboardViewController_Refresh(self, showLoadingIndicator, clear);
+    }
 }

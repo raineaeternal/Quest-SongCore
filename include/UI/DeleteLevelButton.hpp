@@ -1,10 +1,7 @@
 #pragma once
 
-#include "UI/ProgressBar.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "GlobalNamespace/StandardLevelDetailViewController.hpp"
-#include "GlobalNamespace/CustomBeatmapLevel.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/UI/Button.hpp"
 #include "Zenject/IInitializable.hpp"
@@ -12,7 +9,10 @@
 #include "System/IDisposable.hpp"
 #include "TMPro/TextMeshProUGUI.hpp"
 
+
+#include "UI/ProgressBar.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 #include "LevelSelect.hpp"
 #include "IconCache.hpp"
 #include "ProgressBar.hpp"
@@ -31,8 +31,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, DeleteLevelButton, System::Object
         DECLARE_INSTANCE_FIELD_PRIVATE(BSML::ModalView*, _deleteModal);
         DECLARE_INSTANCE_FIELD_PRIVATE(TMPro::TextMeshProUGUI*, _levelText);
 
-        DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::CustomBeatmapLevel*, _lastSelectedCustomLevel);
-        DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::IDifficultyBeatmap*, _lastSelectedDifficultyBeatmap);
+        DECLARE_INSTANCE_FIELD_PRIVATE(SongLoader::CustomBeatmapLevel*, _lastSelectedCustomLevel);
 
         DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &Zenject::IInitializable::Initialize);
         DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);

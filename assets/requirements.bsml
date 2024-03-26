@@ -1,7 +1,7 @@
 <modal id='_requirementModal'
     clickerino-offerino-closerino='true'
-    anchor-pos-x='0'
-    anchor-pos-y='10'
+    anchor-pos-x='-30'
+    anchor-pos-y='-10'
     size-delta-x='65'
     size-delta-y='65'
     move-to-center='false'
@@ -11,12 +11,14 @@
         horizontal-fit='PreferredSize'
         vertical-fit='PreferredSize'
         anchor-pos-x='-3'
-        size-delta-y='0'>
+        size-delta-y='0'
+        pad='2'>
         <list id='_listTableData'
             data='requirementsCells'
             select-cell='RequirementCellSelected'
             pref-height='55'
             pref-width='55'
+            list-width='55'
             show-scrollbar='true'
             stick-scrolling='true'/>
     </vertical>

@@ -2,18 +2,19 @@
 #include "logging.hpp"
 
 #include "GlobalNamespace/LevelListTableCell.hpp"
-#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
-#include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 #include "UnityEngine/Vector3.hpp"
 #include "UnityEngine/Transform.hpp"
+#include "UnityEngine/RectTransform.hpp"
 #include "TMPro/TMP_Text.hpp"
+#include <algorithm>
 
 MAKE_AUTO_HOOK_MATCH(
     LevelListTableCell_SetDataFromLevelAsync,
     &GlobalNamespace::LevelListTableCell::SetDataFromLevelAsync,
     void,
     GlobalNamespace::LevelListTableCell* self,
-    GlobalNamespace::IPreviewBeatmapLevel* level,
+    GlobalNamespace::BeatmapLevel* level,
     bool isFavorite,
     bool isPromoted,
     bool isUpdated
@@ -22,18 +23,34 @@ MAKE_AUTO_HOOK_MATCH(
     if (!level) return;
 
     self->_songBpmText->text = std::to_string((int)level->beatsPerMinute);
-    auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomPreviewBeatmapLevel>(level);
-    if (customLevel.has_value()) {
-        self->_songAuthorText->richText = true;
-        if (!System::String::IsNullOrWhiteSpace(level->levelAuthorName)) {
-            auto songAuthorName = level->songAuthorName;
-            auto levelAuthorName = level->levelAuthorName;
+    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level);
+    self->_songAuthorText->richText = true;
 
-            auto color = "ff69b4";
+    std::vector<StringW> allAuthors;
+    allAuthors.insert(allAuthors.begin(), level->allMappers->begin(), level->allMappers.end());
+    allAuthors.insert(allAuthors.begin(), level->allLighters->begin(), level->allLighters.end());
 
-            self->_songAuthorText->text = fmt::format("<size=80%><noparse>{}</noparse></size> <size=90%>[<color=#{}><noparse>{}</noparse></color>]</size>", songAuthorName, color, levelAuthorName);
+    if (!allAuthors.empty()) {
+        for (auto& author : allAuthors) {
+            author = author->Replace(u"<", u"<\u200B")->Replace(u">", u"\u200B>");
         }
+
+        auto songAuthorName = level->songAuthorName;
+        std::stringstream levelAuthors;
+        levelAuthors << std::string(allAuthors.front());
+        for (auto itr = std::next(allAuthors.begin()); itr != allAuthors.end(); itr++) {
+            levelAuthors << ", " << static_cast<std::string>(*itr);
+        }
+        auto levelAuthorName = levelAuthors.str();
+
+        auto color = "ff69b4";
+
+        self->_songAuthorText->text = fmt::format("<size=80%>{}</size> <size=90%>[<color=#{}>{}</color>]</size>", songAuthorName, color, levelAuthorName);
     }
+
+    auto size = self->_songNameText->rectTransform->sizeDelta;
+    size.y = 6.5f;
+    self->_songNameText->rectTransform->sizeDelta = size;
 
     if (isFavorite) {
         static auto favoriteSize = UnityEngine::Vector3(1.4,1.4,1.4);

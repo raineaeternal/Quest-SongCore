@@ -27,6 +27,7 @@ namespace SongCore::UI {
 
     void ColorsOptions::ShowColors(CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const& details) {
         Parse();
+        _colorsOptionsModal->transform->position = _modalPosition;
         Show();
         SetColors(details.customColors.value());
     }
@@ -34,6 +35,7 @@ namespace SongCore::UI {
     void ColorsOptions::Parse() {
         if (!_colorsOptionsModal) {
             BSML::parse_and_construct(Assets::colors_bsml, _levelDetailViewController->_standardLevelDetailView->transform, this);
+            _modalPosition = _colorsOptionsModal->transform->position;
         }
     }
 

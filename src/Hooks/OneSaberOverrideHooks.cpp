@@ -4,29 +4,28 @@
 
 #include "GlobalNamespace/GameplayCoreInstaller.hpp"
 #include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
-#include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
-#include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicCollection.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 #include "CustomJSONData.hpp"
 
 MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::GameplayCoreInstaller::InstallBindings, void, GlobalNamespace::GameplayCoreInstaller* self) {
     // if override is disabledl, just run orig and nothing else
     if (config.disableOneSaberOverride) return GameplayCoreInstaller_InstallBindings(self);
 
+    auto sceneSetupData = self->_sceneSetupData;
     // get custom preview level
-    auto level = il2cpp_utils::try_cast<GlobalNamespace::CustomPreviewBeatmapLevel>(self->_sceneSetupData->previewBeatmapLevel).value_or(nullptr);
+    auto level = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(sceneSetupData->beatmapLevel).value_or(nullptr);
     if (!level) return GameplayCoreInstaller_InstallBindings(self);
 
     // get custom level save data if possible
-    auto saveData = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveData>(level->standardLevelInfoSaveData).value_or(nullptr);
+    auto saveData = level->standardLevelInfoSaveData;
     if (!saveData) return GameplayCoreInstaller_InstallBindings(self);
 
     // get difficulty data
-    auto difficultyBeatmap = self->_sceneSetupData->difficultyBeatmap;
-    auto characteristic = difficultyBeatmap->parentDifficultyBeatmapSet->beatmapCharacteristic;
-    auto difficulty = difficultyBeatmap->difficulty;
+    auto beatmapKey = sceneSetupData->beatmapKey;
+    auto characteristic = beatmapKey.beatmapCharacteristic;
+    auto difficulty = beatmapKey.difficulty;
     auto difficultyDataOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
     if (!difficultyDataOpt.has_value()) return GameplayCoreInstaller_InstallBindings(self);
 

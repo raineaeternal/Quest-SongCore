@@ -1,5 +1,6 @@
 #include "SongCore.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
+#include "SongLoader/LevelLoader.hpp"
 #include "SongLoader/NavigationControllerUpdater.hpp"
 #include "UI/PlayButtonsUpdater.hpp"
 #include "UI/IconCache.hpp"
@@ -42,11 +43,6 @@ void SongLoaderInstalled();
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
-Logger& getLogger() {
-    static auto logger = new Logger(modInfo, LoggerOptions(false, true));
-    return *logger;
-}
-
 // Loads the config from disk using our modInfo, then returns it for use
 // other config tools such as config-utils don't use this config, so it can be removed if those are in use
 Configuration& getConfig() {
@@ -61,13 +57,6 @@ SONGCORE_EXPORT_FUNC void setup(CModInfo* info) {
 
     getConfig().Load();
     INFO("Completed setup!");
-}
-
-MAKE_HOOK(abort_hook, nullptr, void) {
-    getLogger().info("abort called");
-    getLogger().Backtrace(40);
-
-    abort_hook();
 }
 
 // Called later on in the game loading - a good time to install function hooks
@@ -97,13 +86,8 @@ SONGCORE_EXPORT_FUNC void late_load() {
         SaveConfig();
     }
 
-    SongCore::Hooking::InstallHooks(getLogger());
+    SongCore::Hooking::InstallHooks();
     auto z = Lapiz::Zenject::Zenjector::Get();
-
-    auto libc = dlopen("libc.so", RTLD_NOW);
-    auto abrt = dlsym(libc, "abort");
-
-    INSTALL_HOOK_DIRECT(getLogger(), abort_hook, abrt);
 
     // load cached hashes n stuff
     if (!SongCore::Utils::LoadSongInfoCache()) SongCore::Utils::SaveSongInfoCache();
@@ -120,6 +104,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
         container->BindInterfacesAndSelfTo<SongCore::Capabilities*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::Characteristics*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::PlayButtonInteractable*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::SongLoader::LevelLoader*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::SongLoader::RuntimeSongLoader*>()->AsSingle()->NonLazy();
         container->BindInterfacesAndSelfTo<SongCore::UI::IconCache*>()->AsSingle()->NonLazy();
     });

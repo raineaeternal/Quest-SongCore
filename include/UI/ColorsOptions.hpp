@@ -14,6 +14,7 @@ DECLARE_CLASS_CODEGEN(SongCore::UI, ColorsOptions, System::Object,
         DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
         DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::ColorSchemeView*, _colorSchemeView);
         DECLARE_INSTANCE_FIELD_PRIVATE(BSML::ModalView*, _colorsOptionsModal);
+        DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Vector3, _modalPosition);
         DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::RectTransform*, _selectedColorBG);
         DECLARE_INSTANCE_FIELD_PRIVATE(UnityEngine::Color, _voidColor);
         DECLARE_INSTANCE_FIELD_PRIVATE(System::Action*, _modalHideAction);

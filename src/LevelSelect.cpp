@@ -6,9 +6,6 @@
 
 #include "SongLoader/RuntimeSongLoader.hpp"
 
-#include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
-#include "GlobalNamespace/IDifficultyBeatmapSet.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "bsml/shared/Helpers/delegates.hpp"
 
@@ -21,9 +18,9 @@ namespace SongCore {
     }
 
     void LevelSelect::Initialize() {
-        _changeDifficultyBeatmapAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::IDifficultyBeatmap*>(
-            std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::IDifficultyBeatmap*)>(
-                std::bind(&LevelSelect::BeatmapLevelSelected, this, std::placeholders::_1, std::placeholders::_2)
+        _changeDifficultyBeatmapAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>>(
+            std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>)>(
+                std::bind(&LevelSelect::BeatmapLevelSelected, this, std::placeholders::_1)
             )
         );
 
@@ -49,7 +46,7 @@ namespace SongCore {
         }
     }
 
-    void LevelSelect::BeatmapLevelSelected(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, GlobalNamespace::IDifficultyBeatmap* selectedBeatmap) {
+    void LevelSelect::BeatmapLevelSelected(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController) {
         StartLevelWasSelectedInvoke();
     }
 
@@ -57,22 +54,17 @@ namespace SongCore {
         LevelWasSelectedEventArgs eventArgs;
 
         eventArgs.levelPack = GetSelectedLevelPack();
-        eventArgs.previewBeatmapLevel = GetSelectedPreviewBeatmapLevel();
         eventArgs.beatmapLevel = GetSelectedBeatmapLevel();
-        eventArgs.difficultyBeatmapSet = GetSelectedDifficultyBeatmapSet();
-        eventArgs.difficultyBeatmap = GetSelectedDifficultyBeatmap();
+        eventArgs.beatmapKey = GetSelectedBeatmapKey();
         eventArgs.isCustom = false;
 
-        // if anything isn't set, early return because the selection performed was invalid
-        if (!eventArgs.levelPack) return;
-        if (!eventArgs.previewBeatmapLevel) return;
+        // if no beatmap level selected, return
+        if (!eventArgs.beatmapKey.beatmapCharacteristic) return;
         if (!eventArgs.beatmapLevel) return;
-        if (!eventArgs.difficultyBeatmapSet) return;
-        if (!eventArgs.difficultyBeatmap) return;
 
-        eventArgs.levelID = static_cast<std::string>(eventArgs.previewBeatmapLevel->levelID);
+        eventArgs.levelID = static_cast<std::string>(eventArgs.beatmapKey.levelId);
 
-        auto customLevel = il2cpp_utils::try_cast<GlobalNamespace::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
+        auto customLevel = il2cpp_utils::try_cast<SongLoader::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
         if (customLevel) {
             eventArgs.isCustom = true;
             HandleCustomLevelWasSelected(eventArgs);
@@ -92,7 +84,7 @@ namespace SongCore {
         // possibly remove ` WIP` from the end
         eventArgs.hash = hashView.substr(0, hashView.size() - (eventArgs.isWIP ? 4 : 0));
 
-        auto saveData = il2cpp_utils::try_cast<CustomJSONData::CustomLevelInfoSaveData>(eventArgs.customBeatmapLevel->standardLevelInfoSaveData).value_or(nullptr);
+        auto saveData = eventArgs.customBeatmapLevel->standardLevelInfoSaveData;
         if (!saveData) return;
 
         eventArgs.customLevelInfoSaveData = saveData;
@@ -100,10 +92,10 @@ namespace SongCore {
         auto levelDetails = saveData->TryGetBasicLevelDetails();
         if (!levelDetails.has_value()) return;
 
-        auto characteristicDetails = levelDetails->get().TryGetCharacteristic(eventArgs.difficultyBeatmapSet->beatmapCharacteristic->serializedName);
+        auto characteristicDetails = levelDetails->get().TryGetCharacteristic(eventArgs.beatmapKey.beatmapCharacteristic->serializedName);
         if (!characteristicDetails.has_value()) return;
 
-        auto diffDetails = characteristicDetails->get().TryGetDifficulty(eventArgs.difficultyBeatmap->difficulty);
+        auto diffDetails = characteristicDetails->get().TryGetDifficulty(eventArgs.beatmapKey.difficulty);
         if (!diffDetails.has_value()) return;
 
         eventArgs.customLevelDetails.emplace(
@@ -118,23 +110,23 @@ namespace SongCore {
         SongCore::API::LevelSelect::GetLevelWasSelectedEvent().invoke(eventArgs);
     }
 
-    GlobalNamespace::IBeatmapLevelPack* LevelSelect::GetSelectedLevelPack() {
+    GlobalNamespace::BeatmapLevelPack* LevelSelect::GetSelectedLevelPack() {
         return _levelDetailViewController->_pack;
     }
 
-    GlobalNamespace::IPreviewBeatmapLevel* LevelSelect::GetSelectedPreviewBeatmapLevel() {
+    GlobalNamespace::BeatmapLevel* LevelSelect::GetSelectedBeatmapLevel() {
         return _levelDetailViewController->beatmapLevel;
     }
 
-    GlobalNamespace::IBeatmapLevel* LevelSelect::GetSelectedBeatmapLevel() {
-        return _levelDetailViewController->selectedDifficultyBeatmap ? _levelDetailViewController->selectedDifficultyBeatmap->level : nullptr;
+    GlobalNamespace::BeatmapKey LevelSelect::GetSelectedBeatmapKey() {
+        return _levelDetailViewController->beatmapKey;
     }
 
-    GlobalNamespace::IDifficultyBeatmapSet* LevelSelect::GetSelectedDifficultyBeatmapSet() {
-        return _levelDetailViewController->selectedDifficultyBeatmap ? _levelDetailViewController->selectedDifficultyBeatmap->parentDifficultyBeatmapSet : nullptr;
+    GlobalNamespace::BeatmapCharacteristicSO* LevelSelect::GetSelectedCharacteristic() {
+        return _levelDetailViewController->beatmapKey.beatmapCharacteristic;
     }
 
-    GlobalNamespace::IDifficultyBeatmap* LevelSelect::GetSelectedDifficultyBeatmap() {
-        return _levelDetailViewController->selectedDifficultyBeatmap;
+    GlobalNamespace::BeatmapDifficulty LevelSelect::GetSelectedDifficulty() {
+        return _levelDetailViewController->beatmapKey.difficulty;
     }
 }

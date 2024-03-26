@@ -1,10 +1,12 @@
 #pragma once
 
 #include "custom-types/shared/macros.hpp"
-#include "GlobalNamespace/CustomBeatmapLevelPack.hpp"
+#include "GlobalNamespace/BeatmapLevelPack.hpp"
+#include "GlobalNamespace/BeatmapLevel.hpp"
+#include "CustomBeatmapLevel.hpp"
 #include <string>
 
-DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomLevelPack, GlobalNamespace::CustomBeatmapLevelPack,
+DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomLevelPack, GlobalNamespace::BeatmapLevelPack,
     DECLARE_CTOR(ctor, StringW packId, StringW packName, UnityEngine::Sprite* coverImage);
 
     public:
@@ -14,11 +16,14 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomLevelPack, GlobalNamespace::Cu
         void SortLevels();
 
         /// @brief sorting function that returns `a < b`
-        using WeakSortingFunc = std::function<bool(GlobalNamespace::CustomPreviewBeatmapLevel*, GlobalNamespace::CustomPreviewBeatmapLevel*)>;
+        using WeakSortingFunc = std::function<bool(GlobalNamespace::BeatmapLevel*, GlobalNamespace::BeatmapLevel*)>;
 
         /// @brief sorts the levels in the collection based on the inputted sort function. std::stable_sort is used
         void SortLevels(WeakSortingFunc sortingFunc);
 
         /// @brief sets the levels in the collection based on the inputted span
-        void SetLevels(std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> levels);
+        void SetLevels(std::span<GlobalNamespace::BeatmapLevel* const> levels);
+
+        /// @brief sets the levels in the collection based on the inputted span
+        void SetLevels(std::span<CustomBeatmapLevel* const> levels);
 )

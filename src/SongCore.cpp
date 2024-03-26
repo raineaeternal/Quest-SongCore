@@ -194,11 +194,11 @@ namespace SongCore::API {
     }
 
     namespace Loading {
-        static UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>> _songsLoadedEvent;
+        static UnorderedEventCallback<std::span<SongCore::SongLoader::CustomBeatmapLevel* const>> _songsLoadedEvent;
         static UnorderedEventCallback<> _songsWillRefreshEvent;
-        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*> _customLevelPacksWillRefreshEvent;
-        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*> _customLevelPacksRefreshedEvent;
-        static UnorderedEventCallback<GlobalNamespace::CustomPreviewBeatmapLevel*> _songWillBeDeletedEvent;
+        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> _customLevelPacksWillRefreshEvent;
+        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> _customLevelPacksRefreshedEvent;
+        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevel*> _songWillBeDeletedEvent;
         static UnorderedEventCallback<> _songDeletedEvent;
 
         std::shared_future<void> RefreshSongs(bool fullRefresh) {
@@ -219,13 +219,13 @@ namespace SongCore::API {
             return instance->DeleteSong(levelPath);
         }
 
-        std::future<void> DeleteSong(GlobalNamespace::CustomPreviewBeatmapLevel* beatmapLevel) {
+        std::future<void> DeleteSong(SongCore::SongLoader::CustomBeatmapLevel* beatmapLevel) {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return std::future<void>();
             return instance->DeleteSong(beatmapLevel);
         }
 
-        UnorderedEventCallback<std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const>>& GetSongsLoadedEvent() {
+        UnorderedEventCallback<std::span<SongCore::SongLoader::CustomBeatmapLevel* const>>& GetSongsLoadedEvent() {
             return _songsLoadedEvent;
         }
 
@@ -233,15 +233,15 @@ namespace SongCore::API {
             return _songsWillRefreshEvent;
         }
 
-        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*>& GetCustomLevelPacksWillRefreshEvent() {
+        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksWillRefreshEvent() {
             return _customLevelPacksWillRefreshEvent;
         }
 
-        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelPackCollection*>& GetCustomLevelPacksRefreshedEvent() {
+        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksRefreshedEvent() {
             return _customLevelPacksRefreshedEvent;
         }
 
-        UnorderedEventCallback<GlobalNamespace::CustomPreviewBeatmapLevel*>& GetSongWillBeDeletedEvent() {
+        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevel*>& GetSongWillBeDeletedEvent() {
             return _songWillBeDeletedEvent;
         }
 
@@ -307,8 +307,8 @@ namespace SongCore::API {
             return instance->Progress;
         }
 
-        std::span<GlobalNamespace::CustomPreviewBeatmapLevel* const> GetAllLevels() {
-            static std::array<GlobalNamespace::CustomPreviewBeatmapLevel*, 0x0> emptyArray;
+        std::span<SongCore::SongLoader::CustomBeatmapLevel* const> GetAllLevels() {
+            static std::array<SongCore::SongLoader::CustomBeatmapLevel*, 0x0> emptyArray;
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return emptyArray;
             return instance->AllLevels;
@@ -326,31 +326,31 @@ namespace SongCore::API {
             return instance->CustomWIPLevelPack;
         }
 
-        SongLoader::CustomBeatmapLevelPackCollection* GetCustomLevelPackCollection() {
+        SongLoader::CustomBeatmapLevelsRepository* GetCustomBeatmapLevelsRepository() {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return nullptr;
-            return instance->CustomBeatmapLevelPackCollection;
+            return instance->CustomBeatmapLevelsRepository;
         }
 
-        GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByPath(std::filesystem::path const& levelPath) {
+        SongCore::SongLoader::CustomBeatmapLevel* GetLevelByPath(std::filesystem::path const& levelPath) {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return nullptr;
             return instance->GetLevelByPath(levelPath);
         }
 
-        GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByLevelID(std::string_view levelID) {
+        SongCore::SongLoader::CustomBeatmapLevel* GetLevelByLevelID(std::string_view levelID) {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return nullptr;
             return instance->GetLevelByLevelID(levelID);
         }
 
-        GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByHash(std::string_view hash) {
+        SongCore::SongLoader::CustomBeatmapLevel* GetLevelByHash(std::string_view hash) {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return nullptr;
             return instance->GetLevelByHash(hash);
         }
 
-        GlobalNamespace::CustomPreviewBeatmapLevel* GetLevelByFunction(std::function<bool(GlobalNamespace::CustomPreviewBeatmapLevel*)> searchFunction) {
+        SongCore::SongLoader::CustomBeatmapLevel* GetLevelByFunction(std::function<bool(SongCore::SongLoader::CustomBeatmapLevel*)> searchFunction) {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return nullptr;
             return instance->GetLevelByFunction(searchFunction);

@@ -82,7 +82,6 @@ namespace SongCore::UI {
     }
 
     void DeleteLevelButton::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
-        _lastSelectedDifficultyBeatmap = eventArgs.difficultyBeatmap;
         if (eventArgs.isCustom) {
             _lastSelectedCustomLevel = eventArgs.customBeatmapLevel;
         } else {
