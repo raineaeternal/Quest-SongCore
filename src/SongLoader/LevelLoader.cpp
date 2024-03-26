@@ -1,10 +1,13 @@
 #include "SongLoader/LevelLoader.hpp"
 #include "CustomJSONData.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
+#include "Utils/WavRiff.hpp"
 #include "logging.hpp"
 #include "Utils/Hashing.hpp"
 #include "Utils/File.hpp"
 #include "Utils/OggVorbis.hpp"
+#include "Utils/WavRiff.hpp"
+#include "Utils/Cache.hpp"
 
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
@@ -12,6 +15,13 @@
 #include "GlobalNamespace/PlayerSaveData.hpp"
 #include "GlobalNamespace/EnvironmentName.hpp"
 #include "GlobalNamespace/BeatmapBasicData.hpp"
+#include "GlobalNamespace/BpmTimeProcessor.hpp"
+#include "UnityEngine/JsonUtility.hpp"
+#include "BeatmapSaveDataVersion3/BeatmapSaveData.hpp"
+#include "BeatmapSaveDataVersion3/BeatmapSaveDataItem.hpp"
+#include <cmath>
+#include <exception>
+#include <limits>
 
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
 
@@ -112,12 +122,7 @@ namespace SongCore::SongLoader {
         auto colorSchemes = GetColorSchemes(saveData->colorSchemes);
         if (!saveData->difficultyBeatmapSets) saveData->_difficultyBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>::Empty();
 
-        float songDuration = 0.0f;
-        std::string songFilePath = levelPath / static_cast<std::string>(saveData->get_songFilename());
-        if (std::filesystem::exists(songFilePath)) { // only do this if the file exists
-            songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
-            if (songDuration <= 0 || songDuration == std::numeric_limits<float>::infinity()) songDuration = 0.0f;
-        }
+        float songDuration = GetLengthForLevel(levelPath, saveData);
 
         std::vector<GlobalNamespace::EnvironmentName> environmentNameList;
         if (environmentInfos.size() == 0) {
@@ -315,4 +320,73 @@ namespace SongCore::SongLoader {
         }
         return colorSchemes->ToArray();
     }
+
+    float LevelLoader::GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+        // check the cached info
+        auto cachedInfoOpt = Utils::GetCachedInfo(levelPath);
+        if (cachedInfoOpt.has_value() && cachedInfoOpt->songDuration.has_value()) {
+            return cachedInfoOpt->songDuration.value();
+        } else {
+            // try to get the info from the ogg file
+            std::string songFilePath = levelPath / static_cast<std::string>(saveData->songFilename);
+            if (std::filesystem::exists(songFilePath)) {
+                float songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
+                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
+                    // update cache with new duration
+                    auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
+                    info.songDuration = songDuration;
+                    Utils::SetCachedInfo(levelPath, info);
+                    return songDuration;
+                }
+                songDuration = Utils::GetLengthFromWavRiff(songFilePath);
+                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
+                    // update cache with new duration
+                    auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
+                    info.songDuration = songDuration;
+                    Utils::SetCachedInfo(levelPath, info);
+                    return songDuration;
+                }
+            }
+
+            // if the file didn't exist or we didn't get a valid length from the ogg, we go and get it from the map
+            float songDuration = GetLengthFromMap(levelPath, saveData);
+            auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
+            info.songDuration = songDuration;
+            Utils::SetCachedInfo(levelPath, info);
+            return songDuration;
+        }
+    }
+
+    float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+        try {
+            std::string beatmapFileName(saveData->difficultyBeatmapSets->First()->difficultyBeatmaps->Last()->beatmapFilename);
+            auto saveDataString = Utils::ReadText(levelPath / beatmapFileName);
+            auto beatmapSaveData = UnityEngine::JsonUtility::FromJson<BeatmapSaveDataVersion3::BeatmapSaveData*>(saveDataString);
+
+            float highestBeat = 0.0f;
+            if (beatmapSaveData->colorNotes->Count > 0) {
+                for (auto note : ListW<::BeatmapSaveDataVersion3::ColorNoteData*>(beatmapSaveData->colorNotes)) {
+                    auto beat = note->beat;
+                    if (beat > highestBeat) highestBeat = beat;
+                }
+            } else if (beatmapSaveData->basicBeatmapEvents->Count > 0) {
+                for (auto event : ListW<::BeatmapSaveDataVersion3::BasicEventData*>(beatmapSaveData->basicBeatmapEvents)) {
+                    auto beat = event->beat;
+                    if (beat > highestBeat) highestBeat = beat;
+                }
+            }
+
+            auto bmpInTimeProcessor = GlobalNamespace::BpmTimeProcessor::New_ctor(saveData->beatsPerMinute, beatmapSaveData->bpmEvents->i___System__Collections__Generic__IReadOnlyList_1_T_());
+            return bmpInTimeProcessor->ConvertBeatToTime(highestBeat);
+        } catch (std::exception const& e) {
+            ERROR("While determining length from map, caught exception {}: {}", typeid(e).name(), e.what());
+        } catch (...) {
+            ERROR("While determining length from map, caught error {} with no known what()!", typeid(std::current_exception()).name());
+        }
+
+        WARNING("Getting length from map failed, so duration will be 0");
+        // we somehow failed, so we return 0
+        return 0;
+    }
+
 }

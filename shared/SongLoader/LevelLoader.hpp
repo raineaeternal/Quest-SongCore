@@ -59,4 +59,10 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
 
         /// @brief creates the color schemes for the savedata
         ArrayW<GlobalNamespace::ColorScheme*> GetColorSchemes(std::span<GlobalNamespace::BeatmapLevelColorSchemeSaveData* const> colorSchemeDatas);
+
+        /// @brief gets the length for a level
+        static float GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData);
+
+        /// @brief calculates the song duration by parsing the first characteristic, first difficulty for the last note and seeing the time on it
+        static float GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData);
 )
