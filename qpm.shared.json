@@ -36,7 +36,7 @@
     "dependencies": [
       {
         "id": "beatsaber-hook",
-        "versionRange": "^5.1.2",
+        "versionRange": "^5.1.6",
         "additionalData": {}
       },
       {
@@ -51,17 +51,17 @@
       },
       {
         "id": "bsml",
-        "versionRange": "^0.4.16",
+        "versionRange": "^0.4.17",
         "additionalData": {}
       },
       {
         "id": "lapiz",
-        "versionRange": "^0.2.5",
+        "versionRange": "^0.2.6",
         "additionalData": {}
       },
       {
         "id": "custom-types",
-        "versionRange": "^0.17.3",
+        "versionRange": "^0.17.6",
         "additionalData": {}
       },
       {
@@ -87,17 +87,17 @@
     {
       "dependency": {
         "id": "bsml",
-        "versionRange": "=0.4.16",
+        "versionRange": "=0.4.17",
         "additionalData": {
-          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.16/libbsml.so",
-          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.16/debug_libbsml.so",
+          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.17/libbsml.so",
+          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.17/debug_libbsml.so",
           "overrideSoName": "libbsml.so",
-          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.16/BSML.qmod",
-          "branchName": "version/v0_4_16",
+          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.17/BSML.qmod",
+          "branchName": "version/v0_4_17",
           "cmake": true
         }
       },
-      "version": "0.4.16"
+      "version": "0.4.17"
     },
     {
       "dependency": {
@@ -145,13 +145,13 @@
     {
       "dependency": {
         "id": "custom-types",
-        "versionRange": "=0.17.3",
+        "versionRange": "=0.17.6",
         "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.3/libcustom-types.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.3/debug_libcustom-types.so",
+          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.6/libcustom-types.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.6/debug_libcustom-types.so",
           "overrideSoName": "libcustom-types.so",
-          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.3/CustomTypes.qmod",
-          "branchName": "version/v0_17_3",
+          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.6/CustomTypes.qmod",
+          "branchName": "version/v0_17_6",
           "compileOptions": {
             "cppFlags": [
               "-Wno-invalid-offsetof"
@@ -160,7 +160,7 @@
           "cmake": true
         }
       },
-      "version": "0.17.3"
+      "version": "0.17.6"
     },
     {
       "dependency": {
@@ -176,15 +176,15 @@
     {
       "dependency": {
         "id": "beatsaber-hook",
-        "versionRange": "=5.1.2",
+        "versionRange": "=5.1.6",
         "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.2/libbeatsaber-hook_5_1_2.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.2/debug_libbeatsaber-hook_5_1_2.so",
-          "branchName": "version/v5_1_2",
+          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.6/libbeatsaber-hook_5_1_6.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.6/debug_libbeatsaber-hook_5_1_6.so",
+          "branchName": "version/v5_1_6",
           "cmake": true
         }
       },
-      "version": "5.1.2"
+      "version": "5.1.6"
     },
     {
       "dependency": {
@@ -229,17 +229,17 @@
     {
       "dependency": {
         "id": "lapiz",
-        "versionRange": "=0.2.5",
+        "versionRange": "=0.2.6",
         "additionalData": {
-          "soLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.5/liblapiz.so",
-          "debugSoLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.5/debug_liblapiz.so",
+          "soLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.6/liblapiz.so",
+          "debugSoLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.6/debug_liblapiz.so",
           "overrideSoName": "liblapiz.so",
-          "modLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.5/Lapiz.qmod",
-          "branchName": "version/v0_2_5",
+          "modLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.6/Lapiz.qmod",
+          "branchName": "version/v0_2_6",
           "cmake": true
         }
       },
-      "version": "0.2.5"
+      "version": "0.2.6"
     },
     {
       "dependency": {
