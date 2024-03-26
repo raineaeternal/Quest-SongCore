@@ -29,7 +29,7 @@ namespace SongCore {
 
     /// @brief checks whether the function is match hookable, which requires the function to be at least 5 (5 * 4 = 20 bytes) instructions and not have an address of 0 (abstract/virtual funcs)
     template<auto mPtr>
-    concept match_hookable = has_metadata<mPtr> && Metadata<mPtr>::size >= (0x5 * sizeof(int32_t)) && Metadata<mPtr>::addrs != 0xffffffff;
+    concept match_hookable = has_metadata<mPtr> && Metadata<mPtr>::size >= (0x5 * sizeof(int32_t)) && Metadata<mPtr>::addrs != 0x0;
 }
 
 #define HOOK_AUTO_INSTALL_ORIG(name_)                                                               \
