@@ -53,14 +53,18 @@ namespace SongCore::SongLoader {
         auto scrollView = tableView ? tableView->_scrollView : nullptr;
         float scrollPosition = scrollView ? scrollView->position : 0;
 
-        auto pack = _levelFilteringNavigationController->selectedBeatmapLevelPack;
-        if (pack) {
-            // check whether the pack was still in the beatmap levels model
-            if (_beatmapLevelsModel->GetLevelPack(pack->packID)) {
-                _levelFilteringNavigationController->_levelPackIdToBeSelectedAfterPresent = pack->packID;
+        auto selectedCategory = _levelFilteringNavigationController->selectedLevelCategory;
+        if (selectedCategory == GlobalNamespace::SelectLevelCategoryViewController::LevelCategory::MusicPacks
+            || selectedCategory == GlobalNamespace::SelectLevelCategoryViewController::LevelCategory::CustomSongs) {
+            auto pack = _levelFilteringNavigationController->selectedBeatmapLevelPack;
+            if (pack) {
+                // check whether the pack was still in the beatmap levels model
+                if (_beatmapLevelsModel->GetLevelPack(pack->packID)) {
+                    _levelFilteringNavigationController->_levelPackIdToBeSelectedAfterPresent = pack->packID;
+                }
+                // don't scroll back to the last position if the same pack won't be reselected
+                else scrollPosition = 0;
             }
-            // don't scroll back to the last position if the same pack won't be reselected
-            else scrollPosition = 0;
         }
 
         // thanks metalit for pointing out updatecustomsongs still starts an async thing, doing things this way lets us await the reload to be complete
