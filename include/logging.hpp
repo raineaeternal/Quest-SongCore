@@ -5,14 +5,6 @@
 
 #include "paper/shared/logger.hpp"
 
-template <> struct fmt::formatter<::StringW> : formatter<string_view> {
-    // parse is inherited from formatter<string_view>.
-    template <typename FormatContext>
-    auto format(StringW s, FormatContext& ctx) {
-        return formatter<string_view>::format(static_cast<std::string>(s), ctx);
-    }
-};
-
 #define INFO(str, ...) Paper::Logger::fmtLogTag<Paper::LogLevel::INF>(str, "SongCore" __VA_OPT__(, __VA_ARGS__))
 #define ERROR(str, ...) Paper::Logger::fmtLogTag<Paper::LogLevel::ERR>(str, "SongCore" __VA_OPT__(, __VA_ARGS__))
 #define CRITICAL(str, ...) Paper::Logger::fmtLogTag<Paper::LogLevel::ERR>(str, "SongCore" __VA_OPT__(, __VA_ARGS__))
