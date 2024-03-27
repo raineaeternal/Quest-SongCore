@@ -47,7 +47,7 @@ namespace SongCore::SongLoader {
     void NavigationControllerUpdater::SongsLoaded(std::span<SongLoader::CustomBeatmapLevel* const> levels) {
         auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
         auto level = levelCollectionTableView ? levelCollectionTableView->_selectedBeatmapLevel : nullptr;
-        auto levelId = level ? level->levelID : nullptr;
+        auto levelId = level ? level->levelID : "";
 
         auto tableView = levelCollectionTableView ? levelCollectionTableView->_tableView : nullptr;
         auto scrollView = tableView ? tableView->_scrollView : nullptr;
@@ -70,9 +70,7 @@ namespace SongCore::SongLoader {
             },
             [this, levelId, scrollPosition](){
                 INFO("Selecting level '{}'", levelId);
-
-                GlobalNamespace::BeatmapLevel* level = nullptr;
-                if (levelId) level = _beatmapLevelsModel->GetBeatmapLevel(levelId);
+                auto level = _beatmapLevelsModel->GetBeatmapLevel(levelId);
 
                 auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
                 if (level && levelCollectionTableView) levelCollectionTableView->SelectLevel(level);
