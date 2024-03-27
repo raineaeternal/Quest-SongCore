@@ -24,10 +24,6 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdat
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::LevelCollectionNavigationController*, _levelCollectionNavigationController);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::LevelCollectionViewController*, _levelCollectionViewController);
 
-    DECLARE_INSTANCE_FIELD_PRIVATE(StringW, _lastSelectedBeatmapLevelId);
-    DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::SelectLevelCategoryViewController::LevelCategory, _lastSelectedCategory);
-    DECLARE_INSTANCE_FIELD_PRIVATE(float, _lastScrollPosition);
-
     DECLARE_CTOR(ctor, GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::LevelFilteringNavigationController* levelFilteringNavigationController, GlobalNamespace::LevelCollectionNavigationController* levelCollectionNavigationViewController, GlobalNamespace::LevelCollectionViewController* levelCollectionViewController);
 
     private:
