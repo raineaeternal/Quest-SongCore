@@ -135,8 +135,6 @@ namespace SongCore::SongLoader {
             return _doubleRefreshRequestedFuture;
         }
 
-        InvokeSongsWillRefresh();
-
         std::unique_lock<std::shared_mutex> writingLock(_currentRefreshMutex);
         _currentlyLoadingFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshSongs_internal, this, std::forward<bool>(fullRefresh));
         return _currentlyLoadingFuture;
@@ -166,6 +164,9 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::RefreshSongs_internal(bool fullRefresh) {
+        // AreRefreshing is already false here, but areLoaded may be true depending on whether this is a new reload or not
+        InvokeSongsWillRefresh();
+
         auto refreshStartTime = high_resolution_clock::now();
         std::set<LevelPathAndWip> levels;
         _areSongsLoaded = false;
@@ -275,19 +276,11 @@ namespace SongCore::SongLoader {
 
         INFO("Updated collections after load in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - collectionUpdateStartTime).count());
 
-        bool finishedOnMainThread = false;
-        // finish things up on the main thread for safety with loading
-        BSML::MainThreadScheduler::Schedule([this, &finishedOnMainThread](){
-            INFO("Finishing up level loading on main thread");
-            RefreshLevelPacks();
+        // events happen on main thread anyway so we don't have to queue up on main thread
+        RefreshLevelPacks();
 
-            InvokeSongsLoaded(_allLoadedLevels);
-
-            // let the loading thread know you're done
-            finishedOnMainThread = true;
-        });
-
-        while (!finishedOnMainThread) std::this_thread::sleep_for(10ms);
+        // same goes here, it's already on main thread
+        InvokeSongsLoaded(_allLoadedLevels);
         _areSongsLoaded = true;
         INFO("Refresh performed in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - refreshStartTime).count());
     }
