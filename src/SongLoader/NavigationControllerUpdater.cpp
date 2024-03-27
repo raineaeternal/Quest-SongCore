@@ -21,9 +21,6 @@ namespace SongCore::SongLoader {
         _levelCollectionNavigationController = levelCollectionNavigationController;
         _levelCollectionViewController = levelCollectionViewController;
         _beatmapLevelsModel = beatmapLevelsModel;
-
-        _lastSelectedBeatmapLevelId = "";
-        _lastSelectedPackId = "";
     }
 
     void NavigationControllerUpdater::Initialize() {
@@ -42,16 +39,23 @@ namespace SongCore::SongLoader {
     void NavigationControllerUpdater::SongsWillRefresh() {
         auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
         auto level = levelCollectionTableView ? levelCollectionTableView->_selectedBeatmapLevel : nullptr;
-        _lastSelectedBeatmapLevelId = level ? level->levelID : "";
-
-        auto pack = _levelFilteringNavigationController->selectedBeatmapLevelPack;
-        _lastSelectedPackId = pack ? pack->packID : "";
-
-        _lastSelectedCategory = _levelFilteringNavigationController->selectedLevelCategory;
+        _lastSelectedBeatmapLevelId = level ? level->levelID : nullptr;
 
         auto tableView = levelCollectionTableView ? levelCollectionTableView->_tableView : nullptr;
         auto scrollView = tableView ? tableView->_scrollView : nullptr;
         _lastScrollPosition = scrollView ? scrollView->position : 0;
+
+        auto pack = _levelFilteringNavigationController->selectedBeatmapLevelPack;
+        if (pack) {
+            // check whether the pack was still in the beatmap levels model
+            if (_beatmapLevelsModel->GetLevelPack(pack->packID)) {
+                _levelFilteringNavigationController->_levelPackIdToBeSelectedAfterPresent = pack->packID;
+            }
+            // don't scroll back to the last position if the same pack won't be reselected
+            else _lastScrollPosition = 0;
+        }
+
+        _lastSelectedCategory = _levelFilteringNavigationController->selectedLevelCategory;
 
         _levelFilteringNavigationController->_customLevelPacks = nullptr;
         _levelFilteringNavigationController->_annotatedBeatmapLevelCollectionsViewController->ShowLoading();
@@ -81,11 +85,11 @@ namespace SongCore::SongLoader {
             [this](){
                 INFO("Selecting level '{}'", _lastSelectedBeatmapLevelId);
 
-                auto level = _beatmapLevelsModel->GetBeatmapLevel(_lastSelectedBeatmapLevelId);
+                GlobalNamespace::BeatmapLevel* level = nullptr;
+                if (_lastSelectedBeatmapLevelId) level = _beatmapLevelsModel->GetBeatmapLevel(_lastSelectedBeatmapLevelId);
+
                 auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
-                if (level && levelCollectionTableView) {
-                    levelCollectionTableView->SelectLevel(level);
-                }
+                if (level && levelCollectionTableView) levelCollectionTableView->SelectLevel(level);
 
                 auto tableView = levelCollectionTableView ? levelCollectionTableView->_tableView : nullptr;
                 auto scrollView = tableView ? tableView->_scrollView : nullptr;

@@ -11,6 +11,7 @@
 #include "GlobalNamespace/BeatmapSaveDataHelpers.hpp"
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
 #include "GlobalNamespace/LevelFilteringNavigationController.hpp"
+#include "GlobalNamespace/LevelSearchViewController.hpp"
 #include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
 #include "GlobalNamespace/PlatformLeaderboardViewController.hpp"
 #include "GlobalNamespace/LoadingControl.hpp"
@@ -311,4 +312,26 @@ MAKE_AUTO_HOOK_ORIG_MATCH(
     } else {
         PlatformLeaderboardViewController_Refresh(self, showLoadingIndicator, clear);
     }
+}
+
+// keep level search and filters when refreshing
+MAKE_AUTO_HOOK_MATCH(
+    LevelFilteringNavigationController_UpdateSecondChildControllerContent,
+    &LevelFilteringNavigationController::UpdateSecondChildControllerContent,
+    void,
+    LevelFilteringNavigationController* self,
+    SelectLevelCategoryViewController::LevelCategory levelCategory
+) {
+    std::optional<LevelFilter> searchFilter = std::nullopt;
+    // cancellationTokenSource is only non null during UpdateCustomSongs
+    if (self->_cancellationTokenSource
+        && self->_levelSearchViewController
+        && (levelCategory == SelectLevelCategoryViewController::LevelCategory::Favorites
+            || levelCategory == SelectLevelCategoryViewController::LevelCategory::All)) {
+        searchFilter = self->_levelSearchViewController->_currentSearchFilter;
+    }
+
+    LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
+
+    if (searchFilter) self->_levelSearchViewController->Refresh(byref(*searchFilter));
 }
