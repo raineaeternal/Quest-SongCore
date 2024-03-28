@@ -280,7 +280,7 @@ namespace SongCore::SongLoader {
 
     ArrayW<GlobalNamespace::EnvironmentInfoSO*> LevelLoader::GetEnvironmentInfos(std::span<StringW const> environmentsNames) {
         if (environmentsNames.empty()) return ArrayW<GlobalNamespace::EnvironmentInfoSO*>::Empty();
-        ListW<GlobalNamespace::EnvironmentInfoSO*> envs;
+        auto envs = ListW<GlobalNamespace::EnvironmentInfoSO*>::New();
 
         for (auto environmentName : environmentsNames) {
             auto env = _environmentsListModel->GetEnvironmentInfoBySerializedName(environmentName);
@@ -293,7 +293,7 @@ namespace SongCore::SongLoader {
     ArrayW<GlobalNamespace::ColorScheme*> LevelLoader::GetColorSchemes(std::span<GlobalNamespace::BeatmapLevelColorSchemeSaveData* const> colorSchemeDatas) {
         if (colorSchemeDatas.empty()) return ArrayW<GlobalNamespace::ColorScheme*>::Empty();
 
-        ListW<GlobalNamespace::ColorScheme*> colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
+        auto colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
         for (auto saveData : colorSchemeDatas) {
             auto colorScheme = saveData->colorScheme;
             if (colorScheme) {
