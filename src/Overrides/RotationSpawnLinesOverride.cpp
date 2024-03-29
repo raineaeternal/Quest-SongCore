@@ -3,6 +3,7 @@
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "CustomJSONData.hpp"
 #include "SongLoader/CustomBeatmapLevel.hpp"
+#include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
 
 DEFINE_TYPE(SongCore::Overrides, RotationSpawnLinesOverride);
 
@@ -11,9 +12,12 @@ extern bool NoteSpawnLinesOverrideShowLines;
 
 namespace SongCore::Overrides {
 
-    void RotationSpawnLinesOverride::ctor(GlobalNamespace::GameplayCoreSceneSetupData* sceneSetupData) {
+    void RotationSpawnLinesOverride::ctor(Zenject::DiContainer* container) {
         NoteSpawnLinesOverrideLevelIsCustom = false;
         NoteSpawnLinesOverrideShowLines = true;
+
+        auto sceneSetupData = container->TryResolve<GlobalNamespace::GameplayCoreSceneSetupData*>();
+        if (!sceneSetupData) return;
 
         auto customLevel = il2cpp_utils::try_cast<SongLoader::CustomBeatmapLevel>(sceneSetupData->beatmapLevel).value_or(nullptr);
         if (!customLevel) return;
