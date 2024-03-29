@@ -27,7 +27,6 @@
 #include "Zenject/IInitializable.hpp"
 #include "Zenject/IInitializable.hpp"
 #include "System/IDisposable.hpp"
-#include "lapiz/shared/macros.hpp"
 
 namespace SongCore::SongLoader {
     using SongDict = ::System::Collections::Concurrent::ConcurrentDictionary_2<StringW, CustomBeatmapLevel*>;

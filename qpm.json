@@ -51,12 +51,16 @@
     {
       "id": "bsml",
       "versionRange": "^0.4.17",
-      "additionalData": {}
+      "additionalData": {
+        "private": true
+      }
     },
     {
       "id": "lapiz",
       "versionRange": "^0.2.6",
-      "additionalData": {}
+      "additionalData": {
+        "private": true
+      }
     },
     {
       "id": "custom-types",
@@ -73,12 +77,16 @@
     {
       "id": "kaleb",
       "versionRange": "^0.1.9",
-      "additionalData": {}
+      "additionalData": {
+        "private": true
+      }
     },
     {
       "id": "libcryptopp",
       "versionRange": "^8.5.0",
-      "additionalData": {}
+      "additionalData": {
+        "private": true
+      }
     }
   ]
 }

@@ -52,12 +52,16 @@
       {
         "id": "bsml",
         "versionRange": "^0.4.17",
-        "additionalData": {}
+        "additionalData": {
+          "private": true
+        }
       },
       {
         "id": "lapiz",
         "versionRange": "^0.2.6",
-        "additionalData": {}
+        "additionalData": {
+          "private": true
+        }
       },
       {
         "id": "custom-types",
@@ -74,12 +78,16 @@
       {
         "id": "kaleb",
         "versionRange": "^0.1.9",
-        "additionalData": {}
+        "additionalData": {
+          "private": true
+        }
       },
       {
         "id": "libcryptopp",
         "versionRange": "^8.5.0",
-        "additionalData": {}
+        "additionalData": {
+          "private": true
+        }
       }
     ]
   },
@@ -87,17 +95,17 @@
     {
       "dependency": {
         "id": "bsml",
-        "versionRange": "=0.4.17",
+        "versionRange": "=0.4.20",
         "additionalData": {
-          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.17/libbsml.so",
-          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.17/debug_libbsml.so",
+          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.20/libbsml.so",
+          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.20/debug_libbsml.so",
           "overrideSoName": "libbsml.so",
-          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.17/BSML.qmod",
-          "branchName": "version/v0_4_17",
+          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.20/BSML.qmod",
+          "branchName": "version/v0_4_20",
           "cmake": true
         }
       },
-      "version": "0.4.17"
+      "version": "0.4.20"
     },
     {
       "dependency": {
