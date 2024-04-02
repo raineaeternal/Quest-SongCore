@@ -329,6 +329,7 @@ MAKE_AUTO_HOOK_MATCH(
         && (levelCategory == SelectLevelCategoryViewController::LevelCategory::Favorites
             || levelCategory == SelectLevelCategoryViewController::LevelCategory::All)) {
         searchFilter = self->_levelSearchViewController->_currentSearchFilter;
+        if (searchFilter->searchText == nullptr) searchFilter->searchText = "";
     }
 
     LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
