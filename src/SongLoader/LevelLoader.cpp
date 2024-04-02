@@ -19,6 +19,7 @@
 #include "UnityEngine/JsonUtility.hpp"
 #include "BeatmapSaveDataVersion3/BeatmapSaveData.hpp"
 #include "BeatmapSaveDataVersion3/BeatmapSaveDataItem.hpp"
+#include "utf8.h"
 #include <cmath>
 #include <exception>
 #include <limits>
@@ -362,14 +363,18 @@ namespace SongCore::SongLoader {
             std::string beatmapFileName(saveData->difficultyBeatmapSets->First()->difficultyBeatmaps->Last()->beatmapFilename);
             auto saveDataString = Utils::ReadText(levelPath / beatmapFileName);
             auto beatmapSaveData = UnityEngine::JsonUtility::FromJson<BeatmapSaveDataVersion3::BeatmapSaveData*>(saveDataString);
+            if (!beatmapSaveData) {
+                WARNING("Could not parse beatmap savedata for time from savedata string {}", utf8::utf16to8(saveDataString));
+                return 0;
+            }
 
             float highestBeat = 0.0f;
-            if (beatmapSaveData->colorNotes->Count > 0) {
+            if (beatmapSaveData->colorNotes && beatmapSaveData->colorNotes->Count > 0) {
                 for (auto note : ListW<::BeatmapSaveDataVersion3::ColorNoteData*>(beatmapSaveData->colorNotes)) {
                     auto beat = note->beat;
                     if (beat > highestBeat) highestBeat = beat;
                 }
-            } else if (beatmapSaveData->basicBeatmapEvents->Count > 0) {
+            } else if (beatmapSaveData->basicBeatmapEvents && beatmapSaveData->basicBeatmapEvents->Count > 0) {
                 for (auto event : ListW<::BeatmapSaveDataVersion3::BasicEventData*>(beatmapSaveData->basicBeatmapEvents)) {
                     auto beat = event->beat;
                     if (beat > highestBeat) highestBeat = beat;
