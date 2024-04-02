@@ -360,9 +360,30 @@ namespace SongCore::SongLoader {
 
     float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
         try {
-            std::string beatmapFileName(saveData->difficultyBeatmapSets->First()->difficultyBeatmaps->Last()->beatmapFilename);
-            auto saveDataString = Utils::ReadText(levelPath / beatmapFileName);
+            static auto GetFirstAvailableDiffFile = [](std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) -> GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap* {
+                for (auto set : saveData->difficultyBeatmapSets) {
+                    auto beatmaps = set->difficultyBeatmaps;
+                    for (auto itr = beatmaps.rbegin(); itr != beatmaps.rend(); itr ++) {
+                        std::string fileName((*itr)->beatmapFilename);
+                        if (!fileName.empty() && std::filesystem::exists(levelPath / fileName)) {
+                            return *itr;
+                        }
+                    }
+                }
+
+                return nullptr;
+            };
+
+            auto diff = GetFirstAvailableDiffFile(levelPath, saveData);
+            if (!diff) {
+                WARNING("No diff files were found for level {} to get beatmap length", levelPath.string());
+                return 0;
+            }
+
+            auto beatmapFilePath = levelPath / std::string(diff->beatmapFilename);
+            auto saveDataString = Utils::ReadText(beatmapFilePath);
             auto beatmapSaveData = UnityEngine::JsonUtility::FromJson<BeatmapSaveDataVersion3::BeatmapSaveData*>(saveDataString);
+
             if (!beatmapSaveData) {
                 WARNING("Could not parse beatmap savedata for time from savedata string {}", utf8::utf16to8(saveDataString));
                 return 0;
