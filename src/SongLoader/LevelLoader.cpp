@@ -22,6 +22,7 @@
 #include "utf8.h"
 #include <cmath>
 #include <exception>
+#include <filesystem>
 #include <limits>
 
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
@@ -87,6 +88,15 @@ namespace SongCore::SongLoader {
     }
 
     CustomBeatmapLevel* LevelLoader::LoadCustomBeatmapLevel(std::filesystem::path const& levelPath, bool wip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& hashOut) {
+        if (!BasicVerifyMap(levelPath, saveData)) {
+            #ifdef THROW_ON_MISSING_DATA
+            throw std::runtime_error(fmt::format("Map {} was missing files!", levelPath.string()));
+            #else
+            WARNING("Map {} was missing files!", levelPath);
+            return nullptr;
+            #endif
+        }
+
         if (!saveData) {
             WARNING("saveData was null for level @ {}", levelPath.string());
             return nullptr;
@@ -415,4 +425,22 @@ namespace SongCore::SongLoader {
         return 0;
     }
 
+    bool LevelLoader::BasicVerifyMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+        std::string songFile(saveData->songFilename);
+        std::string coverFile(saveData->coverImageFilename);
+
+        if (!std::filesystem::exists(levelPath / songFile)) return false;
+        // FIXME: should no cover mean a hard false?
+        if (!std::filesystem::exists(levelPath / coverFile)) return false;
+
+        for (auto set : saveData->difficultyBeatmapSets) {
+            for (auto diff : set->difficultyBeatmaps) {
+                std::string diffFile(diff->beatmapFilename);
+                if (!std::filesystem::exists(levelPath / diffFile)) return false;
+            }
+        }
+
+        // no files were found to be missing, return success
+        return true;
+    }
 }
