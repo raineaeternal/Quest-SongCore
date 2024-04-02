@@ -88,6 +88,15 @@ namespace SongCore::SongLoader {
     }
 
     CustomBeatmapLevel* LevelLoader::LoadCustomBeatmapLevel(std::filesystem::path const& levelPath, bool wip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& hashOut) {
+        if (!saveData) {
+            #ifdef THROW_ON_MISSING_DATA
+            throw std::runtime_error(fmt::format("saveData was null for level @ {}", levelPath.string()));
+            #else
+            WARNING("saveData was null for level @ {}", levelPath.string());
+            return nullptr;
+            #endif
+        }
+
         if (!BasicVerifyMap(levelPath, saveData)) {
             #ifdef THROW_ON_MISSING_DATA
             throw std::runtime_error(fmt::format("Map {} was missing files!", levelPath.string()));
@@ -97,10 +106,6 @@ namespace SongCore::SongLoader {
             #endif
         }
 
-        if (!saveData) {
-            WARNING("saveData was null for level @ {}", levelPath.string());
-            return nullptr;
-        }
 
         auto hashOpt = Utils::GetCustomLevelHash(levelPath, saveData);
         hashOut = *hashOpt;
