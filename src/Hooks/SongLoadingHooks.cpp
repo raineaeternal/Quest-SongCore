@@ -29,7 +29,11 @@
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
 #include "BGLib/Polyglot/Localization.hpp"
 
+#include "utf8.h"
 #include <regex>
+#include <string>
+#include <string_view>
+#include <sstream>
 
 // if the version was still null, override!
 MAKE_AUTO_HOOK_MATCH(VersionSerializedData_get_v, &GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData::get_v, StringW, GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData* self) {
@@ -231,14 +235,47 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsyn
     }, std::forward<SongCore::CancellationToken>(cancellationToken));
 }
 
+// gets the char16 representation of the 2 nibbles that fit 1 char
+std::pair<char16_t, char16_t> getByteChars(char c) {
+    static char16_t nibbleToChar[] = u"0123456789abcde";
+    auto lower = c & 0b1111;
+    auto upper = (c >> 4) & 0b1111;
+
+    return {nibbleToChar[lower], nibbleToChar[upper]};
+}
+
+// manually implement escaping the filepath url. as it turns out most of the code the game does is good except it escapes / as well which breaks filepaths, so we just escape with a limited charset
+std::u16string escape(std::u16string_view url) {
+    static char16_t forbidden[] = u"@&;:<>=?\"'\\!#%+$,{}|^[]`";
+    static auto forbiddenEnd = forbidden + (sizeof(forbidden) / sizeof(char16_t));
+    static auto isForbidden = [](char16_t c) { return std::find(forbidden, forbiddenEnd, c) != forbiddenEnd; };
+
+    // i'd have preferred to use wstringstream but it doesn't convert to u16 as easily
+    std::u16string escaped;
+    escaped.reserve(url.size());
+
+    for (auto c : url) {
+        if (isForbidden(c)) {
+            escaped.push_back(u'%');
+            // we lose width here but all forbidden chars are only as big as 1 byte (char) anyway
+            auto [lc, uc] = getByteChars(static_cast<char>(c));
+            escaped.push_back(uc);
+            escaped.push_back(lc);
+        } else {
+            escaped.push_back(c);
+        }
+    }
+
+    return escaped;
+}
+
 // reading files sucks for file paths
 MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
-    std::u16string str = filePath;
-    int index = str.find_last_of('/') + 1;
-    StringW dir = str.substr(0, index);
-    StringW fileName = UnityEngine::Networking::UnityWebRequest::EscapeURL(str.substr(index, str.size()));
-    std::replace(fileName.begin(), fileName.end(), u'+', u' '); // '+' breaks stuff even though it's supposed to be valid encoding ¯\_(ツ)_/¯
-    return u"file://" + dir + fileName;
+    std::u16string_view view(filePath);
+    if (view.find(u"://") != std::string::npos) { // check if it's already a URL
+        return filePath;
+    }
+    return fmt::format("file://{}", utf8::utf16to8(escape(filePath)));
 }
 
 // get the level data async
