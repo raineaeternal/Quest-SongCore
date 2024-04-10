@@ -32,8 +32,6 @@
 #include "utf8.h"
 #include <regex>
 #include <string>
-#include <string_view>
-#include <sstream>
 
 // if the version was still null, override!
 MAKE_AUTO_HOOK_MATCH(VersionSerializedData_get_v, &GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData::get_v, StringW, GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData* self) {
