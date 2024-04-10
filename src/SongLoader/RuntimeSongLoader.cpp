@@ -23,6 +23,7 @@
 #include "System/Collections/IEnumerator.hpp"
 #include "System/IDisposable.hpp"
 
+#include "Utils/SaveDataVersion.hpp"
 
 DEFINE_TYPE(SongCore::SongLoader, RuntimeSongLoader);
 
@@ -322,10 +323,26 @@ namespace SongCore::SongLoader {
 
                 // if the level is not yet set, attempt loading levelinfosavedata from the song path, then load custom preview beatmap level from that
                 if (!level) {
-                    auto saveData = _levelLoader->GetStandardSaveData(levelPath);
-                    if (saveData) {
-                        std::string hash;
-                        level = _levelLoader->LoadCustomBeatmapLevel(levelPath, isWip, saveData, hash);
+                    static Version v4(4);
+                    static auto GetSaveDataVersion = [](std::filesystem::path const& levelPath) {
+                        std::filesystem::path infoPath = levelPath / "info.dat";
+                        if (!std::filesystem::exists(infoPath)) infoPath = levelPath / "Info.dat";
+                        return VersionFromFilePath(infoPath);
+                    };
+
+                    auto v = GetSaveDataVersion(levelPath);
+                    if (v < v4) { // v3
+                        auto saveData = _levelLoader->GetSaveDataFromV3(levelPath);
+                        if (saveData) {
+                            std::string hash;
+                            level = _levelLoader->LoadCustomBeatmapLevel(levelPath, isWip, saveData, hash);
+                        }
+                    } else { // v4
+                        auto saveData = _levelLoader->GetSaveDataFromV4(levelPath);
+                        if (saveData) {
+                            std::string hash;
+                            level = _levelLoader->LoadCustomBeatmapLevel(levelPath, isWip, saveData, hash);
+                        }
                     }
                 }
 
