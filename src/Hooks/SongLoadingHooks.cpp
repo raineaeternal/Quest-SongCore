@@ -30,8 +30,8 @@
 #include "BGLib/Polyglot/Localization.hpp"
 
 #include "utf8.h"
-#include <regex>
 #include <string>
+#include "Utils/SaveDataVersion.hpp"
 
 // if the version was still null, override!
 MAKE_AUTO_HOOK_MATCH(VersionSerializedData_get_v, &GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData::get_v, StringW, GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData* self) {
@@ -40,37 +40,14 @@ MAKE_AUTO_HOOK_MATCH(VersionSerializedData_get_v, &GlobalNamespace::BeatmapSaveD
     return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion()->ToString();
 }
 
-// version getting override implementation
-System::Version* GetVersion(StringW data) {
-    if (!data) return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
-
-    auto truncatedText = static_cast<std::string>(data).substr(0, 50);
-    static const std::regex versionRegex (R"("_?version"\s*:\s*"[0-9]+\.[0-9]+\.?[0-9]?")", std::regex_constants::optimize);
-    std::smatch matches;
-    if(std::regex_search(truncatedText, matches, versionRegex)) {
-        if(!matches.empty()) {
-            auto version = matches[0].str();
-            version = version.substr(0, version.length()-1);
-            version = version.substr(version.find_last_of('\"')+1, version.length());
-            try {
-                return System::Version::New_ctor(version);
-            } catch(const std::runtime_error& e) {
-                ERROR("BeatmapSaveDataHelpers_GetVersion Invalid version: '{}'!", version);
-            }
-        }
-    }
-
-    return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
-}
-
 // version getting override
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersionAsync, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersionAsync, System::Threading::Tasks::Task_1<System::Version*>*, StringW data) {
-    return SongCore::StartTask<System::Version*>(std::bind(GetVersion, data));
+    return SongCore::StartTask<System::Version*>(std::bind(&SongCore::VersionFromFileData, data));
 }
 
 // version getting override
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
-    return GetVersion(data);
+    return SongCore::VersionFromFileData(data);
 }
 
 // create a custom level save data
