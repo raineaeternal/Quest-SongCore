@@ -235,7 +235,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsyn
 
 // gets the char16 representation of the 2 nibbles that fit 1 char
 std::pair<char16_t, char16_t> getByteChars(char c) {
-    static char16_t nibbleToChar[] = u"0123456789abcde";
+    static char16_t nibbleToChar[] = u"0123456789abcdef";
     auto lower = c & 0b1111;
     auto upper = (c >> 4) & 0b1111;
 
