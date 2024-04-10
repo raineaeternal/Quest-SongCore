@@ -10,6 +10,8 @@ DEFINE_TYPE(SongCore::CustomJSONData, CustomLevelInfoSaveData);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmapSet);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmap);
 
+DEFINE_TYPE(SongCore::CustomJSONData, CustomBeatmapLevelSaveData);
+
 namespace SongCore::CustomJSONData {
 
 	void CustomLevelInfoSaveData::ctor(

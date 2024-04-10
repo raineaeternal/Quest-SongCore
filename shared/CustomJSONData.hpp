@@ -9,6 +9,7 @@
 #include "beatsaber-hook/shared/rapidjson/include/rapidjson/document.h"
 
 #include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
+#include "BeatmapLevelSaveDataVersion4/BeatmapLevelSaveData.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "UnityEngine/Color.hpp"
 
@@ -233,4 +234,8 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalN
 
 public:
 	std::optional<std::reference_wrapper<const ValueUTF16>> customData;
+)
+
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomBeatmapLevelSaveData, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData,
+
 )
