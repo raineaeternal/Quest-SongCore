@@ -85,9 +85,9 @@ namespace SongCore {
         eventArgs.hash = hashView.substr(0, hashView.size() - (eventArgs.isWIP ? 4 : 0));
 
         auto customLevel = eventArgs.customBeatmapLevel;
-        if (eventArgs.customBeatmapLevel->standardLevelInfoSaveDataV2) {
+        if (customLevel->standardLevelInfoSaveDataV2) {
             eventArgs.customLevelInfoSaveDataV2 = customLevel->standardLevelInfoSaveDataV2;
-        } else if (eventArgs.customBeatmapLevel->beatmapLevelSaveDataV4) {
+        } else if (customLevel->beatmapLevelSaveDataV4) {
             eventArgs.customBeatmapLevelSaveDataV4 = customLevel->beatmapLevelSaveDataV4;
         } else return;
 
