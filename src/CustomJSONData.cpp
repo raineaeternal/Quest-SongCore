@@ -105,14 +105,16 @@ namespace SongCore::CustomJSONData {
 		BasicCustomLevelDetails levelDetails;
 
 		switch(saveDataVersion) {
-			case SaveDataVersion::Unknown:
+			case SaveDataVersion::Unknown: {
 				ERROR("Save data version was never set, this is invalid behaviour! returning false for parsed level details!");
 				return false;
-			case SaveDataVersion::V3:
+			} break;
+			case SaveDataVersion::V3: {
 				if (!levelDetails.DeserializeV3(doc->GetObject())) {
 					ERROR("Failed to parse save data as v3 savedata");
 					return false;
 				}
+			} break;
 			case SaveDataVersion::V4: {
 				if (!levelDetails.DeserializeV4(doc->GetObject())) {
 					ERROR("Failed to parse save data as v4 savedata");
@@ -232,6 +234,7 @@ namespace SongCore::CustomJSONData {
 				auto& characteristic = characteristicNameToBeatmapDetailsSet[characteristicName];
 				characteristic.characteristicName = characteristicName;
 				auto& diff = characteristic.difficultyToDifficultyBeatmapDetails[difficulty];
+				diff.characteristicName = characteristicName;
 				diff.DeserializeV4(beatmap);
 			}
 		} else {
