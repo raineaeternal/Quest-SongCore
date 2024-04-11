@@ -246,8 +246,8 @@ namespace SongCore::CustomJSONData {
 			ParseContributorArrayInto(customDataItr->value, CustomSaveDataInfo::SaveDataVersion::V4, contributors);
 
 			auto characteristicDataItr = customDataItr->value.FindMember(u"characteristicData");
-			if (characteristicDataItr != customDataItr->value.MemberEnd() && customDataItr->value.IsArray()) {
-				for (auto& data : customDataItr->value.GetArray()) {
+			if (characteristicDataItr != customDataItr->value.MemberEnd() && characteristicDataItr->value.IsArray()) {
+				for (auto& data : characteristicDataItr->value.GetArray()) {
 					auto characteristicName = utf8::utf16to8(data[u"characteristic"].Get<std::u16string>());
 					auto& characteristic = characteristicNameToBeatmapDetailsSet[characteristicName];
 					characteristic.DeserializeV4(data);
