@@ -84,7 +84,7 @@ namespace SongCore {
         // possibly remove ` WIP` from the end
         eventArgs.hash = hashView.substr(0, hashView.size() - (eventArgs.isWIP ? 4 : 0));
 
-        auto customLevel =  eventArgs.customBeatmapLevel;
+        auto customLevel = eventArgs.customBeatmapLevel;
         if (eventArgs.customBeatmapLevel->standardLevelInfoSaveDataV2) {
             eventArgs.customLevelInfoSaveDataV2 = customLevel->standardLevelInfoSaveDataV2;
         } else if (eventArgs.customBeatmapLevel->beatmapLevelSaveDataV4) {
