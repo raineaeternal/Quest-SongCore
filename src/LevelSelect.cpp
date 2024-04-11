@@ -84,16 +84,10 @@ namespace SongCore {
         // possibly remove ` WIP` from the end
         eventArgs.hash = hashView.substr(0, hashView.size() - (eventArgs.isWIP ? 4 : 0));
 
-        SongCore::CustomJSONData::CustomSaveDataInfo saveData;
-        if (eventArgs.customBeatmapLevel->standardLevelInfoSaveDataV2) {
-            eventArgs.customLevelInfoSaveDataV2 = eventArgs.customBeatmapLevel->standardLevelInfoSaveDataV2.value();
-            saveData = eventArgs.customBeatmapLevel->standardLevelInfoSaveDataV2.value()->CustomSaveDataInfo.value();
-        } else if (eventArgs.customBeatmapLevel->beatmapLevelSaveDataV4) {
-            eventArgs.customBeatmapLevelSaveDataV4 = eventArgs.customBeatmapLevel->beatmapLevelSaveDataV4.value();
-            saveData = eventArgs.customBeatmapLevel->beatmapLevelSaveDataV4.value()->CustomSaveDataInfo.value();
-        }
+        auto saveData = eventArgs.customBeatmapLevel->CustomSaveDataInfo;
+        if (!saveData.has_value()) return;
 
-        auto levelDetails = saveData.TryGetBasicLevelDetails();
+        auto levelDetails = saveData->get().TryGetBasicLevelDetails();
         if (!levelDetails.has_value()) return;
 
         auto characteristicDetails = levelDetails->get().TryGetCharacteristic(eventArgs.beatmapKey.beatmapCharacteristic->serializedName);
