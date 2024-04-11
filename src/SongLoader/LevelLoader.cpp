@@ -71,7 +71,8 @@ namespace SongCore::SongLoader {
         }
 
         try {
-            auto standardSaveData = GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(Utils::ReadText(infoPath));
+            auto text = Utils::ReadText(infoPath);
+            auto standardSaveData = LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString(text), text);
 
             if (!standardSaveData) {
                 ERROR("Cannot load file from path: {}!", path.string());
@@ -91,6 +92,91 @@ namespace SongCore::SongLoader {
 
         // we errored out while doing things. return null
         return nullptr;
+    }
+
+    SongCore::CustomJSONData::CustomLevelInfoSaveData* LevelLoader::LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string const& stringData) {
+        auto customBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>(il2cpp_array_size_t(saveData->difficultyBeatmapSets.size()));
+
+        SongCore::CustomJSONData::CustomLevelInfoSaveData *customSaveData =
+                SongCore::CustomJSONData::CustomLevelInfoSaveData::New_ctor(
+                    saveData->songName,
+                    saveData->songSubName,
+                    saveData->songAuthorName,
+                    saveData->levelAuthorName,
+                    saveData->beatsPerMinute,
+                    saveData->songTimeOffset,
+                    saveData->shuffle,
+                    saveData->shufflePeriod,
+                    saveData->previewStartTime,
+                    saveData->previewDuration,
+                    saveData->songFilename,
+                    saveData->coverImageFilename,
+                    saveData->environmentName,
+                    saveData->allDirectionsEnvironmentName,
+                    saveData->environmentNames,
+                    saveData->colorSchemes,
+                    customBeatmapSets
+                );
+
+
+        auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
+        customSaveData->_customSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
+        customSaveData->_customSaveDataInfo->doc = sharedDoc;
+
+        rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
+        doc.Parse(stringData.c_str());
+
+        auto dataItr = doc.FindMember(u"_customData");
+        if (dataItr != doc.MemberEnd()) {
+            customSaveData->_customSaveDataInfo->customData = dataItr->value;
+        }
+
+        SongCore::CustomJSONData::ValueUTF16 const& beatmapSetsArr = doc.FindMember(u"_difficultyBeatmapSets")->value;
+
+        for (rapidjson::SizeType i = 0; i < beatmapSetsArr.Size(); i++) {
+            SongCore::CustomJSONData::ValueUTF16 const& beatmapSetJson = beatmapSetsArr[i];
+
+            auto originalBeatmapSet = saveData->difficultyBeatmapSets[i];
+            auto customBeatmaps = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap *>(originalBeatmapSet->difficultyBeatmaps.size());
+
+            auto const& difficultyBeatmaps = beatmapSetJson.FindMember(u"_difficultyBeatmaps")->value;
+
+            for (rapidjson::SizeType j = 0; j < originalBeatmapSet->difficultyBeatmaps.size(); j++) {
+                SongCore::CustomJSONData::ValueUTF16 const& difficultyBeatmapJson = difficultyBeatmaps[j];
+                auto originalBeatmap = originalBeatmapSet->difficultyBeatmaps[j];
+
+                auto customBeatmap =
+                    SongCore::CustomJSONData::CustomDifficultyBeatmap::New_ctor(
+                        originalBeatmap->difficulty,
+                        originalBeatmap->difficultyRank,
+                        originalBeatmap->beatmapFilename,
+                        originalBeatmap->noteJumpMovementSpeed,
+                        originalBeatmap->noteJumpStartBeatOffset,
+                        originalBeatmap->beatmapColorSchemeIdx,
+                        originalBeatmap->environmentNameIdx
+                    );
+
+                auto customDataItr = difficultyBeatmapJson.FindMember(u"_customData");
+                if (customDataItr != difficultyBeatmapJson.MemberEnd()) {
+                    customBeatmap->customData = customDataItr->value;
+                }
+
+                customBeatmaps[j] = customBeatmap;
+            }
+
+            auto customBeatmapSet = SongCore::CustomJSONData::CustomDifficultyBeatmapSet::New_ctor(
+                originalBeatmapSet->beatmapCharacteristicName,
+                customBeatmaps
+            );
+
+            auto customDataItr = beatmapSetJson.FindMember(u"_customData");
+            if (customDataItr != beatmapSetJson.MemberEnd()) {
+                customBeatmapSet->customData = customDataItr->value;
+            }
+
+            customBeatmapSets[i] = customBeatmapSet;
+        }
+        return customSaveData;
     }
 
     SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LevelLoader::LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string const& stringData) {

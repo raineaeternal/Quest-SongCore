@@ -37,9 +37,6 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
         /// @brief gets the v3 savedata from the path
         SongCore::CustomJSONData::CustomLevelInfoSaveData* GetSaveDataFromV3(std::filesystem::path const& path);
 
-        /// @brief gets the v4 savedata with custom data from the base game save data
-        SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string const& stringData);
-
         /// @brief gets the v4 savedata from the path
         SongCore::CustomJSONData::CustomBeatmapLevelSaveData* GetSaveDataFromV4(std::filesystem::path const& path);
 
@@ -98,4 +95,10 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
 
         /// @brief calculates the song duration by parsing the first characteristic, first difficulty for the last note and seeing the time on it
         static float GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData);
+
+        /// @brief gets the v3 savedata with custom data from the base game save data
+        SongCore::CustomJSONData::CustomLevelInfoSaveData* LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string const& stringData);
+
+        /// @brief gets the v4 savedata with custom data from the base game save data
+        SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string const& stringData);
 )

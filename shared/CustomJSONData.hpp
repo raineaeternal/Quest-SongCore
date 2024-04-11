@@ -13,7 +13,6 @@
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "UnityEngine/Color.hpp"
 
-struct Hook_StandardLevelInfoSaveData_DeserializeFromJSONString;
 namespace SongCore::SongLoader { class LevelLoader; }
 namespace SongCore::CustomJSONData {
 	using ValueUTF16 = rapidjson::GenericValue<rapidjson::UTF16<char16_t>>;
@@ -222,7 +221,7 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveData, GlobalN
 		}
 		__declspec(property(get=get_CustomSaveDataInfo)) std::optional<std::reference_wrapper<CustomSaveDataInfo>> CustomSaveDataInfo;
 	private:
-		friend struct ::Hook_StandardLevelInfoSaveData_DeserializeFromJSONString;
+		friend class ::SongCore::SongLoader::LevelLoader;
 		std::optional<CustomJSONData::CustomSaveDataInfo> _customSaveDataInfo;
 )
 
