@@ -881,6 +881,7 @@ namespace SongCore::SongLoader {
 
         auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
         customSaveData->_customSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
+        customSaveData->_customSaveDataInfo->saveDataVersion = SongCore::CustomJSONData::CustomSaveDataInfo::SaveDataVersion::V3;
         customSaveData->_customSaveDataInfo->doc = sharedDoc;
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
@@ -962,6 +963,7 @@ namespace SongCore::SongLoader {
 
         auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
         customSaveData->_customSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
+        customSaveData->_customSaveDataInfo->saveDataVersion = SongCore::CustomJSONData::CustomSaveDataInfo::SaveDataVersion::V4;
         customSaveData->_customSaveDataInfo->doc = sharedDoc;
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;

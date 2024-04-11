@@ -20,6 +20,13 @@ namespace SongCore::CustomJSONData {
 
 	/// @brief struct providing custom information about the save data
 	struct CustomSaveDataInfo {
+		/// @brief enum that describes which save data version the custom data is coming from. useful to know when trying to find certain members
+		enum class SaveDataVersion {
+			Unknown,
+			V3,
+			V4,
+		} saveDataVersion;
+
 		std::shared_ptr<DocumentUTF16> doc;
 		std::optional<std::reference_wrapper<const ValueUTF16>> customData;
 
@@ -38,7 +45,15 @@ namespace SongCore::CustomJSONData {
 
 				/// @brief deserializer method
 				/// @return since everything is completely optional, returns true if anything was found, false if nothing was found
-				bool Deserialize(ValueUTF16 const& value);
+				[[deprecated("Use DeserializeV3")]] bool Deserialize(ValueUTF16 const& value);
+
+				/// @brief deserializer method
+				/// @return since everything is completely optional, returns true if anything was found, false if nothing was found
+				bool DeserializeV3(ValueUTF16 const& value);
+
+				/// @brief deserializer method
+				/// @return since everything is completely optional, returns true if anything was found, false if nothing was found
+				bool DeserializeV4(ValueUTF16 const& value);
 			};
 
 			/// @brief characteristic name as parsed from info.dat
@@ -70,7 +85,15 @@ namespace SongCore::CustomJSONData {
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			bool Deserialize(ValueUTF16 const& value);
+			[[deprecated("Use DeserializeV3 instead")]] bool Deserialize(ValueUTF16 const& value);
+
+			/// @brief deserializer method
+			/// @return whether deserialization was succesful
+			bool DeserializeV3(ValueUTF16 const& value);
+
+			/// @brief deserializer method
+			/// @return whether deserialization was succesful
+			bool DeserializeV4(ValueUTF16 const& value);
 		};
 
 		/// @brief struct providing basic information about a difficulty beatmap set (characteristic)
@@ -98,7 +121,15 @@ namespace SongCore::CustomJSONData {
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			bool Deserialize(ValueUTF16 const& value);
+			[[deprecated("Use DeserializeV3 instead")]] bool Deserialize(ValueUTF16 const& value);
+
+			/// @brief deserializer method
+			/// @return whether deserialization was succesful
+			bool DeserializeV3(ValueUTF16 const& value);
+
+			/// @brief deserializer method
+			/// @return whether deserialization was succesful
+			bool DeserializeV4(ValueUTF16 const& value);
 		};
 
 		/// @brief struct providing basic information about a beatmap
@@ -114,7 +145,15 @@ namespace SongCore::CustomJSONData {
 
 				/// @brief deserializer method
 				/// @return whether deserialization was succesful
-				bool Deserialize(ValueUTF16 const& value);
+				[[deprecated("Use DeserializeV3 instead")]] bool Deserialize(ValueUTF16 const& value);
+
+				/// @brief deserializer method
+				/// @return whether deserialization was succesful
+				bool DeserializeV3(ValueUTF16 const& value);
+
+				/// @return whether deserialization was succesful
+				/// @brief deserializer method
+				bool DeserializeV4(ValueUTF16 const& value);
 			};
 
 			std::unordered_map<std::string, BasicCustomDifficultyBeatmapDetailsSet> characteristicNameToBeatmapDetailsSet;
@@ -148,7 +187,11 @@ namespace SongCore::CustomJSONData {
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			bool Deserialize(ValueUTF16 const& value);
+			[[deprecated("Use DeserializeV3 instead")]] bool Deserialize(ValueUTF16 const& value);
+
+			bool DeserializeV3(ValueUTF16 const& value);
+
+			bool DeserializeV4(ValueUTF16 const& value);
 		};
 
 		/// @brief tries to get the basic level details for this savedata
@@ -186,6 +229,12 @@ namespace SongCore::CustomJSONData {
 
 	private:
 		bool ParseLevelDetails();
+
+		/// @brief parses level details assuming the saved json doc is a V3 savedata
+		bool ParseLevelDetailsV3();
+
+		/// @brief parses level details assuming the saved json doc is a V4 savedata
+		bool ParseLevelDetailsV4();
 
 		std::optional<BasicCustomLevelDetails> _cachedLevelDetails;
 	};
