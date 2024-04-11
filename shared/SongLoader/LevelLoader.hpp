@@ -16,6 +16,7 @@
 #include "GlobalNamespace/FileSystemBeatmapLevelData.hpp"
 #include "GlobalNamespace/FileDifficultyBeatmap.hpp"
 #include "GlobalNamespace/AudioClipAsyncLoader.hpp"
+#include "BeatmapLevelSaveDataVersion4/BeatmapLevelSaveData.hpp"
 #include "System/ValueTuple_2.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
 #include <filesystem>
@@ -35,6 +36,9 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
 
         /// @brief gets the v3 savedata from the path
         SongCore::CustomJSONData::CustomLevelInfoSaveData* GetSaveDataFromV3(std::filesystem::path const& path);
+
+        /// @brief gets the v4 savedata with custom data from the base game save data
+        SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string const& stringData);
 
         /// @brief gets the v4 savedata from the path
         SongCore::CustomJSONData::CustomBeatmapLevelSaveData* GetSaveDataFromV4(std::filesystem::path const& path);
@@ -66,10 +70,13 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
         using BeatmapLevelDataDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>;
 
         /// @brief preview media data from filesystem
-        GlobalNamespace::FileSystemPreviewMediaData* GetPreviewMediaData(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData);
+        GlobalNamespace::FileSystemPreviewMediaData* GetPreviewMediaData(std::filesystem::path const& levelPath, StringW coverImageFilename, StringW songFilename);
 
         /// @brief beatmap level data from filesystem & basic beatmap data from savedata
         std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, BeatmapBasicDataDict*> GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, std::span<GlobalNamespace::EnvironmentName const> environmentNames, std::span<GlobalNamespace::ColorScheme* const> colorSchemes, CustomJSONData::CustomLevelInfoSaveData* saveData);
+
+        /// @brief beatmap level data from filesystem & basic beatmap data from savedata
+        std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, BeatmapBasicDataDict*> GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, CustomJSONData::CustomBeatmapLevelSaveData* saveData);
 
         /// @brief gets the environment info for the environmentName and whether it's all directions or not
         GlobalNamespace::EnvironmentInfoSO* GetEnvironmentInfo(StringW environmentName, bool allDirections);
@@ -83,6 +90,12 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
         /// @brief gets the length for a level
         static float GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData);
 
+        /// @brief gets the length for a level
+        static float GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData);
+
         /// @brief calculates the song duration by parsing the first characteristic, first difficulty for the last note and seeing the time on it
         static float GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData);
+
+        /// @brief calculates the song duration by parsing the first characteristic, first difficulty for the last note and seeing the time on it
+        static float GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData);
 )

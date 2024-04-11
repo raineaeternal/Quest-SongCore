@@ -218,13 +218,16 @@ namespace SongCore::API {
             std::optional<std::string> hash = std::nullopt;
 
             struct BasicCustomLevelDetailsGroup {
-                CustomJSONData::CustomLevelInfoSaveData::BasicCustomLevelDetails const& levelDetails;
-                CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet const& characteristicDetails;
-                CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const& difficultyDetails;
+                CustomJSONData::CustomSaveDataInfo::BasicCustomLevelDetails const& levelDetails;
+                CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet const& characteristicDetails;
+                CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails const& difficultyDetails;
             };
 
-            /// @brief if this is a custom level, this should be set
-            std::optional<CustomJSONData::CustomLevelInfoSaveData*> customLevelInfoSaveData = std::nullopt;
+            /// @brief if this is a V2-V3 custom level, this should be set
+            std::optional<CustomJSONData::CustomLevelInfoSaveData*> customLevelInfoSaveDataV2 = std::nullopt;
+
+            /// @brief if this is a V4 custom level, this should be set
+            std::optional<CustomJSONData::CustomBeatmapLevelSaveData*> customBeatmapLevelSaveDataV4 = std::nullopt;
 
             /// @brief if this is a custom level, this should be set
             std::optional<BasicCustomLevelDetailsGroup> customLevelDetails = std::nullopt;

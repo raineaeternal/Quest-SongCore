@@ -3,7 +3,6 @@
 #include "System/Version.hpp"
 
 namespace SongCore {
-    #define VERSION_CMP_OP(op) bool operator op(Version const& rhs) const { return major op rhs.major && minor op rhs.minor && patch op rhs.patch; }
     struct Version {
         int major, minor, patch;
         constexpr Version(int major = 0, int minor = 0, int patch = 0) noexcept : major(major), minor(minor), patch(patch) {}
@@ -13,11 +12,33 @@ namespace SongCore {
             return System::Version::New_ctor(major, minor, patch);
         }
 
-        VERSION_CMP_OP(<)
-        VERSION_CMP_OP(<=)
-        VERSION_CMP_OP(==)
-        VERSION_CMP_OP(>)
-        VERSION_CMP_OP(>=)
+        bool operator <(Version const& rhs) const { 
+            if (major < rhs.major) return true;
+            if (major == rhs.major && minor < rhs.minor) return true;
+            if (major == rhs.major && minor == rhs.minor && patch < rhs.patch) return true;
+            return false;
+        }
+        bool operator <=(Version const& rhs) const {
+            if (major == rhs.major && minor == rhs.minor && patch <= rhs.patch) return true;
+            if (major == rhs.major && minor <= rhs.minor) return true;
+            if (major <= rhs.major) return true;
+            return false;
+        }
+        bool operator ==(Version const& rhs) const { 
+            return major == rhs.major && minor == rhs.minor && patch == rhs.patch;
+        }
+        bool operator >(Version const& rhs) const { 
+            if (major > rhs.major) return true;
+            if (major == rhs.major && minor > rhs.minor) return true;
+            if (major == rhs.major && minor == rhs.minor && patch > rhs.patch) return true;
+            return false;
+        }
+        bool operator >=(Version const& rhs) const { 
+            if (major == rhs.major && minor == rhs.minor && patch >= rhs.patch) return true;
+            if (major == rhs.major && minor >= rhs.minor) return true;
+            if (major >= rhs.major) return true;
+            return false;
+        }
 
         static Version noVersion;
     };

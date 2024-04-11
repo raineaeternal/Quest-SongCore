@@ -19,14 +19,14 @@ MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::Ga
     if (!level) return GameplayCoreInstaller_InstallBindings(self);
 
     // get custom level save data if possible
-    auto saveData = level->standardLevelInfoSaveData;
-    if (!saveData) return GameplayCoreInstaller_InstallBindings(self);
+    auto customSaveDataInfo = level->standardLevelInfoSaveDataV2 ? level->standardLevelInfoSaveDataV2.value()->CustomSaveDataInfo : level->beatmapLevelSaveDataV4.value()->CustomSaveDataInfo;
+    if (!customSaveDataInfo) return GameplayCoreInstaller_InstallBindings(self);
 
     // get difficulty data
     auto beatmapKey = sceneSetupData->beatmapKey;
     auto characteristic = beatmapKey.beatmapCharacteristic;
     auto difficulty = beatmapKey.difficulty;
-    auto difficultyDataOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
+    auto difficultyDataOpt = customSaveDataInfo->TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
     if (!difficultyDataOpt.has_value()) return GameplayCoreInstaller_InstallBindings(self);
 
     // get if one saber set

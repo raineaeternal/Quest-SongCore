@@ -85,14 +85,15 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
     std::u16string str(stringData ? stringData : u"{}");
 
     auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
-    customSaveData->doc = sharedDoc;
+    customSaveData->CustomSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
+    customSaveData->CustomSaveDataInfo->doc = sharedDoc;
 
     rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
     doc.Parse(str.c_str());
 
     auto dataItr = doc.FindMember(u"_customData");
     if (dataItr != doc.MemberEnd()) {
-        customSaveData->customData = dataItr->value;
+        customSaveData->CustomSaveDataInfo->customData = dataItr->value;
     }
 
     SongCore::CustomJSONData::ValueUTF16 const& beatmapSetsArr = doc.FindMember(u"_difficultyBeatmapSets")->value;
@@ -347,4 +348,29 @@ MAKE_AUTO_HOOK_MATCH(
     LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
 
     if (searchFilter) self->_levelSearchViewController->Refresh(byref(*searchFilter));
+}
+
+
+// fix levels using regular name instead of serialized name. WHY
+MAKE_AUTO_HOOK_MATCH(
+    EnvironmentsListModel_GetEnvironmentInfoBySerializedName,
+    &EnvironmentsListModel::GetEnvironmentInfoBySerializedName,
+    UnityW<GlobalNamespace::EnvironmentInfoSO>,
+    EnvironmentsListModel* self,
+    StringW environmentSerializedName
+) {
+    auto result = EnvironmentsListModel_GetEnvironmentInfoBySerializedName(self, environmentSerializedName);
+    //Fix here
+    if(!result) {
+        //This should be a rare case
+        auto envList = ListW<UnityW<GlobalNamespace::EnvironmentInfoSO>>::New();
+        envList->AddRange(self->environmentInfos->i___System__Collections__Generic__IEnumerable_1_T_());
+        for(auto& env : envList) {
+            if(env->environmentName == environmentSerializedName) {
+                result = env;
+            }
+        }
+    }
+
+    return result;
 }

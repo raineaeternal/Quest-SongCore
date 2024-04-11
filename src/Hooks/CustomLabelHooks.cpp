@@ -92,8 +92,8 @@ MAKE_AUTO_HOOK_MATCH(
 }
 
 void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegmentedControlController* self, SongCore::SongLoader::CustomBeatmapLevel* customLevel) {
-    auto saveData = customLevel->standardLevelInfoSaveData;
-    if (!saveData) return;
+    auto customSaveDataInfo = customLevel->standardLevelInfoSaveDataV2 ? customLevel->standardLevelInfoSaveDataV2.value()->CustomSaveDataInfo : customLevel->beatmapLevelSaveDataV4.value()->CustomSaveDataInfo;
+    if (!customSaveDataInfo) return;
 
     auto beatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(self->_beatmapCharacteristics);
     std::vector<TemporaryCharacteristicSegmentedControlData> cellData;
@@ -101,7 +101,7 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
     int selectedCellIdx = self->_segmentedControl->selectedCellNumber;
 
     for (auto characteristic : beatmapCharacteristics) {
-        auto characteristicDetailsOpt = saveData->TryGetCharacteristic(characteristic->serializedName);
+        auto characteristicDetailsOpt = customSaveDataInfo->TryGetCharacteristic(characteristic->serializedName);
         if (!characteristicDetailsOpt.has_value()) { success = false; break; }
         auto& characteristicDetails = characteristicDetailsOpt->get();
 
@@ -136,8 +136,8 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
 }
 
 void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedControlController* self, SongCore::SongLoader::CustomBeatmapLevel* customLevel, GlobalNamespace::BeatmapKey const& beatmapKey) {
-    auto saveData = customLevel->standardLevelInfoSaveData;
-    if (!saveData) return;
+    auto customSaveDataInfo = customLevel->standardLevelInfoSaveDataV2 ? customLevel->standardLevelInfoSaveDataV2.value()->CustomSaveDataInfo : customLevel->beatmapLevelSaveDataV4.value()->CustomSaveDataInfo;
+    if (!customSaveDataInfo) return;
 
     auto characteristic = beatmapKey.beatmapCharacteristic;
     auto difficulties = ListW<GlobalNamespace::BeatmapDifficulty>(self->_difficulties);
@@ -147,7 +147,7 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     int selectedCellIdx = self->_difficultySegmentedControl->selectedCellNumber;
 
     for (auto difficulty : difficulties) {
-        auto difficultyDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
+        auto difficultyDetailsOpt = customSaveDataInfo->TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
         if (!difficultyDetailsOpt.has_value()) { success = false; break; }
 
         auto& difficultyDetails = difficultyDetailsOpt->get();

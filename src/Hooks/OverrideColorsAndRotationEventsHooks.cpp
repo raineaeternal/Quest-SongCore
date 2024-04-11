@@ -12,12 +12,13 @@
 #include "GlobalNamespace/RecordingToolManager.hpp"
 #include "UnityEngine/Color.hpp"
 #include "System/Nullable_1.hpp"
+#include "System/Collections/Generic/IReadOnlyList_1.hpp"
 
 #include "SongLoader/CustomBeatmapLevel.hpp"
 #include "CustomJSONData.hpp"
 
 /// @brief method to merge the given custom colors into a newly created color scheme, or nothing if all custom color overrides are disabled
-GlobalNamespace::ColorScheme* ApplyOverrideColors(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails::CustomColors const& customColors);
+GlobalNamespace::ColorScheme* ApplyOverrideColors(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails::CustomColors const& customColors);
 
 // TODO: extract similiar code into seperate method from both these hooks
 MAKE_AUTO_HOOK_MATCH(
@@ -91,9 +92,9 @@ MAKE_AUTO_HOOK_MATCH(
     auto diff = beatmapKey->difficulty;
     bool containsRotation = characteristic->containsRotationEvents;
 
-    auto saveData = customLevel->standardLevelInfoSaveData;
-    if (saveData) {
-        auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, diff);
+    auto customSaveDataInfo = customLevel->standardLevelInfoSaveDataV2 ? customLevel->standardLevelInfoSaveDataV2.value()->CustomSaveDataInfo : customLevel->beatmapLevelSaveDataV4.value()->CustomSaveDataInfo;
+    if (customSaveDataInfo) {
+        auto diffDetailsOpt = customSaveDataInfo->TryGetCharacteristicAndDifficulty(characteristic->serializedName, diff);
         if (diffDetailsOpt) {
             auto& diffDetails = diffDetailsOpt->get();
             // map requests rotation events to be enabled or not, so we do that here
@@ -203,9 +204,9 @@ MAKE_AUTO_HOOK_MATCH(
     auto diff = beatmapKey->difficulty;
     bool containsRotation = characteristic->containsRotationEvents;
 
-    auto saveData = customLevel->standardLevelInfoSaveData;
-    if (saveData) {
-        auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, diff);
+    auto customSaveDataInfo = customLevel->standardLevelInfoSaveDataV2 ? customLevel->standardLevelInfoSaveDataV2.value()->CustomSaveDataInfo : customLevel->beatmapLevelSaveDataV4.value()->CustomSaveDataInfo;
+    if (customSaveDataInfo) {
+        auto diffDetailsOpt = customSaveDataInfo->TryGetCharacteristicAndDifficulty(characteristic->serializedName, diff);
         if (diffDetailsOpt) {
             auto& diffDetails = diffDetailsOpt->get();
             // map requests rotation events to be enabled or not, so we do that here
@@ -329,10 +330,10 @@ GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorSchem
     // if we're not allowed to apply any colors, don't do anything
     if (!config.customSongObstacleColors && !config.customSongEnvironmentColors && !config.customSongNoteColors) return nullptr;
 
-    auto saveData = level->standardLevelInfoSaveData;
-    if (!saveData) return nullptr;
+    auto customSaveDataInfo = level->standardLevelInfoSaveDataV2 ? level->standardLevelInfoSaveDataV2.value()->CustomSaveDataInfo : level->beatmapLevelSaveDataV4.value()->CustomSaveDataInfo;
+    if (!customSaveDataInfo) return nullptr;
 
-    auto diffDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(beatmapKey.beatmapCharacteristic->serializedName, beatmapKey.difficulty);
+    auto diffDetailsOpt = customSaveDataInfo->TryGetCharacteristicAndDifficulty(beatmapKey.beatmapCharacteristic->serializedName, beatmapKey.difficulty);
     if (!diffDetailsOpt.has_value()) return nullptr;
     auto& diffDetails = diffDetailsOpt->get();
 

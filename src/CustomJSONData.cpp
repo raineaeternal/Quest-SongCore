@@ -6,11 +6,14 @@
 
 using namespace GlobalNamespace;
 
+//V2
 DEFINE_TYPE(SongCore::CustomJSONData, CustomLevelInfoSaveData);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmapSet);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmap);
 
+//V3
 DEFINE_TYPE(SongCore::CustomJSONData, CustomBeatmapLevelSaveData);
+DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmapV4);
 
 namespace SongCore::CustomJSONData {
 
@@ -56,12 +59,12 @@ namespace SongCore::CustomJSONData {
 		);
 	}
 
-	std::optional<std::reference_wrapper<const CustomLevelInfoSaveData::BasicCustomLevelDetails>> CustomLevelInfoSaveData::TryGetBasicLevelDetails() {
+	std::optional<std::reference_wrapper<const CustomSaveDataInfo::BasicCustomLevelDetails>> CustomSaveDataInfo::TryGetBasicLevelDetails() {
 		ParseLevelDetails();
 		return _cachedLevelDetails;
 	}
 
-	bool CustomLevelInfoSaveData::TryGetBasicLevelDetails(BasicCustomLevelDetails& outDetails) {
+	bool CustomSaveDataInfo::TryGetBasicLevelDetails(BasicCustomLevelDetails& outDetails) {
 		if (ParseLevelDetails()) {
 			outDetails = _cachedLevelDetails.value();
 			return true;
@@ -69,35 +72,35 @@ namespace SongCore::CustomJSONData {
 		return false;
 	}
 
-	std::optional<std::reference_wrapper<CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet const>> CustomLevelInfoSaveData::TryGetCharacteristic(std::string const& characteristic) {
+	std::optional<std::reference_wrapper<CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet const>> CustomSaveDataInfo::TryGetCharacteristic(std::string const& characteristic) {
 		if (ParseLevelDetails()) {
 			return _cachedLevelDetails->TryGetCharacteristic(characteristic);
 		}
 		return std::nullopt;
 	}
 
-	bool CustomLevelInfoSaveData::TryGetCharacteristic(std::string const& characteristic, CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet& outSet) {
+	bool CustomSaveDataInfo::TryGetCharacteristic(std::string const& characteristic, CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet& outSet) {
 		if (ParseLevelDetails()) {
 			return _cachedLevelDetails->TryGetCharacteristic(characteristic, outSet);
 		}
 		return false;
 	}
 
-	std::optional<std::reference_wrapper<CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const>> CustomLevelInfoSaveData::TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty) {
+	std::optional<std::reference_wrapper<CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails const>> CustomSaveDataInfo::TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty) {
 		if (ParseLevelDetails()) {
 			return _cachedLevelDetails->TryGetCharacteristicAndDifficulty(characteristic, difficulty);
 		}
 		return std::nullopt;
 	}
 
-	bool CustomLevelInfoSaveData::TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails& outDetails) {
+	bool CustomSaveDataInfo::TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails& outDetails) {
 		if (ParseLevelDetails()) {
 			return _cachedLevelDetails->TryGetCharacteristicAndDifficulty(characteristic, difficulty, outDetails);
 		}
 		return false;
 	}
 
-	bool CustomLevelInfoSaveData::ParseLevelDetails() {
+	bool CustomSaveDataInfo::ParseLevelDetails() {
 		if (_cachedLevelDetails.has_value()) return true;
 		BasicCustomLevelDetails levelDetails;
 
@@ -107,13 +110,13 @@ namespace SongCore::CustomJSONData {
 		return true;
 	}
 
-	std::optional<std::reference_wrapper<CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet const>> CustomLevelInfoSaveData::BasicCustomLevelDetails::TryGetCharacteristic(std::string const& characteristic) const {
+	std::optional<std::reference_wrapper<CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet const>> CustomSaveDataInfo::BasicCustomLevelDetails::TryGetCharacteristic(std::string const& characteristic) const {
 		auto charItr = characteristicNameToBeatmapDetailsSet.find(characteristic);
 		if (charItr != characteristicNameToBeatmapDetailsSet.end()) return charItr->second;
 		return std::nullopt;
 	}
 
-	bool CustomLevelInfoSaveData::BasicCustomLevelDetails::TryGetCharacteristic(std::string const& characteristic, CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet& outDetailsSet) const {
+	bool CustomSaveDataInfo::BasicCustomLevelDetails::TryGetCharacteristic(std::string const& characteristic, CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet& outDetailsSet) const {
 		auto charItr = characteristicNameToBeatmapDetailsSet.find(characteristic);
 		if (charItr != characteristicNameToBeatmapDetailsSet.end()) {
 			outDetailsSet = charItr->second;
@@ -122,19 +125,19 @@ namespace SongCore::CustomJSONData {
 		return false;
 	}
 
-	std::optional<std::reference_wrapper<CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const>> CustomLevelInfoSaveData::BasicCustomLevelDetails::TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty) const {
+	std::optional<std::reference_wrapper<CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails const>> CustomSaveDataInfo::BasicCustomLevelDetails::TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty) const {
 		auto charItr = characteristicNameToBeatmapDetailsSet.find(characteristic);
 		if (charItr != characteristicNameToBeatmapDetailsSet.end()) return charItr->second.TryGetDifficulty(difficulty);
 		return std::nullopt;
 	}
 
-	bool CustomLevelInfoSaveData::BasicCustomLevelDetails::TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails) const {
+	bool CustomSaveDataInfo::BasicCustomLevelDetails::TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails) const {
 		auto charItr = characteristicNameToBeatmapDetailsSet.find(characteristic);
 		if (charItr != characteristicNameToBeatmapDetailsSet.end()) return charItr->second.TryGetDifficulty(difficulty, outDetails);
 		return false;
 	}
 
-	static void ParseContributorArrayInto(ValueUTF16 const& customData, std::vector<CustomLevelInfoSaveData::BasicCustomLevelDetails::Contributor>& out) {
+	static void ParseContributorArrayInto(ValueUTF16 const& customData, std::vector<CustomSaveDataInfo::BasicCustomLevelDetails::Contributor>& out) {
 		auto arrayItr = customData.FindMember(u"_contributors");
 		if (arrayItr == customData.MemberEnd() || !arrayItr->value.IsArray()) return;
 		for (auto& value : arrayItr->value.GetArray()) {
@@ -143,7 +146,7 @@ namespace SongCore::CustomJSONData {
 	}
 
 	// this is all the characteristics -> diff sets
-	bool CustomLevelInfoSaveData::BasicCustomLevelDetails::Deserialize(ValueUTF16 const& value) {
+	bool CustomSaveDataInfo::BasicCustomLevelDetails::Deserialize(ValueUTF16 const& value) {
 		auto memberEnd = value.MemberEnd();
 		bool foundEverything = true;
 		auto difficultyBeatmapSetsItr = value.FindMember(u"_difficultyBeatmapSets");
@@ -167,7 +170,7 @@ namespace SongCore::CustomJSONData {
 		return foundEverything;
 	}
 
-	bool CustomLevelInfoSaveData::BasicCustomLevelDetails::Contributor::Deserialize(ValueUTF16 const& value) {
+	bool CustomSaveDataInfo::BasicCustomLevelDetails::Contributor::Deserialize(ValueUTF16 const& value) {
 		auto memberEnd = value.MemberEnd();
 		auto nameItr = value.FindMember(u"_name");
 		if (nameItr != memberEnd) name = utf8::utf16to8(nameItr->value.Get<std::u16string>());
@@ -179,13 +182,13 @@ namespace SongCore::CustomJSONData {
 		return true;
 	}
 
-	std::optional<std::reference_wrapper<CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const>> CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet::TryGetDifficulty(GlobalNamespace::BeatmapDifficulty difficulty) const {
+	std::optional<std::reference_wrapper<CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails const>> CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet::TryGetDifficulty(GlobalNamespace::BeatmapDifficulty difficulty) const {
 		auto diffItr = difficultyToDifficultyBeatmapDetails.find(difficulty);
 		if (diffItr != difficultyToDifficultyBeatmapDetails.end()) return diffItr->second;
 		return std::nullopt;
 	}
 
-	bool CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet::TryGetDifficulty(GlobalNamespace::BeatmapDifficulty difficulty, CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails& outDetails) const {
+	bool CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet::TryGetDifficulty(GlobalNamespace::BeatmapDifficulty difficulty, CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails& outDetails) const {
 		auto diffItr = difficultyToDifficultyBeatmapDetails.find(difficulty);
 		if (diffItr != difficultyToDifficultyBeatmapDetails.end()) {
 			outDetails = diffItr->second;
@@ -213,7 +216,7 @@ namespace SongCore::CustomJSONData {
 	}
 
 	// this is the diff set -> difficulties
-	bool CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetailsSet::Deserialize(ValueUTF16 const& value) {
+	bool CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet::Deserialize(ValueUTF16 const& value) {
 		auto memberEnd = value.MemberEnd();
 		auto customDataItr = value.FindMember(u"_customData");
 		if (customDataItr != memberEnd && customDataItr->value.IsObject()) {
@@ -253,7 +256,7 @@ namespace SongCore::CustomJSONData {
 	}
 
 	// this is each difficulty individually
-	bool CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails::Deserialize(ValueUTF16 const& value) {
+	bool CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails::Deserialize(ValueUTF16 const& value) {
 		auto customDataItr = value.FindMember(u"_customData");
 		if (customDataItr == value.MemberEnd()) return false;
 		auto& customData = customDataItr->value;
@@ -306,7 +309,7 @@ namespace SongCore::CustomJSONData {
 		}                                                               \
 	} while (0)
 
-    bool CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails::CustomColors::Deserialize(ValueUTF16 const& value) {
+    bool CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails::CustomColors::Deserialize(ValueUTF16 const& value) {
 		auto memberEnd = value.MemberEnd();
 		bool foundAnything = false;
 		DESERIALIZE_OPT_COLOR(colorLeft);
@@ -355,5 +358,37 @@ void CustomDifficultyBeatmap::ctor(
 		beatmapColorSchemeIdx,
 		environmentNameIdx
 	);
+}
+
+void CustomBeatmapLevelSaveData::ctor() {
+	INVOKE_CTOR();
+
+	_ctor();
+}
+
+void CustomDifficultyBeatmapV4::ctor(
+	BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::BeatmapAuthors beatmapAuthors,
+	int beatmapColorSchemeIdx,
+	StringW beatmapDataFilename,
+	StringW characteristic,
+	StringW difficulty,
+	int environmentNameIdx,
+	StringW lightshowDataFilename,
+	float noteJumpMovementSpeed,
+	float noteJumpStartBeatOffset
+) {
+	INVOKE_CTOR();
+
+	_ctor();
+
+	this->beatmapAuthors = beatmapAuthors;
+	this->beatmapColorSchemeIdx = beatmapColorSchemeIdx;
+	this->beatmapDataFilename = beatmapDataFilename;
+	this->characteristic = characteristic;
+	this->difficulty = difficulty;
+	this->environmentNameIdx = environmentNameIdx;
+	this->lightshowDataFilename = lightshowDataFilename;
+	this->noteJumpMovementSpeed = noteJumpMovementSpeed;
+	this->noteJumpStartBeatOffset = noteJumpStartBeatOffset;
 }
 }

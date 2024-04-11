@@ -25,7 +25,7 @@ namespace SongCore::UI {
         _colorsOptionsModal->Show();
     }
 
-    void ColorsOptions::ShowColors(CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const& details) {
+    void ColorsOptions::ShowColors(CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails const& details) {
         Parse();
         _colorsOptionsModal->transform->position = _modalPosition;
         Show();
@@ -68,7 +68,7 @@ namespace SongCore::UI {
         SaveConfig();
     }
 
-    void ColorsOptions::SetColors(CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails::CustomColors const& colors) {
+    void ColorsOptions::SetColors(CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails::CustomColors const& colors) {
         _colorSchemeView->SetColors(
             colors.colorLeft.value_or(_voidColor),
             colors.colorRight.value_or(_voidColor),

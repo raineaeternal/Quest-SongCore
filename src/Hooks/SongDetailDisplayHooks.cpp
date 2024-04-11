@@ -30,18 +30,15 @@ MAKE_AUTO_HOOK_MATCH(
     allAuthors.insert(allAuthors.begin(), level->allMappers->begin(), level->allMappers.end());
     allAuthors.insert(allAuthors.begin(), level->allLighters->begin(), level->allLighters.end());
 
+    allAuthors.erase( unique( allAuthors.begin(), allAuthors.end() ), allAuthors.end() );
+
     if (!allAuthors.empty()) {
         for (auto& author : allAuthors) {
             author = author->Replace(u"<", u"<\u200B")->Replace(u">", u"\u200B>");
         }
 
         auto songAuthorName = level->songAuthorName;
-        std::stringstream levelAuthors;
-        levelAuthors << std::string(allAuthors.front());
-        for (auto itr = std::next(allAuthors.begin()); itr != allAuthors.end(); itr++) {
-            levelAuthors << ", " << static_cast<std::string>(*itr);
-        }
-        auto levelAuthorName = levelAuthors.str();
+        auto levelAuthorName = fmt::format("{}", fmt::join(allAuthors, ", "));
 
         auto color = "ff69b4";
 

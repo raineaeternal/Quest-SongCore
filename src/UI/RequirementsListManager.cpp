@@ -118,7 +118,8 @@ namespace SongCore::UI {
 
         for (auto& contributor : levelDetails.contributors) {
             auto cell = GetCellInfo();
-            cell->text = fmt::format("<size=75%>{}", contributor.name);
+            //TODO: fix ????
+            cell->text = fmt::format("<size=75%>{}", /*contributor.name*/ "N/A");
             cell->subText = contributor.role;
             UnityEngine::Sprite* icon = nullptr;
             if (!contributor.iconPath.empty()) {

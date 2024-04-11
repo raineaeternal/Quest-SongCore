@@ -1,4 +1,5 @@
 #include "Utils/Hashing.hpp"
+#include "CustomJSONData.hpp"
 #include "Utils/Cache.hpp"
 #include "logging.hpp"
 #include <filesystem>
@@ -53,6 +54,81 @@ namespace SongCore::Utils {
                 fs.Pump(LWORD_MAX);
                 fs.Detach();
             }
+        }
+
+        hashFilter.MessageEnd();
+
+        HexEncoder hexEncoder(new StringSink(hashHex));
+        hexEncoder.Put((const byte*)hashResult.data(), hashResult.size());
+
+        cacheData->sha1 = hashHex;
+        SetCachedInfo(levelPath, *cacheData);
+
+        std::chrono::milliseconds duration = duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+        DEBUG("GetCustomLevelHash Stop Result {} Time {}", hashHex, duration.count());
+        return hashHex;
+    }
+
+    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+        auto start = std::chrono::high_resolution_clock::now();
+        std::string hashHex;
+
+        // get cached info
+        auto cacheData = GetCachedInfo(levelPath);
+        if(!cacheData.has_value()) return std::nullopt;
+
+        if (cacheData->sha1.has_value()) {
+            DEBUG("GetCustomLevelHash Stop Result {} from cache", *cacheData->sha1);
+            return *cacheData->sha1;
+        }
+
+        auto infoPath = levelPath / "info.dat";
+        if(!std::filesystem::exists(infoPath)) {
+            infoPath = levelPath / "Info.dat";
+            if(!std::filesystem::exists(infoPath)) return std::nullopt;
+        }
+
+        auto audioPath = levelPath / static_cast<std::string>(saveData->audio.audioDataFilename);
+        if(!std::filesystem::exists(audioPath)) {
+            return std::nullopt;
+        }
+
+        SHA1 hashType;
+        std::string hashResult;
+        HashFilter hashFilter(hashType, new StringSink(hashResult));
+
+        FileSource fs(infoPath.c_str(), false);
+        fs.Attach(new Redirector(hashFilter));
+        fs.Pump(LWORD_MAX);
+        fs.Detach();
+
+        FileSource fsAudio(audioPath.c_str(), false);
+        fsAudio.Attach(new Redirector(hashFilter));
+        fsAudio.Pump(LWORD_MAX);
+        fsAudio.Detach();
+
+        for(auto val : saveData->difficultyBeatmaps) {
+            if (!val) continue;
+            
+            auto diffPath = levelPath / static_cast<std::string>(val->beatmapDataFilename);
+            if(!std::filesystem::exists(diffPath)) {
+                ERROR("GetCustomLevelHash File {} did not exist", diffPath.string());
+                continue;
+            }
+            FileSource fs(diffPath.c_str(), false);
+            fs.Attach(new Redirector(hashFilter));
+            fs.Pump(LWORD_MAX);
+            fs.Detach();
+
+            auto lightPath = levelPath / static_cast<std::string>(val->lightshowDataFilename);
+            if(!std::filesystem::exists(lightPath)) {
+                ERROR("GetCustomLevelHash Lighting File {} did not exist", diffPath.string());
+                continue;
+            }
+            FileSource fsLight(lightPath.c_str(), false);
+            fsLight.Attach(new Redirector(hashFilter));
+            fsLight.Pump(LWORD_MAX);
+            fsLight.Detach();
         }
 
         hashFilter.MessageEnd();

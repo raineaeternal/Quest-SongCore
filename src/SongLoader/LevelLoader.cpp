@@ -1,6 +1,10 @@
 #include "SongLoader/LevelLoader.hpp"
+#include "BeatmapLevelSaveDataVersion4/zzzz__AudioSaveData_def.hpp"
+#include "BeatmapLevelSaveDataVersion4/zzzz__BeatmapLevelSaveData_def.hpp"
 #include "CustomJSONData.hpp"
+#include "GlobalNamespace/zzzz__ColorScheme_def.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
+#include "UnityEngine/zzzz__Color_def.hpp"
 #include "Utils/WavRiff.hpp"
 #include "logging.hpp"
 #include "Utils/Hashing.hpp"
@@ -9,6 +13,7 @@
 #include "Utils/WavRiff.hpp"
 #include "Utils/Cache.hpp"
 
+#include "bsml/shared/Helpers/utilities.hpp"
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/BeatmapLevelColorSchemeSaveData.hpp"
@@ -19,10 +24,17 @@
 #include "UnityEngine/JsonUtility.hpp"
 #include "BeatmapSaveDataVersion3/BeatmapSaveData.hpp"
 #include "BeatmapSaveDataVersion3/BeatmapSaveDataItem.hpp"
+#include "BeatmapSaveDataVersion4/BeatmapSaveData.hpp"
+#include "BeatmapSaveDataVersion4/LightshowSaveData.hpp"
+#include "BeatmapSaveDataVersion4/BeatIndex.hpp"
+#include "BeatmapSaveDataVersion4/BeatmapBeatIndex.hpp"
+#include "BeatmapLevelSaveDataVersion4/AudioSaveData.hpp"
+#include "Newtonsoft/Json/JsonConvert.hpp"
 #include "utf8.h"
 #include <cmath>
 #include <exception>
 #include <filesystem>
+#include <fmt/core.h>
 #include <limits>
 
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
@@ -74,16 +86,110 @@ namespace SongCore::SongLoader {
 
             return opt.value();
         } catch(std::runtime_error& e) {
-            ERROR("GetStandardSaveData can't Load File {}: {}!", path.string(), e.what());
+            ERROR("GetSaveDataFromV3 can't Load File {}: {}!", path.string(), e.what());
         }
 
         // we errored out while doing things. return null
         return nullptr;
     }
 
+    SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LevelLoader::LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string const& stringData) {
+        if (!saveData) {
+            WARNING("Save Data is not valid!");
+            return nullptr;
+        }
+
+        auto customDiffBeatmaps = ArrayW<BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap*>(il2cpp_array_size_t(saveData->difficultyBeatmaps.size()));
+
+        SongCore::CustomJSONData::CustomBeatmapLevelSaveData *customSaveData =
+                SongCore::CustomJSONData::CustomBeatmapLevelSaveData::New_ctor();
+        customSaveData->song = saveData->song;
+        customSaveData->audio = saveData->audio;
+        customSaveData->colorSchemes = saveData->colorSchemes;
+        customSaveData->difficultyBeatmaps = customDiffBeatmaps;
+        customSaveData->coverImageFilename = saveData->coverImageFilename;
+        customSaveData->songPreviewFilename = saveData->songPreviewFilename;
+        customSaveData->environmentNames = saveData->environmentNames;
+        customSaveData->version = saveData->version;
+
+        std::u16string str(stringData);
+
+        auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
+        customSaveData->CustomSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
+        customSaveData->CustomSaveDataInfo->doc = sharedDoc;
+
+        rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
+        doc.Parse(str.c_str());
+
+        auto dataItr = doc.FindMember(u"_customData");
+        if (dataItr != doc.MemberEnd()) {
+            customSaveData->CustomSaveDataInfo->customData = dataItr->value;
+        }
+
+        SongCore::CustomJSONData::ValueUTF16 const& beatmapsArr = doc.FindMember(u"difficultyBeatmaps")->value;
+
+        for (rapidjson::SizeType i = 0; i < beatmapsArr.Size(); i++) {
+            SongCore::CustomJSONData::ValueUTF16 const& diffBeatmapJson = beatmapsArr[i];
+
+            auto originalDiffBeatmap = saveData->difficultyBeatmaps[i];
+            auto customDiffBeatmap = SongCore::CustomJSONData::CustomDifficultyBeatmapV4::New_ctor(
+                originalDiffBeatmap->beatmapAuthors,
+                originalDiffBeatmap->beatmapColorSchemeIdx,
+                originalDiffBeatmap->beatmapDataFilename,
+                originalDiffBeatmap->characteristic,
+                originalDiffBeatmap->difficulty,
+                originalDiffBeatmap->environmentNameIdx,
+                originalDiffBeatmap->lightshowDataFilename,
+                originalDiffBeatmap->noteJumpMovementSpeed,
+                originalDiffBeatmap->noteJumpStartBeatOffset
+            );
+
+            auto customDataItr = diffBeatmapJson.FindMember(u"_customData");
+            if (customDataItr != diffBeatmapJson.MemberEnd()) {
+                customDiffBeatmap->customData = customDataItr->value;
+            }
+
+            customDiffBeatmaps[i] = customDiffBeatmap;
+        }
+        return customSaveData;
+    }
+
     SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LevelLoader::GetSaveDataFromV4(std::filesystem::path const& path) {
-        // TODO: implement reading in the file like V3 and then checking whether it was a CustomBeatmapLevelSaveData.
-        // We probably need to hook JsonConvert.DeserializeObject for that. mpcore does that, so simple!
+        if (path.empty()) {
+            ERROR("Provided path was empty!");
+            return nullptr;
+        }
+
+        auto infoPath = path / "info.dat";
+        if (!std::filesystem::exists(infoPath)) {
+            infoPath = path / "Info.dat";
+            if (!std::filesystem::exists(infoPath)) {
+                ERROR("no info.dat found for song @ '{}', returning null!", path.string());
+                return nullptr;
+            }
+        }
+
+        try {
+            auto infoText = Utils::ReadText(infoPath);
+            auto beatmapLevelSaveData = LoadCustomSaveData(Newtonsoft::Json::JsonConvert::DeserializeObject<BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData*>(infoText), infoText);
+
+            if (!beatmapLevelSaveData) {
+                ERROR("Cannot load file from path: {}!", path.string());
+                return nullptr;
+            }
+
+            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomBeatmapLevelSaveData>(beatmapLevelSaveData);
+            if (!opt.has_value()) {
+                ERROR("Cannot load file {} as CustomBeatmapLevelSaveData!", path.string());
+                return nullptr;
+            }
+
+            return opt.value();
+        } catch(std::runtime_error& e) {
+            ERROR("GetSaveDataFromV4 can't Load File {}: {}!", path.string(), e.what());
+        }
+
+        // we errored out while doing things. return null
         return nullptr;
     }
 
@@ -116,7 +222,6 @@ namespace SongCore::SongLoader {
             #endif
         }
 
-
         auto hashOpt = Utils::GetCustomLevelHash(levelPath, saveData);
         hashOut = *hashOpt;
 
@@ -133,8 +238,6 @@ namespace SongCore::SongLoader {
 
         auto bpm = saveData->beatsPerMinute;
         auto songTimeOffset = saveData->songTimeOffset;
-        auto shuffle = saveData->shuffle;
-        auto shufflePeriod = saveData->shufflePeriod;
         auto previewStartTime = saveData->previewStartTime;
         auto previewDuration = saveData->previewDuration;
 
@@ -169,12 +272,13 @@ namespace SongCore::SongLoader {
         auto allMappers = ArrayW<StringW>({ levelAuthorName });
         auto allLighters = ArrayW<StringW>::Empty();
 
-        auto previewMediaData = GetPreviewMediaData(levelPath, saveData);
+        auto previewMediaData = GetPreviewMediaData(levelPath, saveData->coverImageFilename, saveData->songFilename);
         auto [beatmapLevelData, beatmapBasicData] = GetBeatmapLevelAndBasicData(levelPath, levelId, environmentNameList, colorSchemes, saveData);
 
         auto result = CustomBeatmapLevel::New(
             levelPath.string(),
             saveData,
+            nullptr,
             beatmapLevelData->i___GlobalNamespace__IBeatmapLevelData(),
             false,
             levelId,
@@ -216,9 +320,64 @@ namespace SongCore::SongLoader {
             #endif
         }
 
-        // TODO: parse some of the savedata and construct a CustomBeatmapLevel
+        auto hashOpt = Utils::GetCustomLevelHash(levelPath, saveData);
+        hashOut = *hashOpt;
 
-        return nullptr;
+        std::string levelId = fmt::format("{}{}{}", RuntimeSongLoader::CUSTOM_LEVEL_PREFIX_ID, hashOut, wip ? " WIP" : "");
+
+        auto songName = saveData->song.title;
+        FixEmptyString(songName)
+        auto songSubName = saveData->song.subTitle;
+        FixEmptyString(songSubName);
+        auto songAuthorName = saveData->song.author;
+        FixEmptyString(songAuthorName);
+
+        auto bpm = saveData->audio.bpm;
+        auto lufs = (saveData->audio.lufs != 0.0f) ? saveData->audio.lufs : (-6.0f);
+        auto previewStartTime = saveData->audio.previewStartTime;
+        auto previewDuration = saveData->audio.previewDuration;
+
+        float songDuration = GetLengthForLevel(levelPath, saveData);
+
+        auto previewMediaData = GetPreviewMediaData(levelPath, saveData->coverImageFilename, saveData->audio.songFilename);
+        auto [beatmapLevelData, beatmapBasicData] = GetBeatmapLevelAndBasicData(levelPath, levelId, saveData);
+
+        auto allMappers = ListW<StringW>::New();
+        auto allLighters = ListW<StringW>::New();
+
+        for (auto diffBeatmap : saveData->difficultyBeatmaps) {
+            for (auto author : diffBeatmap->beatmapAuthors.mappers) {
+                allMappers->Add(author);
+            }
+            for (auto author : diffBeatmap->beatmapAuthors.lighters) {
+                allLighters->Add(author);
+            }
+        }
+
+        auto result = CustomBeatmapLevel::New(
+            levelPath.string(),
+            nullptr,
+            saveData,
+            beatmapLevelData->i___GlobalNamespace__IBeatmapLevelData(),
+            false,
+            levelId,
+            songName,
+            songSubName,
+            songAuthorName,
+            allMappers.to_array(),
+            allLighters.to_array(),
+            bpm,
+            lufs,
+            0.0f,
+            previewStartTime,
+            previewDuration,
+            songDuration,
+            GlobalNamespace::PlayerSensitivityFlag::Safe,
+            previewMediaData->i___GlobalNamespace__IPreviewMediaData(),
+            beatmapBasicData->i___System__Collections__Generic__IReadOnlyDictionary_2_TKey_TValue_()
+        );
+
+        return result;
     }
 
 
@@ -311,13 +470,170 @@ namespace SongCore::SongLoader {
         };
     }
 
-    GlobalNamespace::FileSystemPreviewMediaData* LevelLoader::GetPreviewMediaData(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+    std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, LevelLoader::BeatmapBasicDataDict*> LevelLoader::GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+        auto fileDifficultyBeatmapsDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>::New_ctor();
+        auto basicDataDict = LevelLoader::BeatmapBasicDataDict::New_ctor();
+
+        auto environmentNames = ListW<GlobalNamespace::EnvironmentName>::New();
+        for (StringW name : saveData->environmentNames) {
+            environmentNames->Add(
+                GetEnvironmentInfo(name, false)->_environmentName
+            );
+        }
+
+        auto colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
+        auto ConvertHTMLStringToColor = [](std::string colorHtmlString) {
+            auto color = BSML::Utilities::ParseHTMLColorOpt(colorHtmlString);
+            if(!color)
+                return UnityEngine::Color::get_black();
+            return color.value();
+        };
+        if(saveData->colorSchemes) {
+            for (int i = 0; i < saveData->colorSchemes.size(); i++) {
+                auto colorScheme = saveData->colorSchemes[i];
+                auto name = colorScheme->colorSchemeName;
+                bool nonLocalized = true;
+                bool editable = false;
+                auto saberAColor = ConvertHTMLStringToColor(colorScheme->saberAColor);
+                auto saberBColor = ConvertHTMLStringToColor(colorScheme->saberBColor);
+                auto obstaclesColor = ConvertHTMLStringToColor(colorScheme->obstaclesColor);
+                auto envColor0 = ConvertHTMLStringToColor(colorScheme->environmentColor0);
+                auto envColor1 = ConvertHTMLStringToColor(colorScheme->environmentColor1);
+                auto envColor0Boost = ConvertHTMLStringToColor(colorScheme->environmentColor0Boost);
+                auto envColor1Boost = ConvertHTMLStringToColor(colorScheme->environmentColor1Boost);
+
+                auto scheme = GlobalNamespace::ColorScheme::New_ctor(
+                    name,
+                    name,
+                    nonLocalized,
+                    name,
+                    editable,
+                    saberAColor,
+                    saberBColor,
+                    envColor0,
+                    envColor1,
+                    {1, 1, 1, 1},
+                    true,
+                    envColor0Boost,
+                    envColor1Boost,
+                    {1, 1, 1, 1},
+                    obstaclesColor
+                );
+
+                INFO("ColorScheme ptr: {}", fmt::ptr(scheme));
+
+                colorSchemes->Add(scheme);
+            }
+        }
+
+        for (auto diffBeatmap : saveData->difficultyBeatmaps) {
+            auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(diffBeatmap->characteristic);
+            if (!characteristic) {
+                #ifdef THROW_ON_MISSING_DATA
+                    throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", diffBeatmap->characteristic));
+                #else
+                    WARNING("Got null characteristic for characteristic name {}, skipping...", diffBeatmap->characteristic);
+                    continue;
+                #endif
+            }
+
+            GlobalNamespace::BeatmapDifficulty difficulty;
+            auto parseSuccess = GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
+                diffBeatmap->difficulty,
+                byref(difficulty)
+            );
+
+            if (!parseSuccess) {
+                #ifdef THROW_ON_MISSING_DATA
+                    throw std::runtime_error(fmt::format("Failed to parse a diff string: {}", diffBeatmap->difficulty));
+                #else
+                    WARNING("Failed to parse a diff string: {}, skipping...", diffBeatmap->difficulty);
+                    continue;
+                #endif
+            }
+
+            auto beatmapPath = levelPath / std::string(diffBeatmap->beatmapDataFilename);
+            if (!std::filesystem::exists(beatmapPath)) {
+                #ifdef THROW_ON_MISSING_DATA
+                    throw std::runtime_error(fmt::format("Diff file '{}' does not exist", beatmapPath.string()));
+                #else
+                    WARNING("Diff file '{}' does not exist, skipping...", beatmapPath.string());
+                    continue;
+                #endif
+            }
+
+            auto lightingPath = levelPath / std::string(diffBeatmap->lightshowDataFilename);
+            if (!std::filesystem::exists(lightingPath)) {
+                #ifdef THROW_ON_MISSING_DATA
+                    throw std::runtime_error(fmt::format("Diff Lighting file '{}' does not exist", lightingPath.string()));
+                #else
+                    WARNING("Diff Lighting file '{}' does not exist, skipping...", lightingPath.string());
+                    continue;
+                #endif
+            }
+
+            auto const dictKey = CharacteristicDifficultyPair(
+                characteristic,
+                difficulty
+            );
+
+            fileDifficultyBeatmapsDict->Add(
+                dictKey,
+                GlobalNamespace::FileDifficultyBeatmap::New_ctor(
+                    beatmapPath.string(),
+                    lightingPath.string()
+                )
+            );
+
+            ListW<StringW> mappers = ListW<StringW>::New();
+            ListW<StringW> lighters = ListW<StringW>::New();
+
+            for (auto author : diffBeatmap->beatmapAuthors.mappers) {
+                mappers->Add(author);
+            }
+            for (auto author : diffBeatmap->beatmapAuthors.lighters) {
+                lighters->Add(author);
+            }
+
+            auto environmentName = environmentNames[diffBeatmap->environmentNameIdx];
+			auto colorScheme = ((diffBeatmap->beatmapColorSchemeIdx >= 0 && diffBeatmap->beatmapColorSchemeIdx < colorSchemes.size()) ? colorSchemes[diffBeatmap->beatmapColorSchemeIdx] : nullptr);
+
+            INFO("Creating basic data with env name {} and color scheme {}", environmentName._environmentName, colorScheme ? colorScheme->colorSchemeId : "null");
+            			
+            basicDataDict->Add(
+                    dictKey,
+                    GlobalNamespace::BeatmapBasicData::New_ctor(
+                        diffBeatmap->noteJumpMovementSpeed,
+                        diffBeatmap->noteJumpStartBeatOffset,
+                        environmentName,
+                        colorScheme,    
+                        0,
+                        0,
+                        0,
+                        mappers.to_array(),
+                        lighters.to_array()
+                    )
+                );
+        }
+
+        return {
+            GlobalNamespace::FileSystemBeatmapLevelData::New_ctor(
+                levelID,
+                (levelPath / std::string(saveData->audio.songFilename)).string(),
+                (levelPath / std::string(saveData->audio.audioDataFilename)).string(),
+                fileDifficultyBeatmapsDict
+            ),
+            basicDataDict
+        };
+    }
+
+    GlobalNamespace::FileSystemPreviewMediaData* LevelLoader::GetPreviewMediaData(std::filesystem::path const& levelPath, StringW coverImageFilename, StringW songFilename) {
         return GlobalNamespace::FileSystemPreviewMediaData::New_ctor(
             _spriteAsyncLoader,
             _clipLoader,
             levelPath.string(),
-            saveData->coverImageFilename,
-            saveData->songFilename
+            coverImageFilename,
+            songFilename
         );
     }
 
@@ -407,6 +723,42 @@ namespace SongCore::SongLoader {
         }
     }
 
+    float LevelLoader::GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+        // check the cached info
+        auto cachedInfoOpt = Utils::GetCachedInfo(levelPath);
+        if (cachedInfoOpt.has_value() && cachedInfoOpt->songDuration.has_value()) {
+            return cachedInfoOpt->songDuration.value();
+        } else {
+            // try to get the info from the ogg file
+            std::string songFilePath = levelPath / static_cast<std::string>(saveData->audio.songFilename);
+            if (std::filesystem::exists(songFilePath)) {
+                float songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
+                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
+                    // update cache with new duration
+                    auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
+                    info.songDuration = songDuration;
+                    Utils::SetCachedInfo(levelPath, info);
+                    return songDuration;
+                }
+                songDuration = Utils::GetLengthFromWavRiff(songFilePath);
+                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
+                    // update cache with new duration
+                    auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
+                    info.songDuration = songDuration;
+                    Utils::SetCachedInfo(levelPath, info);
+                    return songDuration;
+                }
+            }
+
+            // if the file didn't exist or we didn't get a valid length from the ogg, we go and get it from the map
+            float songDuration = GetLengthFromMap(levelPath, saveData);
+            auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
+            info.songDuration = songDuration;
+            Utils::SetCachedInfo(levelPath, info);
+            return songDuration;
+        }
+    }
+
     float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
         try {
             static auto GetFirstAvailableDiffFile = [](std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) -> GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap* {
@@ -464,6 +816,68 @@ namespace SongCore::SongLoader {
         return 0;
     }
 
+    float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+        try {
+            static auto GetFirstAvailableDiffFile = [](std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData) -> BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap* {
+                for (auto beatmap : saveData->difficultyBeatmaps) {
+                    std::string fileName(beatmap->beatmapDataFilename);
+                    if (!fileName.empty() && std::filesystem::exists(levelPath / fileName)) {
+                        return beatmap;
+                    }
+                }
+
+                return nullptr;
+            };
+
+            auto diff = GetFirstAvailableDiffFile(levelPath, saveData);
+            if (!diff) {
+                WARNING("No diff files were found for level {} to get beatmap length", levelPath.string());
+                return 0;
+            }
+
+            auto beatmapFilePath = levelPath / std::string(diff->beatmapDataFilename);
+            auto saveDataString = Utils::ReadText(beatmapFilePath);
+            auto beatmapSaveData = UnityEngine::JsonUtility::FromJson<BeatmapSaveDataVersion4::BeatmapSaveData*>(saveDataString);
+
+            auto lightshowFilePath = levelPath / std::string(diff->lightshowDataFilename);
+            auto lightshowSaveDataString = Utils::ReadText(lightshowFilePath);
+            auto lightshowSaveData = UnityEngine::JsonUtility::FromJson<BeatmapSaveDataVersion4::LightshowSaveData*>(lightshowSaveDataString);
+
+            if (!beatmapSaveData) {
+                WARNING("Could not parse beatmap savedata for time from savedata string {}", utf8::utf16to8(saveDataString));
+                return 0;
+            }
+
+            float highestBeat = 0.0f;
+            if (beatmapSaveData->colorNotes && beatmapSaveData->colorNotes->get_Length() > 0) {
+                for (auto note : ListW<::BeatmapSaveDataVersion4::BeatmapBeatIndex*>(beatmapSaveData->colorNotes)) {
+                    auto beat = note->beat;
+                    if (beat > highestBeat) highestBeat = beat;
+                }
+            } else if (lightshowSaveData->basicEvents && lightshowSaveData->basicEvents->get_Length() > 0) {
+                for (auto event : ListW<::BeatmapSaveDataVersion4::BeatIndex*>(lightshowSaveData->basicEvents)) {
+                    auto beat = event->beat;
+                    if (beat > highestBeat) highestBeat = beat;
+                }
+            }
+
+            auto audioFilePath = levelPath / std::string(saveData->audio.audioDataFilename);
+            auto audioSaveDataString = Utils::ReadText(audioFilePath);
+            auto audioSaveData = UnityEngine::JsonUtility::FromJson<BeatmapLevelSaveDataVersion4::AudioSaveData*>(audioSaveDataString);
+
+            auto bmpInTimeProcessor = GlobalNamespace::BpmTimeProcessor::New_ctor(audioSaveData);
+            return bmpInTimeProcessor->ConvertBeatToTime(highestBeat);
+        } catch (std::exception const& e) {
+            ERROR("While determining length from map, caught exception {}: {}", typeid(e).name(), e.what());
+        } catch (...) {
+            ERROR("While determining length from map, caught error {} with no known what()!", typeid(std::current_exception()).name());
+        }
+
+        WARNING("Getting length from map failed, so duration will be 0");
+        // we somehow failed, so we return 0
+        return 0;
+    }
+
     bool LevelLoader::BasicVerifyMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
         std::string songFile(saveData->songFilename);
         std::string coverFile(saveData->coverImageFilename);
@@ -486,14 +900,18 @@ namespace SongCore::SongLoader {
     bool LevelLoader::BasicVerifyMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
         std::string songFile(saveData->audio.songFilename);
         std::string coverFile(saveData->coverImageFilename);
+        std::string audioFile(saveData->audio.audioDataFilename);
 
         if (!std::filesystem::exists(levelPath / songFile)) return false;
         // FIXME: should no cover mean a hard false?
         if (!std::filesystem::exists(levelPath / coverFile)) return false;
 
+        if (!std::filesystem::exists(levelPath / audioFile)) return false;
+
         for (auto diff : saveData->difficultyBeatmaps) {
             std::string diffFile(diff->beatmapDataFilename);
-            if (!std::filesystem::exists(levelPath / diffFile)) return false;
+            std::string lightFile(diff->lightshowDataFilename);
+            if (!std::filesystem::exists(levelPath / diffFile) || !std::filesystem::exists(levelPath / lightFile)) return false;
         }
 
         // no files were found to be missing, return success
