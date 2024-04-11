@@ -969,7 +969,7 @@ namespace SongCore::SongLoader {
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
         doc.Parse(str.c_str());
 
-        auto dataItr = doc.FindMember(u"_customData");
+        auto dataItr = doc.FindMember(u"customData");
         if (dataItr != doc.MemberEnd()) {
             customSaveData->_customSaveDataInfo->customData = dataItr->value;
         }
@@ -992,7 +992,7 @@ namespace SongCore::SongLoader {
                 originalDiffBeatmap->noteJumpStartBeatOffset
             );
 
-            auto customDataItr = diffBeatmapJson.FindMember(u"_customData");
+            auto customDataItr = diffBeatmapJson.FindMember(u"customData");
             if (customDataItr != diffBeatmapJson.MemberEnd()) {
                 customDiffBeatmap->customData = customDataItr->value;
             }
