@@ -170,6 +170,7 @@ namespace SongCore::CustomJSONData {
 		/// @param outSet reference to destination details set. will copy construct
 		/// @return true if found, false if not
 		[[nodiscard]] bool TryGetCharacteristic(std::string const& characteristic, BasicCustomDifficultyBeatmapDetailsSet& outSet);
+
 		/// @brief tries to get the difficulty details for a characteristic
 		/// @param characteristic characteristic name
 		/// @param difficulty the difficulty to get the details for
