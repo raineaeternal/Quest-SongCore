@@ -115,15 +115,15 @@ namespace SongCore::SongLoader {
         std::u16string str(stringData);
 
         auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
-        customSaveData->CustomSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
-        customSaveData->CustomSaveDataInfo->doc = sharedDoc;
+        customSaveData->_customSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
+        customSaveData->_customSaveDataInfo->doc = sharedDoc;
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
         doc.Parse(str.c_str());
 
         auto dataItr = doc.FindMember(u"_customData");
         if (dataItr != doc.MemberEnd()) {
-            customSaveData->CustomSaveDataInfo->customData = dataItr->value;
+            customSaveData->_customSaveDataInfo->customData = dataItr->value;
         }
 
         SongCore::CustomJSONData::ValueUTF16 const& beatmapsArr = doc.FindMember(u"difficultyBeatmaps")->value;
@@ -599,14 +599,14 @@ namespace SongCore::SongLoader {
 			auto colorScheme = ((diffBeatmap->beatmapColorSchemeIdx >= 0 && diffBeatmap->beatmapColorSchemeIdx < colorSchemes.size()) ? colorSchemes[diffBeatmap->beatmapColorSchemeIdx] : nullptr);
 
             INFO("Creating basic data with env name {} and color scheme {}", environmentName._environmentName, colorScheme ? colorScheme->colorSchemeId : "null");
-            			
+
             basicDataDict->Add(
                     dictKey,
                     GlobalNamespace::BeatmapBasicData::New_ctor(
                         diffBeatmap->noteJumpMovementSpeed,
                         diffBeatmap->noteJumpStartBeatOffset,
                         environmentName,
-                        colorScheme,    
+                        colorScheme,
                         0,
                         0,
                         0,

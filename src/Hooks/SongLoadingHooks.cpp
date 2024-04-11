@@ -85,15 +85,15 @@ MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &Globa
     std::u16string str(stringData ? stringData : u"{}");
 
     auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
-    customSaveData->CustomSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
-    customSaveData->CustomSaveDataInfo->doc = sharedDoc;
+    customSaveData->_customSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
+    customSaveData->_customSaveDataInfo->doc = sharedDoc;
 
     rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
     doc.Parse(str.c_str());
 
     auto dataItr = doc.FindMember(u"_customData");
     if (dataItr != doc.MemberEnd()) {
-        customSaveData->CustomSaveDataInfo->customData = dataItr->value;
+        customSaveData->_customSaveDataInfo->customData = dataItr->value;
     }
 
     SongCore::CustomJSONData::ValueUTF16 const& beatmapSetsArr = doc.FindMember(u"_difficultyBeatmapSets")->value;
