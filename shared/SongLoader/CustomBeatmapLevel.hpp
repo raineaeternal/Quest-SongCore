@@ -31,6 +31,14 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
         std::string_view get_customLevelPath() const { return _customLevelPath; }
         __declspec(property(get=get_customLevelPath)) std::string_view customLevelPath;
 
+        /// @brief gets the CustomSaveDataInfo from either the v2/3 or v4 info savedata
+        std::optional<std::reference_wrapper<CustomJSONData::CustomSaveDataInfo>> get_CustomSaveDataInfo() const {
+            if (_customLevelSaveDataV2) return _customLevelSaveDataV2->CustomSaveDataInfo;
+            if (_customBeatmapLevelSaveDataV4) return _customBeatmapLevelSaveDataV4->CustomSaveDataInfo;
+            return std::nullopt;
+        }
+        __declspec(property(get=get_CustomSaveDataInfo)) std::optional<std::reference_wrapper<CustomJSONData::CustomSaveDataInfo>> CustomSaveDataInfo;
+
         /// @brief level info.dat save data. Set for V2-V3 levels.
         std::optional<CustomJSONData::CustomLevelInfoSaveData*> get_standardLevelInfoSaveDataV2() { return _customLevelSaveDataV2 ? std::optional(_customLevelSaveDataV2) : std::nullopt; }
         __declspec(property(get=get_standardLevelInfoSaveDataV2)) std::optional<CustomJSONData::CustomLevelInfoSaveData*> standardLevelInfoSaveDataV2;

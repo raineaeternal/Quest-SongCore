@@ -184,47 +184,53 @@ namespace SongCore::CustomJSONData {
 
 	private:
 		bool ParseLevelDetails();
-		
+
 		std::optional<BasicCustomLevelDetails> _cachedLevelDetails;
 	};
 }
 
 // V2
-
 DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveData, GlobalNamespace::StandardLevelInfoSaveData,
 
-    DECLARE_CTOR(ctor,
-        StringW songName,
-		StringW songSubName,
-		StringW songAuthorName,
-		StringW levelAuthorName,
-		float beatsPerMinute,
-		float songTimeOffset,
-		float shuffle,
-		float shufflePeriod,
-		float previewStartTime,
-		float previewDuration,
-		StringW songFilename,
-		StringW coverImageFilename,
-		StringW environmentName,
-		StringW allDirectionsEnvironmentName,
-		ArrayW<::StringW> environmentNames,
-		ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*> colorSchemes,
-		ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*> difficultyBeatmapSets
-    );
-    DECLARE_SIMPLE_DTOR();
-public:
-	std::optional<CustomSaveDataInfo> CustomSaveDataInfo;
+		DECLARE_CTOR(ctor,
+			StringW songName,
+			StringW songSubName,
+			StringW songAuthorName,
+			StringW levelAuthorName,
+			float beatsPerMinute,
+			float songTimeOffset,
+			float shuffle,
+			float shufflePeriod,
+			float previewStartTime,
+			float previewDuration,
+			StringW songFilename,
+			StringW coverImageFilename,
+			StringW environmentName,
+			StringW allDirectionsEnvironmentName,
+			ArrayW<::StringW> environmentNames,
+			ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*> colorSchemes,
+			ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*> difficultyBeatmapSets
+		);
+		DECLARE_SIMPLE_DTOR();
+	public:
+		std::optional<std::reference_wrapper<CustomJSONData::CustomSaveDataInfo>> get_CustomSaveDataInfo() {
+			if (_customSaveDataInfo.has_value())
+				return _customSaveDataInfo.value();
+			return std::nullopt;
+		}
+		__declspec(property(get=get_CustomSaveDataInfo)) std::optional<std::reference_wrapper<CustomSaveDataInfo>> CustomSaveDataInfo;
+	private:
+		std::optional<CustomJSONData::CustomSaveDataInfo> _customSaveDataInfo;
 )
 
 DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapSet, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet,
 
-	DECLARE_CTOR(ctor,
-		StringW beatmapCharacteristicName,
-		ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap*> difficultyBeatmaps
-	);
-public:
-	std::optional<std::reference_wrapper<const ValueUTF16>> customData;
+		DECLARE_CTOR(ctor,
+			StringW beatmapCharacteristicName,
+			ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap*> difficultyBeatmaps
+		);
+	public:
+		std::optional<std::reference_wrapper<const ValueUTF16>> customData;
 )
 
 DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap,
@@ -239,20 +245,26 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalN
 		int environmentNameIdx
 	);
 
-public:
-	std::optional<std::reference_wrapper<const ValueUTF16>> customData;
+	public:
+		std::optional<std::reference_wrapper<const ValueUTF16>> customData;
 )
 
 // V4
-
 DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomBeatmapLevelSaveData, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData,
-	
+
 	//Manually assign fields
 	DECLARE_CTOR(ctor);
     DECLARE_SIMPLE_DTOR();
-	
-public:
-	std::optional<CustomSaveDataInfo> CustomSaveDataInfo;
+
+	public:
+		std::optional<std::reference_wrapper<CustomJSONData::CustomSaveDataInfo>> get_CustomSaveDataInfo() {
+			if (_customSaveDataInfo.has_value())
+				return _customSaveDataInfo.value();
+			return std::nullopt;
+		}
+		__declspec(property(get=get_CustomSaveDataInfo)) std::optional<std::reference_wrapper<CustomSaveDataInfo>> CustomSaveDataInfo;
+	private:
+		std::optional<CustomJSONData::CustomSaveDataInfo> _customSaveDataInfo;
 )
 
 DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapV4, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap,
