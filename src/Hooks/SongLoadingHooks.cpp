@@ -33,23 +33,6 @@
 #include <string>
 #include "Utils/SaveDataVersion.hpp"
 
-// if the version was still null, override!
-MAKE_AUTO_HOOK_MATCH(VersionSerializedData_get_v, &GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData::get_v, StringW, GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData* self) {
-    auto result = VersionSerializedData_get_v(self);
-    if (result) return result;
-    return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion()->ToString();
-}
-
-// version getting override
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersionAsync, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersionAsync, System::Threading::Tasks::Task_1<System::Version*>*, StringW data) {
-    return SongCore::StartTask<System::Version*>(std::bind(&SongCore::VersionFromFileData, data));
-}
-
-// version getting override
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
-    return SongCore::VersionFromFileData(data);
-}
-
 // custom songs tab is disabled by default on quest, reenable
 MAKE_AUTO_HOOK_ORIG_MATCH(SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels, &GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator::get_enableCustomLevels, bool, GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator* self) {
     DEBUG("SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels override returning true");
