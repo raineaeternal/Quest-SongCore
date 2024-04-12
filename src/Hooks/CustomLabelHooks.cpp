@@ -108,10 +108,10 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
 
         auto label = characteristicDetails.characteristicLabel.value_or(characteristicDetails.characteristicName);
         UnityEngine::Sprite* icon = nullptr;
-        if (characteristicDetails.characteristicIconImageFileName.has_value() && !characteristicDetails.characteristicIconImageFileName->empty()) {
+        if (characteristicDetails.iconFilename.has_value() && !characteristicDetails.iconFilename->empty()) {
             auto iconCache = SongCore::UI::IconCache::get_instance();
             if (iconCache) { // if iconcache instance exists, use it
-                auto iconPath = std::filesystem::path(customLevel->get_customLevelPath()) / characteristicDetails.characteristicIconImageFileName.value();
+                auto iconPath = std::filesystem::path(customLevel->get_customLevelPath()) / characteristicDetails.iconFilename.value();
                 icon = iconCache->GetIconForPath(iconPath);
             }
         }

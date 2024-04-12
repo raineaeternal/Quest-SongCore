@@ -105,7 +105,7 @@ namespace SongCore::CustomJSONData {
 			/// @brief optional custom label (hover text)
 			std::optional<std::string> characteristicLabel;
 			/// @brief optional custom icon filename (combine with customLevelPath)
-			std::optional<std::string> characteristicIconImageFileName;
+			std::optional<std::string> iconFilename;
 
 			/// @brief tries to get the difficulty details for a characteristic
 			/// @param characteristic characteristic name
