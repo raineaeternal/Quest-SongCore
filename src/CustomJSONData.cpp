@@ -317,7 +317,7 @@ namespace SongCore::CustomJSONData {
 			if (characteristicLabelItr != memberEnd) characteristicLabel = utf8::utf16to8(characteristicLabelItr->value.Get<std::u16string>());
 
 			auto characteristicIconImageFileNameItr = customData.FindMember(u"_characteristicIconImageFilename");
-			if (characteristicIconImageFileNameItr != memberEnd) iconFilename = utf8::utf16to8(characteristicIconImageFileNameItr->value.Get<std::u16string>());
+			if (characteristicIconImageFileNameItr != memberEnd) characteristicIconImageFileName = utf8::utf16to8(characteristicIconImageFileNameItr->value.Get<std::u16string>());
 		}
 
 		auto difficultyBeatmapsItr = value.FindMember(u"_difficultyBeatmaps");
@@ -340,11 +340,11 @@ namespace SongCore::CustomJSONData {
 	bool CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetailsSet::DeserializeV4(ValueUTF16 const& value) {
 		auto memberEnd = value.MemberEnd();
 
-		auto characteristicLabelItr = value.FindMember(u"name");
+		auto characteristicLabelItr = value.FindMember(u"label");
 		if (characteristicLabelItr != memberEnd) characteristicLabel = utf8::utf16to8(characteristicLabelItr->value.Get<std::u16string>());
 
-		auto iconFilenameItr = value.FindMember(u"iconPath");
-		if (iconFilenameItr != memberEnd) iconFilename = utf8::utf16to8(iconFilenameItr->value.Get<std::u16string>());
+		auto iconPathItr = value.FindMember(u"iconPath");
+		if (iconPathItr != memberEnd) characteristicIconImageFileName = utf8::utf16to8(iconPathItr->value.Get<std::u16string>());
 
 		return true;
 	}
