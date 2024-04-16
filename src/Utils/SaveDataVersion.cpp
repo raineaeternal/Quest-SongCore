@@ -12,8 +12,8 @@ namespace SongCore {
         std::string truncatedText(data.substr(0, 50));
         static const std::regex versionRegex (R"("_?version"\s*:\s*"[0-9]+\.[0-9]+\.?[0-9]?")", std::regex_constants::optimize);
         std::smatch matches;
-        if(std::regex_search(truncatedText, matches, versionRegex)) {
-            if(!matches.empty()) {
+        if (std::regex_search(truncatedText, matches, versionRegex)) {
+            if (!matches.empty()) {
                 auto version = matches[0].str();
                 version = version.substr(0, version.length()-1);
                 version = version.substr(version.find_last_of('\"')+1, version.length());

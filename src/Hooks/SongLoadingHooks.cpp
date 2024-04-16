@@ -240,7 +240,7 @@ MAKE_AUTO_HOOK_MATCH(
 }
 
 
-// fix levels using regular name instead of serialized name. WHY
+// Fix levels using regular name instead of serialized name.
 MAKE_AUTO_HOOK_MATCH(
     EnvironmentsListModel_GetEnvironmentInfoBySerializedName,
     &EnvironmentsListModel::GetEnvironmentInfoBySerializedName,
@@ -250,12 +250,12 @@ MAKE_AUTO_HOOK_MATCH(
 ) {
     auto result = EnvironmentsListModel_GetEnvironmentInfoBySerializedName(self, environmentSerializedName);
     //Fix here
-    if(!result) {
+    if (!result) {
         //This should be a rare case
         auto envList = ListW<UnityW<GlobalNamespace::EnvironmentInfoSO>>::New();
         envList->AddRange(self->environmentInfos->i___System__Collections__Generic__IEnumerable_1_T_());
         for(auto& env : envList) {
-            if(env->environmentName == environmentSerializedName) {
+            if (env->environmentName == environmentSerializedName) {
                 result = env;
             }
         }

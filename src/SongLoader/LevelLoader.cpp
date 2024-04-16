@@ -139,7 +139,7 @@ namespace SongCore::SongLoader {
     }
 
     #define FixEmptyString(name) \
-    if(!name) { \
+    if (!name) { \
         name = EmptyString(); \
     }
 
@@ -422,11 +422,11 @@ namespace SongCore::SongLoader {
         auto colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
         auto ConvertHTMLStringToColor = [](std::string colorHtmlString) {
             auto color = BSML::Utilities::ParseHTMLColorOpt(colorHtmlString);
-            if(!color)
+            if (!color)
                 return UnityEngine::Color::get_black();
             return color.value();
         };
-        if(saveData->colorSchemes) {
+        if (saveData->colorSchemes) {
             for (int i = 0; i < saveData->colorSchemes.size(); i++) {
                 auto colorScheme = saveData->colorSchemes[i];
                 auto name = colorScheme->colorSchemeName;

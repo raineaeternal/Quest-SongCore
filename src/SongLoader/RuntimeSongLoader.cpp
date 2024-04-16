@@ -418,7 +418,7 @@ namespace SongCore::SongLoader {
         if (!targetDict) {
             WARNING("Level with path {} was attempted to be deleted, but it couldn't be found in the songloader dictionaries! returning...", levelPath.string());
             return;
-        } else if(!level) {
+        } else if (!level) {
             WARNING("Somehow the stored beatmap level was null, just removing from the dictionary and nothing else...");
             targetDict->System_Collections_Generic_IDictionary_TKey_TValue__Remove(csPath);
             return;
