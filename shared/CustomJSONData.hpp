@@ -13,6 +13,8 @@
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "UnityEngine/Color.hpp"
 
+#include "_config.h"
+
 namespace SongCore::SongLoader { class LevelLoader; }
 namespace SongCore::CustomJSONData {
 	using ValueUTF16 = rapidjson::GenericValue<rapidjson::UTF16<char16_t>>;
@@ -45,15 +47,15 @@ namespace SongCore::CustomJSONData {
 
 				/// @brief deserializer method
 				/// @return since everything is completely optional, returns true if anything was found, false if nothing was found
-				[[deprecated("Use DeserializeV3")]] bool Deserialize(ValueUTF16 const& value);
+				[[deprecated("Use DeserializeV3")]] SONGCORE_EXPORT bool Deserialize(ValueUTF16 const& value);
 
 				/// @brief deserializer method
 				/// @return since everything is completely optional, returns true if anything was found, false if nothing was found
-				bool DeserializeV3(ValueUTF16 const& value);
+				SONGCORE_EXPORT bool DeserializeV3(ValueUTF16 const& value);
 
 				/// @brief deserializer method
 				/// @return since everything is completely optional, returns true if anything was found, false if nothing was found
-				bool DeserializeV4(ValueUTF16 const& value);
+				SONGCORE_EXPORT bool DeserializeV4(ValueUTF16 const& value);
 			};
 
 			/// @brief characteristic name as parsed from info.dat
@@ -85,15 +87,15 @@ namespace SongCore::CustomJSONData {
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			[[deprecated("Use DeserializeV3 instead")]] bool Deserialize(ValueUTF16 const& value);
+			[[deprecated("Use DeserializeV3 instead")]] SONGCORE_EXPORT bool Deserialize(ValueUTF16 const& value);
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			bool DeserializeV3(ValueUTF16 const& value);
+			SONGCORE_EXPORT bool DeserializeV3(ValueUTF16 const& value);
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			bool DeserializeV4(ValueUTF16 const& value);
+			SONGCORE_EXPORT bool DeserializeV4(ValueUTF16 const& value);
 		};
 
 		/// @brief struct providing basic information about a difficulty beatmap set (characteristic)
@@ -111,25 +113,25 @@ namespace SongCore::CustomJSONData {
 			/// @param characteristic characteristic name
 			/// @param difficulty the difficulty to get the details for
 			/// @return optional details, nullopt if either characteristic or difficulty not found
-			[[nodiscard]] std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetails const>> TryGetDifficulty(GlobalNamespace::BeatmapDifficulty difficulty) const;
+			[[nodiscard]] SONGCORE_EXPORT std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetails const>> TryGetDifficulty(GlobalNamespace::BeatmapDifficulty difficulty) const;
 
 			/// @brief tries to get the difficulty details for a characteristic
 			/// @param difficulty the difficulty to get the details for
 			/// @param outDetails reference to your output variable. will copy construct
 			/// @return true if found, false if not
-			[[nodiscard]] bool TryGetDifficulty(GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails) const;
+			[[nodiscard]] SONGCORE_EXPORT bool TryGetDifficulty(GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails) const;
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			[[deprecated("Use DeserializeV3 instead")]] bool Deserialize(ValueUTF16 const& value);
+			[[deprecated("Use DeserializeV3 instead")]] SONGCORE_EXPORT bool Deserialize(ValueUTF16 const& value);
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			bool DeserializeV3(ValueUTF16 const& value);
+			SONGCORE_EXPORT bool DeserializeV3(ValueUTF16 const& value);
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			bool DeserializeV4(ValueUTF16 const& value);
+			SONGCORE_EXPORT bool DeserializeV4(ValueUTF16 const& value);
 		};
 
 		/// @brief struct providing basic information about a beatmap
@@ -145,15 +147,15 @@ namespace SongCore::CustomJSONData {
 
 				/// @brief deserializer method
 				/// @return whether deserialization was succesful
-				[[deprecated("Use DeserializeV3 instead")]] bool Deserialize(ValueUTF16 const& value);
+				[[deprecated("Use DeserializeV3 instead")]] SONGCORE_EXPORT bool Deserialize(ValueUTF16 const& value);
 
 				/// @brief deserializer method
 				/// @return whether deserialization was succesful
-				bool DeserializeV3(ValueUTF16 const& value);
+				SONGCORE_EXPORT bool DeserializeV3(ValueUTF16 const& value);
 
 				/// @return whether deserialization was succesful
 				/// @brief deserializer method
-				bool DeserializeV4(ValueUTF16 const& value);
+				SONGCORE_EXPORT bool DeserializeV4(ValueUTF16 const& value);
 			};
 
 			std::unordered_map<std::string, BasicCustomDifficultyBeatmapDetailsSet> characteristicNameToBeatmapDetailsSet;
@@ -164,68 +166,68 @@ namespace SongCore::CustomJSONData {
 			/// @brief tries to get the characteristic details
 			/// @param characteristic characteristic name
 			/// @return optional details set, nullopt if not found
-			[[nodiscard]] std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetailsSet const>> TryGetCharacteristic(std::string const& characteristic) const;
+			[[nodiscard]] SONGCORE_EXPORT std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetailsSet const>> TryGetCharacteristic(std::string const& characteristic) const;
 
 			/// @brief tries to get the characteristic details
 			/// @param characteristic characteristic name
 			/// @param outSet reference to destination details set. will copy construct
 			/// @return true if found, false if not
-			[[nodiscard]] bool TryGetCharacteristic(std::string const& characteristic, BasicCustomDifficultyBeatmapDetailsSet& outSet) const;
+			[[nodiscard]] SONGCORE_EXPORT bool TryGetCharacteristic(std::string const& characteristic, BasicCustomDifficultyBeatmapDetailsSet& outSet) const;
 
 			/// @brief tries to get the difficulty details for a characteristic
 			/// @param characteristic characteristic name
 			/// @param difficulty the difficulty to get the details for
 			/// @return optional details, nullopt if either characteristic or difficulty not found
-			[[nodiscard]] std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetails const>> TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty) const;
+			[[nodiscard]] SONGCORE_EXPORT std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetails const>> TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty) const;
 
 			/// @brief tries to get the difficulty details for a characteristic
 			/// @param characteristic characteristic name
 			/// @param difficulty the difficulty to get the details for
 			/// @param outDetails reference to your output variable. will copy construct
 			/// @return true if found, false if not
-			[[nodiscard]] bool TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails) const;
+			[[nodiscard]] SONGCORE_EXPORT bool TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails) const;
 
 			/// @brief deserializer method
 			/// @return whether deserialization was succesful
-			[[deprecated("Use DeserializeV3 instead")]] bool Deserialize(ValueUTF16 const& value);
+			[[deprecated("Use DeserializeV3 instead")]] SONGCORE_EXPORT bool Deserialize(ValueUTF16 const& value);
 
-			bool DeserializeV3(ValueUTF16 const& value);
+			SONGCORE_EXPORT bool DeserializeV3(ValueUTF16 const& value);
 
-			bool DeserializeV4(ValueUTF16 const& value);
+			SONGCORE_EXPORT bool DeserializeV4(ValueUTF16 const& value);
 		};
 
 		/// @brief tries to get the basic level details for this savedata
 		/// @return optional reference to the parsed data, or nullopt if parse was unsuccesful
-		std::optional<std::reference_wrapper<BasicCustomLevelDetails const>> TryGetBasicLevelDetails();
+		SONGCORE_EXPORT std::optional<std::reference_wrapper<BasicCustomLevelDetails const>> TryGetBasicLevelDetails();
 
 		/// @brief tries to get the basic level details for this savedata
 		/// @param outDetails reference to your output variable. will copy construct
 		/// @return true if available, false if not
-		bool TryGetBasicLevelDetails(BasicCustomLevelDetails& outDetails);
+		SONGCORE_EXPORT bool TryGetBasicLevelDetails(BasicCustomLevelDetails& outDetails);
 
 		/// @brief tries to get the characteristic details
 		/// @param characteristic characteristic name
 		/// @return optional details set, nullopt if not found
-		[[nodiscard]] std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetailsSet const>> TryGetCharacteristic(std::string const& characteristic);
+		[[nodiscard]] SONGCORE_EXPORT std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetailsSet const>> TryGetCharacteristic(std::string const& characteristic);
 
 		/// @brief tries to get the characteristic details
 		/// @param characteristic characteristic name
 		/// @param outSet reference to destination details set. will copy construct
 		/// @return true if found, false if not
-		[[nodiscard]] bool TryGetCharacteristic(std::string const& characteristic, BasicCustomDifficultyBeatmapDetailsSet& outSet);
+		[[nodiscard]] SONGCORE_EXPORT bool TryGetCharacteristic(std::string const& characteristic, BasicCustomDifficultyBeatmapDetailsSet& outSet);
 
 		/// @brief tries to get the difficulty details for a characteristic
 		/// @param characteristic characteristic name
 		/// @param difficulty the difficulty to get the details for
 		/// @return optional details, nullopt if either characteristic or difficulty not found
-		[[nodiscard]] std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetails const>> TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty);
+		[[nodiscard]] SONGCORE_EXPORT std::optional<std::reference_wrapper<BasicCustomDifficultyBeatmapDetails const>> TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty);
 
 		/// @brief tries to get the difficulty details for a characteristic
 		/// @param characteristic characteristic name
 		/// @param difficulty the difficulty to get the details for
 		/// @param outDetails reference to your output variable. will copy construct
 		/// @return true if found, false if not
-		[[nodiscard]] bool TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails);
+		[[nodiscard]] SONGCORE_EXPORT bool TryGetCharacteristicAndDifficulty(std::string const& characteristic, GlobalNamespace::BeatmapDifficulty difficulty, BasicCustomDifficultyBeatmapDetails& outDetails);
 
 	private:
 		bool ParseLevelDetails();
