@@ -6,7 +6,7 @@ on:
     tags:
       - "v*"
     branches:
-      - 'main'
+      - 'master'
       - 'dev/*'
       - 'feat/*'
       - 'fix/*'
@@ -20,13 +20,12 @@ on:
       - '**.txt'
       - '!CMakeLists.txt'
       - '**.ps1'
-      - '!./scripts/build.ps1'
-      - '!./scripts/createqmod.ps1'
+      - '!build.ps1'
+      - '!createqmod.ps1'
       - '**.md'
       - '.gitignore'
   pull_request:
-    branches:
-     - main
+    branches: master
 
 env:
     module_id: songcore
@@ -35,8 +34,11 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
     steps:
+    - uses: FranzDiebold/github-env-vars-action@v2
     - uses: actions/checkout@v2
       name: Checkout
       with:
@@ -112,6 +114,16 @@ jobs:
         path: ./build/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
 
+    - name: Upload non-debug artifact to discord
+      if: "${{ env.WEBHOOK != '' }}"
+      uses: tsickert/discord-webhook@v3.2.0
+      with:
+        webhook-url: ${{ env.WEBHOOK }}
+        content: "${{ env.CI_SHA_SHORT }} - `${{ github.event.head_commit.message }}`"
+        username: "${{ github.repository }}"
+        avatar-url: "http://github.com/${{ env.CI_ACTOR }}.png"
+        filename: ./build/${{ steps.libname.outputs.NAME }}
+
     - name: Upload debug artifact
       uses: actions/upload-artifact@v2
       with:
@@ -119,12 +131,32 @@ jobs:
         path: ./build/debug_${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
 
+    - name: Upload debug artifact to discord
+      if: "${{ env.WEBHOOK != '' }}"
+      uses: tsickert/discord-webhook@v3.2.0
+      with:
+        webhook-url: ${{ env.WEBHOOK }}
+        content: "${{ env.CI_SHA_SHORT }} - `${{ github.event.head_commit.message }}`"
+        username: "${{ github.repository }}"
+        avatar-url: "http://github.com/${{ env.CI_ACTOR }}.png"
+        filename: ./build/debug_${{ steps.libname.outputs.NAME }}
+
     - name: Upload qmod artifact
       uses: actions/upload-artifact@v2
       with:
         name: ${{env.qmod_name}}.qmod
         path: ./${{ env.qmod_name }}.qmod
         if-no-files-found: error
+
+    - name: Upload qmod artifact to discord
+      if: "${{ env.WEBHOOK != '' }}"
+      uses: tsickert/discord-webhook@v3.2.0
+      with:
+        webhook-url: ${{ env.WEBHOOK }}
+        content: "${{ env.CI_SHA_SHORT }} - `${{ github.event.head_commit.message }}`"
+        username: "${{ github.repository }}"
+        avatar-url: "http://github.com/${{ env.CI_ACTOR }}.png"
+        filename: ./build/${{ steps.libname.outputs.NAME }}
 
     # if we had a tag, we should make a release
     - name: Upload release artifacts
@@ -139,3 +171,12 @@ jobs:
           ./${{ env.qmod_name }}.qmod
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Notify webhook
+      if: ${{ env.WEBHOOK != '' && startsWith(github.ref, 'refs/tags/v') }}
+      uses: tsickert/discord-webhook@v3.2.0
+      with:
+        webhook-url: ${{ env.WEBHOOK }}
+        content: "New Release published: `${{ steps.get_tag_version.outputs.TAG }}`"
+        username: "${{ github.repository }}"
+        avatar-url: "http://github.com/${{ env.CI_ACTOR }}.png"
