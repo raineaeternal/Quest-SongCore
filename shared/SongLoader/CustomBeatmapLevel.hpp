@@ -31,9 +31,21 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
         std::string_view get_customLevelPath() const { return _customLevelPath; }
         __declspec(property(get=get_customLevelPath)) std::string_view customLevelPath;
 
-        /// @brief level info.dat save data
-        CustomJSONData::CustomLevelInfoSaveData* get_standardLevelInfoSaveData() const { return _customLevelSaveData; }
-        __declspec(property(get=get_standardLevelInfoSaveData)) CustomJSONData::CustomLevelInfoSaveData* standardLevelInfoSaveData;
+        /// @brief gets the CustomSaveDataInfo from either the v2/3 or v4 info savedata
+        std::optional<std::reference_wrapper<CustomJSONData::CustomSaveDataInfo>> get_CustomSaveDataInfo() const {
+            if (_customLevelSaveDataV2) return _customLevelSaveDataV2->CustomSaveDataInfo;
+            if (_customBeatmapLevelSaveDataV4) return _customBeatmapLevelSaveDataV4->CustomSaveDataInfo;
+            return std::nullopt;
+        }
+        __declspec(property(get=get_CustomSaveDataInfo)) std::optional<std::reference_wrapper<CustomJSONData::CustomSaveDataInfo>> CustomSaveDataInfo;
+
+        /// @brief level info.dat save data. Set for V2-V3 levels.
+        std::optional<CustomJSONData::CustomLevelInfoSaveData*> get_standardLevelInfoSaveDataV2() { return _customLevelSaveDataV2 ? std::optional(_customLevelSaveDataV2) : std::nullopt; }
+        __declspec(property(get=get_standardLevelInfoSaveDataV2)) std::optional<CustomJSONData::CustomLevelInfoSaveData*> standardLevelInfoSaveDataV2;
+
+        /// @brief level info.dat save data. Set for V4 levels.
+        std::optional<CustomJSONData::CustomBeatmapLevelSaveData*> get_beatmapLevelSaveDataV4() { return _customBeatmapLevelSaveDataV4 ? std::optional(_customBeatmapLevelSaveDataV4) : std::nullopt; }
+        __declspec(property(get=get_beatmapLevelSaveDataV4)) std::optional<CustomJSONData::CustomBeatmapLevelSaveData*> beatmapLevelSaveDataV4;
 
         /// @brief level beatmapleveldata
         GlobalNamespace::IBeatmapLevelData* get_beatmapLevelData() const { return _beatmapLevelData; }
@@ -41,7 +53,8 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
 
         static CustomBeatmapLevel* New(
             std::string_view customLevelPath,
-            CustomJSONData::CustomLevelInfoSaveData* saveData,
+            CustomJSONData::CustomLevelInfoSaveData* saveDataV2,
+            CustomJSONData::CustomBeatmapLevelSaveData* saveDataV4,
             GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
             bool hasPrecalculatedData,
             ::StringW levelID,
@@ -61,7 +74,8 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
             ::System::Collections::Generic::IReadOnlyDictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
         );
     private:
-        CustomJSONData::CustomLevelInfoSaveData* _customLevelSaveData;
+        CustomJSONData::CustomLevelInfoSaveData* _customLevelSaveDataV2;
+        CustomJSONData::CustomBeatmapLevelSaveData* _customBeatmapLevelSaveDataV4;
         GlobalNamespace::IBeatmapLevelData* _beatmapLevelData;
         std::string _customLevelPath;
 )

@@ -8,7 +8,7 @@ namespace SongCore::SongLoader {
     void CustomBeatmapLevelsRepository::ctor() {
         INVOKE_CTOR();
         _levelPacks = ListW<GlobalNamespace::BeatmapLevelPack*>::New();
-        _ctor(_levelPacks->i___System__Collections__Generic__IReadOnlyList_1_T_());
+        _ctor(_levelPacks->i___System__Collections__Generic__IEnumerable_1_T_());
     }
 
     void CustomBeatmapLevelsRepository::AddLevelPack(GlobalNamespace::BeatmapLevelPack* pack) {
@@ -37,6 +37,7 @@ namespace SongCore::SongLoader {
     }
 
     void CustomBeatmapLevelsRepository::FixBackingDictionaries() {
+        _beatmapLevelPacks = _levelPacks->ToArray();
         _idToBeatmapLevelPack->Clear();
         _beatmapLevelIdToBeatmapLevelPackId->Clear();
         _idToBeatmapLevel->Clear();

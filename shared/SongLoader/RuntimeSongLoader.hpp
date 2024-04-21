@@ -21,7 +21,6 @@
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
 #include "GlobalNamespace/BeatmapDataLoader.hpp"
 #include "GlobalNamespace/CustomLevelLoader.hpp"
-#include "GlobalNamespace/CachedMediaAsyncLoader.hpp"
 #include "GlobalNamespace/BeatmapLevelsModel.hpp"
 
 #include "Zenject/IInitializable.hpp"

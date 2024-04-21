@@ -1,4 +1,5 @@
 #include "SongLoader/CustomBeatmapLevel.hpp"
+#include "CustomJSONData.hpp"
 
 DEFINE_TYPE(SongCore::SongLoader, CustomBeatmapLevel);
 
@@ -45,7 +46,8 @@ namespace SongCore::SongLoader {
 
     CustomBeatmapLevel* CustomBeatmapLevel::New(
         std::string_view customLevelPath,
-        CustomJSONData::CustomLevelInfoSaveData* saveData,
+        CustomJSONData::CustomLevelInfoSaveData* saveDataV2,
+        CustomJSONData::CustomBeatmapLevelSaveData* saveDataV4,
         GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
         bool hasPrecalculatedData,
         ::StringW levelID,
@@ -84,7 +86,8 @@ namespace SongCore::SongLoader {
         );
 
         level->_customLevelPath = customLevelPath;
-        level->_customLevelSaveData = saveData;
+        level->_customLevelSaveDataV2 = saveDataV2;
+        level->_customBeatmapLevelSaveDataV4 = saveDataV4;
         level->_beatmapLevelData = beatmapLevelData;
 
         return level;

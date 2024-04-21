@@ -23,14 +23,15 @@ namespace SongCore::Overrides {
         if (!customLevel) return;
         NoteSpawnLinesOverrideLevelIsCustom = true;
 
-        auto saveData = customLevel->standardLevelInfoSaveData;
-        if (!saveData) return;
+        auto customSaveDataInfoOpt = customLevel->CustomSaveDataInfo;
+        if (!customSaveDataInfoOpt) return;
+        auto& customSaveDataInfo = customSaveDataInfoOpt->get();
 
         auto& beatmapKey = sceneSetupData->beatmapKey;
         auto characteristic = beatmapKey.beatmapCharacteristic;
         auto difficulty = beatmapKey.difficulty;
 
-        auto levelDetailsOpt = saveData->TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
+        auto levelDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
         if (!levelDetailsOpt.has_value()) return;
 
         auto& levelDetails = levelDetailsOpt->get();

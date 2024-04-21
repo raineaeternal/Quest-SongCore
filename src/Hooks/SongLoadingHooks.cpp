@@ -30,141 +30,8 @@
 #include "BGLib/Polyglot/Localization.hpp"
 
 #include "utf8.h"
-#include <regex>
 #include <string>
-
-// if the version was still null, override!
-MAKE_AUTO_HOOK_MATCH(VersionSerializedData_get_v, &GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData::get_v, StringW, GlobalNamespace::BeatmapSaveDataHelpers::VersionSerializedData* self) {
-    auto result = VersionSerializedData_get_v(self);
-    if (result) return result;
-    return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion()->ToString();
-}
-
-// version getting override implementation
-System::Version* GetVersion(StringW data) {
-    if (!data) return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
-
-    auto truncatedText = static_cast<std::string>(data).substr(0, 50);
-    static const std::regex versionRegex (R"("_?version"\s*:\s*"[0-9]+\.[0-9]+\.?[0-9]?")", std::regex_constants::optimize);
-    std::smatch matches;
-    if(std::regex_search(truncatedText, matches, versionRegex)) {
-        if(!matches.empty()) {
-            auto version = matches[0].str();
-            version = version.substr(0, version.length()-1);
-            version = version.substr(version.find_last_of('\"')+1, version.length());
-            try {
-                return System::Version::New_ctor(version);
-            } catch(const std::runtime_error& e) {
-                ERROR("BeatmapSaveDataHelpers_GetVersion Invalid version: '{}'!", version);
-            }
-        }
-    }
-
-    return GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
-}
-
-// version getting override
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersionAsync, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersionAsync, System::Threading::Tasks::Task_1<System::Version*>*, StringW data) {
-    return SongCore::StartTask<System::Version*>(std::bind(GetVersion, data));
-}
-
-// version getting override
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
-    return GetVersion(data);
-}
-
-// create a custom level save data
-MAKE_AUTO_HOOK_MATCH(StandardLevelInfoSaveData_DeserializeFromJSONString, &GlobalNamespace::StandardLevelInfoSaveData::DeserializeFromJSONString, GlobalNamespace::StandardLevelInfoSaveData*, StringW stringData) {
-    SafePtr<GlobalNamespace::StandardLevelInfoSaveData> original = StandardLevelInfoSaveData_DeserializeFromJSONString(stringData);
-
-    if (!original || !original.ptr()) {
-        WARNING("Orig call did not produce valid savedata!");
-        return nullptr;
-    }
-
-    auto customBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>(il2cpp_array_size_t(original->difficultyBeatmapSets.size()));
-
-    SongCore::CustomJSONData::CustomLevelInfoSaveData *customSaveData =
-            SongCore::CustomJSONData::CustomLevelInfoSaveData::New_ctor(
-                original->songName,
-                original->songSubName,
-                original->songAuthorName,
-                original->levelAuthorName,
-                original->beatsPerMinute,
-                original->songTimeOffset,
-                original->shuffle,
-                original->shufflePeriod,
-                original->previewStartTime,
-                original->previewDuration,
-                original->songFilename,
-                original->coverImageFilename,
-                original->environmentName,
-                original->allDirectionsEnvironmentName,
-                original->environmentNames,
-                original->colorSchemes,
-                customBeatmapSets
-            );
-
-    std::u16string str(stringData ? stringData : u"{}");
-
-    auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
-    customSaveData->doc = sharedDoc;
-
-    rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
-    doc.Parse(str.c_str());
-
-    auto dataItr = doc.FindMember(u"_customData");
-    if (dataItr != doc.MemberEnd()) {
-        customSaveData->customData = dataItr->value;
-    }
-
-    SongCore::CustomJSONData::ValueUTF16 const& beatmapSetsArr = doc.FindMember(u"_difficultyBeatmapSets")->value;
-
-    for (rapidjson::SizeType i = 0; i < beatmapSetsArr.Size(); i++) {
-        SongCore::CustomJSONData::ValueUTF16 const& beatmapSetJson = beatmapSetsArr[i];
-
-        auto originalBeatmapSet = original->difficultyBeatmapSets[i];
-        auto customBeatmaps = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap *>(originalBeatmapSet->difficultyBeatmaps.size());
-
-        auto const& difficultyBeatmaps = beatmapSetJson.FindMember(u"_difficultyBeatmaps")->value;
-
-        for (rapidjson::SizeType j = 0; j < originalBeatmapSet->difficultyBeatmaps.size(); j++) {
-            SongCore::CustomJSONData::ValueUTF16 const& difficultyBeatmapJson = difficultyBeatmaps[j];
-            auto originalBeatmap = originalBeatmapSet->difficultyBeatmaps[j];
-
-            auto customBeatmap =
-                SongCore::CustomJSONData::CustomDifficultyBeatmap::New_ctor(
-                    originalBeatmap->difficulty,
-                    originalBeatmap->difficultyRank,
-                    originalBeatmap->beatmapFilename,
-                    originalBeatmap->noteJumpMovementSpeed,
-                    originalBeatmap->noteJumpStartBeatOffset,
-                    originalBeatmap->beatmapColorSchemeIdx,
-                    originalBeatmap->environmentNameIdx
-                );
-
-            auto customDataItr = difficultyBeatmapJson.FindMember(u"_customData");
-            if (customDataItr != difficultyBeatmapJson.MemberEnd()) {
-                customBeatmap->customData = customDataItr->value;
-            }
-
-            customBeatmaps[j] = customBeatmap;
-        }
-
-        auto customBeatmapSet = SongCore::CustomJSONData::CustomDifficultyBeatmapSet::New_ctor(
-            originalBeatmapSet->beatmapCharacteristicName,
-            customBeatmaps
-        );
-
-        auto customDataItr = beatmapSetJson.FindMember(u"_customData");
-        if (customDataItr != beatmapSetJson.MemberEnd()) {
-            customBeatmapSet->customData = customDataItr->value;
-        }
-
-        customBeatmapSets[i] = customBeatmapSet;
-    }
-    return customSaveData;
-}
+#include "Utils/SaveDataVersion.hpp"
 
 // custom songs tab is disabled by default on quest, reenable
 MAKE_AUTO_HOOK_ORIG_MATCH(SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels, &GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator::get_enableCustomLevels, bool, GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator* self) {
@@ -370,4 +237,29 @@ MAKE_AUTO_HOOK_MATCH(
     LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
 
     if (searchFilter) self->_levelSearchViewController->Refresh(byref(*searchFilter));
+}
+
+
+// Fix levels using regular name instead of serialized name.
+MAKE_AUTO_HOOK_MATCH(
+    EnvironmentsListModel_GetEnvironmentInfoBySerializedName,
+    &EnvironmentsListModel::GetEnvironmentInfoBySerializedName,
+    UnityW<GlobalNamespace::EnvironmentInfoSO>,
+    EnvironmentsListModel* self,
+    StringW environmentSerializedName
+) {
+    auto result = EnvironmentsListModel_GetEnvironmentInfoBySerializedName(self, environmentSerializedName);
+    //Fix here
+    if (!result) {
+        //This should be a rare case
+        auto envList = ListW<UnityW<GlobalNamespace::EnvironmentInfoSO>>::New();
+        envList->AddRange(self->environmentInfos->i___System__Collections__Generic__IEnumerable_1_T_());
+        for(auto& env : envList) {
+            if (env->environmentName == environmentSerializedName) {
+                result = env;
+            }
+        }
+    }
+
+    return result;
 }

@@ -31,8 +31,8 @@ DECLARE_CLASS_CODEGEN(SongCore::UI, ColorsOptions, System::Object,
     public:
         void Show();
         void Parse();
-        void SetColors(CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails::CustomColors const& colors);
+        void SetColors(CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails::CustomColors const& colors);
 
-        void ShowColors(CustomJSONData::CustomLevelInfoSaveData::BasicCustomDifficultyBeatmapDetails const& details);
+        void ShowColors(CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails const& details);
         std::function<void()> onModalHide;
 )
