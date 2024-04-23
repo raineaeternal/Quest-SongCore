@@ -12,136 +12,128 @@ using namespace GlobalNamespace;
 using namespace CryptoPP;
 
 namespace SongCore::Utils {
-    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData) {
-        auto start = std::chrono::high_resolution_clock::now();
-        std::string hashHex;
-
-        // get cached info
-        auto cacheData = GetCachedInfo(levelPath);
-        if(!cacheData.has_value()) return std::nullopt;
-
-        if (cacheData->sha1.has_value()) {
-            DEBUG("GetCustomLevelHash Stop Result {} from cache", *cacheData->sha1);
-            return *cacheData->sha1;
-        }
-
+    // v2 savedata
+    std::vector<std::filesystem::path> GetFilesForHashing(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData) {
         auto infoPath = levelPath / "info.dat";
         if(!std::filesystem::exists(infoPath)) {
             infoPath = levelPath / "Info.dat";
-            if(!std::filesystem::exists(infoPath)) return std::nullopt;
+            if(!std::filesystem::exists(infoPath)) return {};
         }
 
-        SHA1 hashType;
-        std::string hashResult;
-        HashFilter hashFilter(hashType, new StringSink(hashResult));
+        std::vector<std::filesystem::path> files;
 
-        FileSource fs(infoPath.c_str(), false);
-        fs.Attach(new Redirector(hashFilter));
-        fs.Pump(LWORD_MAX);
-        fs.Detach();
-        for(auto val : saveData->difficultyBeatmapSets) {
-            if (!val) continue;
-            auto difficultyBeatmaps = val->difficultyBeatmaps;
-            if (!difficultyBeatmaps) continue;
-            for(auto difficultyBeatmap : difficultyBeatmaps) {
-                auto diffPath = levelPath / static_cast<std::string>(difficultyBeatmap->beatmapFilename);
-                if(!std::filesystem::exists(diffPath)) {
-                    ERROR("GetCustomLevelHash File {} did not exist", diffPath.string());
-                    continue;
-                }
-                FileSource fs(diffPath.c_str(), false);
-                fs.Attach(new Redirector(hashFilter));
-                fs.Pump(LWORD_MAX);
-                fs.Detach();
+        files.emplace_back(infoPath);
+
+        for (auto characteristic : saveData->difficultyBeatmapSets) {
+            if (!characteristic) continue;
+            auto diffs = characteristic->difficultyBeatmaps;
+            if (!diffs) continue;
+            for (auto diff : diffs) {
+                if (!diff) continue;
+                auto diffPath = levelPath / static_cast<std::string>(diff->beatmapFilename);
+                if (!std::filesystem::exists(diffPath)) continue;
+
+                files.emplace_back(diffPath);
             }
         }
 
-        hashFilter.MessageEnd();
-
-        HexEncoder hexEncoder(new StringSink(hashHex));
-        hexEncoder.Put((const byte*)hashResult.data(), hashResult.size());
-
-        cacheData->sha1 = hashHex;
-        SetCachedInfo(levelPath, *cacheData);
-
-        std::chrono::milliseconds duration = duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-        DEBUG("GetCustomLevelHash Stop Result {} Time {}", hashHex, duration.count());
-        return hashHex;
+        return files;
     }
 
-    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
-        auto start = std::chrono::high_resolution_clock::now();
-        std::string hashHex;
-
-        // get cached info
-        auto cacheData = GetCachedInfo(levelPath);
-        if(!cacheData.has_value()) return std::nullopt;
-
-        if (cacheData->sha1.has_value()) {
-            DEBUG("GetCustomLevelHash Stop Result {} from cache", *cacheData->sha1);
-            return *cacheData->sha1;
-        }
-
+    // v4 savedata
+    std::vector<std::filesystem::path> GetFilesForHashing(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
         auto infoPath = levelPath / "info.dat";
         if(!std::filesystem::exists(infoPath)) {
             infoPath = levelPath / "Info.dat";
-            if(!std::filesystem::exists(infoPath)) return std::nullopt;
+            if(!std::filesystem::exists(infoPath)) return {};
         }
 
         auto audioPath = levelPath / static_cast<std::string>(saveData->audio.audioDataFilename);
-        if(!std::filesystem::exists(audioPath)) {
-            return std::nullopt;
+        if(!std::filesystem::exists(infoPath)) return {};
+
+        std::vector<std::filesystem::path> files;
+
+        files.emplace_back(infoPath);
+        files.emplace_back(audioPath);
+
+        for (auto diff : saveData->difficultyBeatmaps) {
+            if (!diff) continue;
+            auto diffPath = levelPath / static_cast<std::string>(diff->beatmapDataFilename);
+            auto lightPath = levelPath / static_cast<std::string>(diff->lightshowDataFilename);
+
+            if (!std::filesystem::exists(diffPath)) continue;
+            if (!std::filesystem::exists(lightPath)) continue;
+
+            files.emplace_back(diffPath);
+            files.emplace_back(lightPath);
         }
+
+        return files;
+    }
+
+    /// @brief templated hash calculation to not repeat code. we always want to get the files and hash them in order
+    template<typename T>
+    std::optional<std::string> CalculateHash(std::filesystem::path const& levelPath, T saveData) {
+        auto start = std::chrono::high_resolution_clock::now();
+        auto filesToHash = GetFilesForHashing(levelPath, saveData);
+        // if we found no files, return nullopt
+        if (filesToHash.empty()) return std::nullopt;
 
         SHA1 hashType;
         std::string hashResult;
         HashFilter hashFilter(hashType, new StringSink(hashResult));
 
-        FileSource fs(infoPath.c_str(), false);
-        fs.Attach(new Redirector(hashFilter));
-        fs.Pump(LWORD_MAX);
-        fs.Detach();
-
-        FileSource fsAudio(audioPath.c_str(), false);
-        fsAudio.Attach(new Redirector(hashFilter));
-        fsAudio.Pump(LWORD_MAX);
-        fsAudio.Detach();
-
-        for(auto val : saveData->difficultyBeatmaps) {
-            if (!val) continue;
-            
-            auto diffPath = levelPath / static_cast<std::string>(val->beatmapDataFilename);
-            if(!std::filesystem::exists(diffPath)) {
-                ERROR("GetCustomLevelHash File {} did not exist", diffPath.string());
-                continue;
-            }
-            FileSource fs(diffPath.c_str(), false);
+        for (auto const& file : filesToHash) {
+            FileSource fs(file.c_str(), false);
             fs.Attach(new Redirector(hashFilter));
             fs.Pump(LWORD_MAX);
             fs.Detach();
-
-            auto lightPath = levelPath / static_cast<std::string>(val->lightshowDataFilename);
-            if(!std::filesystem::exists(lightPath)) {
-                ERROR("GetCustomLevelHash Lighting File {} did not exist", diffPath.string());
-                continue;
-            }
-            FileSource fsLight(lightPath.c_str(), false);
-            fsLight.Attach(new Redirector(hashFilter));
-            fsLight.Pump(LWORD_MAX);
-            fsLight.Detach();
         }
 
         hashFilter.MessageEnd();
 
+        std::string hashHex;
         HexEncoder hexEncoder(new StringSink(hashHex));
         hexEncoder.Put((const byte*)hashResult.data(), hashResult.size());
 
-        cacheData->sha1 = hashHex;
+        DEBUG("Calculated hash in {}ms", duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count());
+        return hashHex;
+    }
+
+    template<typename T>
+    std::optional<std::string> GetCustomLevelHashInternal(std::filesystem::path const& levelPath, T saveData) {
+        // get cached info
+        auto cacheData = GetCachedInfo(levelPath);
+        if(!cacheData.has_value()) return std::nullopt;
+
+        if (cacheData->sha1.has_value()) {
+            DEBUG("GetCustomLevelHash Stop Result {} from cache", *cacheData->sha1);
+            return *cacheData->sha1;
+        }
+
+        // calculate the hash
+        auto calculatedHash = CalculateHash(levelPath, saveData);
+
+        // we failed
+        if (!calculatedHash.has_value()) {
+            DEBUG("GetCustomLevelHash Stop Failed to calculate hash");
+            return std::nullopt;
+        }
+
+        auto& hash = calculatedHash.value();
+        cacheData->sha1 = hash;
         SetCachedInfo(levelPath, *cacheData);
 
-        std::chrono::milliseconds duration = duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-        DEBUG("GetCustomLevelHash Stop Result {} Time {}", hashHex, duration.count());
-        return hashHex;
+        DEBUG("GetCustomLevelHash Stop Result {}", hash);
+        return calculatedHash;
+    }
+
+    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData) {
+        return GetCustomLevelHashInternal(levelPath, saveData);
+    }
+
+    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+        return GetCustomLevelHashInternal(levelPath, saveData);
     }
 
     std::optional<int> GetDirectoryHash(std::filesystem::path const& directoryPath) {
