@@ -26,7 +26,8 @@ MAKE_AUTO_HOOK_MATCH(
     static_cast<
         void
         (GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::*)(
-            ::StringW,
+            ::StringW, 
+            ::GlobalNamespace::IBeatmapLevelData*,
             ByRef<::GlobalNamespace::BeatmapKey>,
             ::GlobalNamespace::BeatmapLevel*,
             ::GlobalNamespace::OverrideEnvironmentSettings*,
@@ -37,16 +38,17 @@ MAKE_AUTO_HOOK_MATCH(
             ::GlobalNamespace::PracticeSettings*,
             ::GlobalNamespace::EnvironmentsListModel*,
             ::GlobalNamespace::AudioClipAsyncLoader*,
+            ::BeatSaber::PerformancePresets::PerformancePreset*,
             ::GlobalNamespace::BeatmapDataLoader*,
             ::StringW,
-            ::GlobalNamespace::BeatmapLevelsModel*,
             bool,
             bool,
             ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
     )>(&GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init),
     void,
     GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
-    ::StringW gameMode,
+    ::StringW gameMode, 
+    ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData, 
     ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
     ::GlobalNamespace::BeatmapLevel* beatmapLevel,
     ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
@@ -57,9 +59,9 @@ MAKE_AUTO_HOOK_MATCH(
     ::GlobalNamespace::PracticeSettings* practiceSettings,
     ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
     ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
+    ::BeatSaber::PerformancePresets::PerformancePreset* performancePreset,
     ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
     ::StringW backButtonText,
-    ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel,
     bool useTestNoteCutSoundEffects,
     bool startPaused,
     ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
@@ -68,7 +70,8 @@ MAKE_AUTO_HOOK_MATCH(
     if (!customLevel) {
         return StandardLevelScenesTransitionSetupDataSO_Init_1(
             self,
-            gameMode,
+            gameMode, 
+            beatmapLevelData, 
             beatmapKey,
             beatmapLevel,
             overrideEnvironmentSettings,
@@ -79,9 +82,9 @@ MAKE_AUTO_HOOK_MATCH(
             practiceSettings,
             environmentsListModel,
             audioClipAsyncLoader,
+            performancePreset,
             beatmapDataLoader,
             backButtonText,
-            beatmapLevelsModel,
             useTestNoteCutSoundEffects,
             startPaused,
             recordingToolData
@@ -112,7 +115,8 @@ MAKE_AUTO_HOOK_MATCH(
 
     StandardLevelScenesTransitionSetupDataSO_Init_1(
         self,
-        gameMode,
+        gameMode, 
+        beatmapLevelData, 
         beatmapKey,
         beatmapLevel,
         overrideEnvironmentSettings,
@@ -123,9 +127,9 @@ MAKE_AUTO_HOOK_MATCH(
         practiceSettings,
         environmentsListModel,
         audioClipAsyncLoader,
+        performancePreset,
         beatmapDataLoader,
         backButtonText,
-        beatmapLevelsModel,
         useTestNoteCutSoundEffects,
         startPaused,
         recordingToolData
@@ -140,7 +144,6 @@ MAKE_AUTO_HOOK_MATCH(
         void
         (GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::*)(
             ::StringW,
-            ::GlobalNamespace::IBeatmapLevelData*,
             ByRef<::GlobalNamespace::BeatmapKey>,
             ::GlobalNamespace::BeatmapLevel*,
             ::GlobalNamespace::OverrideEnvironmentSettings*,
@@ -152,28 +155,31 @@ MAKE_AUTO_HOOK_MATCH(
             ::GlobalNamespace::EnvironmentsListModel*,
             ::GlobalNamespace::AudioClipAsyncLoader*,
             ::GlobalNamespace::BeatmapDataLoader*,
+            ::BeatSaber::PerformancePresets::PerformancePreset*,
             ::StringW,
+            ::GlobalNamespace::BeatmapLevelsModel*,
             bool,
             bool,
             ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
     )>(&GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init),
     void,
     GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
-    ::StringW gameMode,
-    ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
-    ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
+    ::StringW gameMode, 
+    ByRef<::GlobalNamespace::BeatmapKey> beatmapKey, 
     ::GlobalNamespace::BeatmapLevel* beatmapLevel,
-    ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
+    ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings, 
     ::GlobalNamespace::ColorScheme* overrideColorScheme,
-    ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme,
+    ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme, 
     ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
-    ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+    ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings, 
     ::GlobalNamespace::PracticeSettings* practiceSettings,
-    ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
+    ::GlobalNamespace::EnvironmentsListModel* environmentsListModel, 
     ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
-    ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
+    ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader, 
+    ::BeatSaber::PerformancePresets::PerformancePreset* performancePreset, 
     ::StringW backButtonText,
-    bool useTestNoteCutSoundEffects,
+    ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, 
+    bool useTestNoteCutSoundEffects, 
     bool startPaused,
     ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
 ) {
@@ -182,7 +188,6 @@ MAKE_AUTO_HOOK_MATCH(
         return StandardLevelScenesTransitionSetupDataSO_Init_2(
             self,
             gameMode,
-            beatmapLevelData,
             beatmapKey,
             beatmapLevel,
             overrideEnvironmentSettings,
@@ -194,7 +199,9 @@ MAKE_AUTO_HOOK_MATCH(
             environmentsListModel,
             audioClipAsyncLoader,
             beatmapDataLoader,
+            performancePreset,
             backButtonText,
+            beatmapLevelsModel,
             useTestNoteCutSoundEffects,
             startPaused,
             recordingToolData
@@ -226,7 +233,6 @@ MAKE_AUTO_HOOK_MATCH(
     StandardLevelScenesTransitionSetupDataSO_Init_2(
         self,
         gameMode,
-        beatmapLevelData,
         beatmapKey,
         beatmapLevel,
         overrideEnvironmentSettings,
@@ -238,7 +244,9 @@ MAKE_AUTO_HOOK_MATCH(
         environmentsListModel,
         audioClipAsyncLoader,
         beatmapDataLoader,
+        performancePreset,
         backButtonText,
+        beatmapLevelsModel,
         useTestNoteCutSoundEffects,
         startPaused,
         recordingToolData

@@ -395,8 +395,6 @@ namespace SongCore::SongLoader {
 
         allLoaded->FixBackingDictionaries();
 
-        _beatmapLevelsModel->UpdateLoadedPreviewLevels();
-
         InvokeCustomLevelPacksRefreshed(_customBeatmapLevelsRepository);
     }
 

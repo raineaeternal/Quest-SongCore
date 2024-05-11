@@ -45,19 +45,19 @@ using namespace System::Threading::Tasks;
 using namespace System::Collections::Generic;
 
 // we return our own levels repository to which we can add packs we please
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::CreateAllLoadedBeatmapLevelPacks, BeatmapLevelsRepository*, BeatmapLevelsModel* self) {
-    auto result = BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks(self);
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::LoadAllBeatmapLevelPacks, void, BeatmapLevelsModel* self) {
+    BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks(self);
 
     auto custom = SongCore::SongLoader::CustomBeatmapLevelsRepository::New_ctor();
-    auto levelPacks = result->beatmapLevelPacks;
-    auto packCount = levelPacks->i___System__Collections__Generic__IReadOnlyCollection_1_T_()->Count;
+    auto levelPacks = self->____allLoadedBeatmapLevelsRepository->____beatmapLevelPacks;
+    auto packCount = levelPacks->get_Length();
     for (int i = 0; i < packCount; i++) {
-        custom->AddLevelPack(levelPacks->get_Item(i));
+        custom->AddLevelPack(levelPacks[i]);
     }
 
     custom->FixBackingDictionaries();
-
-    return custom;
+    
+    self->_allLoadedBeatmapLevelsRepository = custom;
 }
 
 // hook to ensure a beatmaps data is actually fully unloaded

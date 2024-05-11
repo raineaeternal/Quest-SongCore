@@ -45,19 +45,19 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^3601.*",
+      "versionRange": "^3602.*",
       "additionalData": {}
     },
     {
       "id": "bsml",
-      "versionRange": "^0.4.26",
+      "versionRange": "^0.4.33",
       "additionalData": {
         "private": true
       }
     },
     {
       "id": "lapiz",
-      "versionRange": "^0.2.9",
+      "versionRange": "^0.2.10",
       "additionalData": {
         "private": true
       }
