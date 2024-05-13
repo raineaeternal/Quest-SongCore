@@ -31,7 +31,10 @@
         "restart": [
           "pwsh ./scripts/restart-game.ps1"
         ]
-      }
+      },
+      "qmodIncludeDirs": [],
+      "qmodIncludeFiles": [],
+      "qmodOutput": null
     },
     "dependencies": [
       {
@@ -46,19 +49,19 @@
       },
       {
         "id": "bs-cordl",
-        "versionRange": "3600.*",
+        "versionRange": "3602.*",
         "additionalData": {}
       },
       {
         "id": "bsml",
-        "versionRange": "^0.4.25",
+        "versionRange": "^0.4.33",
         "additionalData": {
           "private": true
         }
       },
       {
         "id": "lapiz",
-        "versionRange": "^0.2.7",
+        "versionRange": "^0.2.10",
         "additionalData": {
           "private": true
         }
@@ -95,17 +98,17 @@
     {
       "dependency": {
         "id": "bsml",
-        "versionRange": "=0.4.25",
+        "versionRange": "=0.4.33",
         "additionalData": {
-          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.25/libbsml.so",
-          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.25/debug_libbsml.so",
+          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.33/libbsml.so",
+          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.33/debug_libbsml.so",
           "overrideSoName": "libbsml.so",
-          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.25/BSML.qmod",
-          "branchName": "version/v0_4_25",
+          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.33/BSML.qmod",
+          "branchName": "version/v0_4_33",
           "cmake": true
         }
       },
-      "version": "0.4.25"
+      "version": "0.4.33"
     },
     {
       "dependency": {
@@ -130,12 +133,13 @@
     {
       "dependency": {
         "id": "libil2cpp",
-        "versionRange": "=0.3.1",
+        "versionRange": "=0.3.2",
         "additionalData": {
-          "headersOnly": true
+          "headersOnly": true,
+          "cmake": false
         }
       },
-      "version": "0.3.1"
+      "version": "0.3.2"
     },
     {
       "dependency": {
@@ -214,10 +218,10 @@
     {
       "dependency": {
         "id": "bs-cordl",
-        "versionRange": "=3600.0.0",
+        "versionRange": "=3602.0.0",
         "additionalData": {
           "headersOnly": true,
-          "branchName": "version/v3600_0_0",
+          "branchName": "version/v3602_0_0",
           "compileOptions": {
             "includePaths": [
               "include"
@@ -232,22 +236,18 @@
           }
         }
       },
-      "version": "3600.0.0"
+      "version": "3602.0.0"
     },
     {
       "dependency": {
         "id": "lapiz",
-        "versionRange": "=0.2.7",
+        "versionRange": "=0.2.10",
         "additionalData": {
-          "soLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.7/liblapiz.so",
-          "debugSoLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.7/debug_liblapiz.so",
           "overrideSoName": "liblapiz.so",
-          "modLink": "https://github.com/raineio/Lapiz/releases/download/v0.2.7/Lapiz.qmod",
-          "branchName": "version/v0_2_7",
           "cmake": true
         }
       },
-      "version": "0.2.7"
+      "version": "0.2.10"
     },
     {
       "dependency": {

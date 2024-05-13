@@ -5,7 +5,6 @@
 #include "GlobalNamespace/BeatmapDataObstaclesMergingTransform.hpp"
 
 #include "GlobalNamespace/BoolSO.hpp"
-#include "GlobalNamespace/MainSettingsModelSO.hpp"
 #include "GlobalNamespace/BeatmapLevel.hpp"
 
 // hooks to get around the `IsObstaclesMergingNeeded` if statement being different on quest.
@@ -21,7 +20,7 @@ MAKE_AUTO_HOOK_MATCH(
     bool leftHanded,
     GlobalNamespace::EnvironmentEffectsFilterPreset environmentEffectsFilterPreset,
     GlobalNamespace::EnvironmentIntensityReductionOptions* environmentIntensityReductionOptions,
-    GlobalNamespace::MainSettingsModelSO* mainSettingsModel
+    BeatSaber::PerformancePresets::PerformancePreset* performancePreset
 ) {
     ByPassMergeTransformForCustomLevel = beatmapLevel && beatmapLevel->levelID.starts_with(u"custom_level_");
 
@@ -32,7 +31,7 @@ MAKE_AUTO_HOOK_MATCH(
         leftHanded,
         environmentEffectsFilterPreset,
         environmentIntensityReductionOptions,
-        mainSettingsModel
+        performancePreset
     );
 }
 
