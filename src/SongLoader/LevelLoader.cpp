@@ -420,7 +420,10 @@ namespace SongCore::SongLoader {
         }
 
         auto colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
-        auto ConvertHTMLStringToColor = [](std::string colorHtmlString) {
+        static auto ConvertHTMLStringToColor = [](std::string colorHtmlString) {
+            // if color does not start with # the library fails to parse the hex color. need to prepend that.
+            // this is different from PC where it just assumes a hex string means hex color
+            if (!colorHtmlString.starts_with('#')) colorHtmlString = fmt::format("#{}", colorHtmlString);
             auto color = BSML::Utilities::ParseHTMLColorOpt(colorHtmlString);
             if (!color)
                 return UnityEngine::Color::get_black();
