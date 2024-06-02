@@ -534,6 +534,9 @@ namespace SongCore::SongLoader {
             }
 
             auto environmentName = environmentNames[diffBeatmap->environmentNameIdx];
+            if(!environmentName._environmentName.ends_with("Environment")) {
+                environmentName._environmentName += "Environment";
+            }
 			auto colorScheme = ((diffBeatmap->beatmapColorSchemeIdx >= 0 && diffBeatmap->beatmapColorSchemeIdx < colorSchemes.size()) ? colorSchemes[diffBeatmap->beatmapColorSchemeIdx] : nullptr);
 
             INFO("Creating basic data with env name {} and color scheme {}", environmentName._environmentName, colorScheme ? colorScheme->colorSchemeId : "null");
