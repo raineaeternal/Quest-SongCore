@@ -6,18 +6,18 @@
 
 using namespace GlobalNamespace;
 
-//V2
-DEFINE_TYPE(SongCore::CustomJSONData, CustomLevelInfoSaveData);
+//V2 | V3
+DEFINE_TYPE(SongCore::CustomJSONData, CustomLevelInfoSaveDataV2);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmapSet);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmap);
 
-//V3
-DEFINE_TYPE(SongCore::CustomJSONData, CustomBeatmapLevelSaveData);
+//V4
+DEFINE_TYPE(SongCore::CustomJSONData, CustomBeatmapLevelSaveDataV4);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmapV4);
 
 namespace SongCore::CustomJSONData {
 
-	void CustomLevelInfoSaveData::ctor(
+	void CustomLevelInfoSaveDataV2::ctor(
 		StringW songName,
 		StringW songSubName,
 		StringW songAuthorName,
@@ -516,7 +516,7 @@ void CustomDifficultyBeatmap::ctor(
 	);
 }
 
-void CustomBeatmapLevelSaveData::ctor() {
+void CustomBeatmapLevelSaveDataV4::ctor() {
 	INVOKE_CTOR();
 
 	_ctor();

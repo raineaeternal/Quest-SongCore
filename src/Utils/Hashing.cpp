@@ -12,7 +12,7 @@ using namespace GlobalNamespace;
 using namespace CryptoPP;
 
 namespace SongCore::Utils {
-    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData) {
+    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomLevelInfoSaveDataV2* saveData) {
         auto start = std::chrono::high_resolution_clock::now();
         std::string hashHex;
 
@@ -69,7 +69,7 @@ namespace SongCore::Utils {
         return hashHex;
     }
 
-    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+    std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData) {
         auto start = std::chrono::high_resolution_clock::now();
         std::string hashHex;
 

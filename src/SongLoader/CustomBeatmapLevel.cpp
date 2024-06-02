@@ -46,8 +46,8 @@ namespace SongCore::SongLoader {
 
     CustomBeatmapLevel* CustomBeatmapLevel::New(
         std::string_view customLevelPath,
-        CustomJSONData::CustomLevelInfoSaveData* saveDataV2,
-        CustomJSONData::CustomBeatmapLevelSaveData* saveDataV4,
+        CustomJSONData::CustomLevelInfoSaveDataV2* saveDataV2,
+        CustomJSONData::CustomBeatmapLevelSaveDataV4* saveDataV4,
         GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
         bool hasPrecalculatedData,
         ::StringW levelID,

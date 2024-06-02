@@ -35,6 +35,7 @@
 #include <exception>
 #include <filesystem>
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 #include <limits>
 
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
@@ -51,11 +52,11 @@ namespace SongCore::SongLoader {
         _clipLoader = GlobalNamespace::AudioClipAsyncLoader::CreateDefault();
     }
 
-    SongCore::CustomJSONData::CustomLevelInfoSaveData* LevelLoader::GetStandardSaveData(std::filesystem::path const& path) {
+    SongCore::CustomJSONData::CustomLevelInfoSaveDataV2* LevelLoader::GetStandardSaveData(std::filesystem::path const& path) {
         return GetSaveDataFromV3(path);
     }
 
-    SongCore::CustomJSONData::CustomLevelInfoSaveData* LevelLoader::GetSaveDataFromV3(std::filesystem::path const& path) {
+    SongCore::CustomJSONData::CustomLevelInfoSaveDataV2* LevelLoader::GetSaveDataFromV3(std::filesystem::path const& path) {
         if (path.empty()) {
             ERROR("Provided path was empty!");
             return nullptr;
@@ -79,9 +80,9 @@ namespace SongCore::SongLoader {
                 return nullptr;
             }
 
-            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveData>(standardSaveData);
+            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveDataV2>(standardSaveData);
             if (!opt.has_value()) {
-                ERROR("Cannot load file {} as CustomLevelInfoSaveData!", path.string());
+                ERROR("Cannot load file {} as CustomLevelInfoSaveDataV2!", path.string());
                 return nullptr;
             }
 
@@ -94,7 +95,7 @@ namespace SongCore::SongLoader {
         return nullptr;
     }
 
-    SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LevelLoader::GetSaveDataFromV4(std::filesystem::path const& path) {
+    SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4* LevelLoader::GetSaveDataFromV4(std::filesystem::path const& path) {
         if (path.empty()) {
             ERROR("Provided path was empty!");
             return nullptr;
@@ -118,9 +119,9 @@ namespace SongCore::SongLoader {
                 return nullptr;
             }
 
-            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomBeatmapLevelSaveData>(beatmapLevelSaveData);
+            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4>(beatmapLevelSaveData);
             if (!opt.has_value()) {
-                ERROR("Cannot load file {} as CustomBeatmapLevelSaveData!", path.string());
+                ERROR("Cannot load file {} as CustomBeatmapLevelSaveDataV4!", path.string());
                 return nullptr;
             }
 
@@ -143,7 +144,7 @@ namespace SongCore::SongLoader {
         name = EmptyString(); \
     }
 
-    CustomBeatmapLevel* LevelLoader::LoadCustomBeatmapLevel(std::filesystem::path const& levelPath, bool wip, SongCore::CustomJSONData::CustomLevelInfoSaveData* saveData, std::string& hashOut) {
+    CustomBeatmapLevel* LevelLoader::LoadCustomBeatmapLevel(std::filesystem::path const& levelPath, bool wip, SongCore::CustomJSONData::CustomLevelInfoSaveDataV2* saveData, std::string& hashOut) {
         if (!saveData) {
             #ifdef THROW_ON_MISSING_DATA
             throw std::runtime_error(fmt::format("saveData was null for level @ {}", levelPath.string()));
@@ -241,21 +242,22 @@ namespace SongCore::SongLoader {
         return result;
     }
 
-    CustomBeatmapLevel* LevelLoader::LoadCustomBeatmapLevel(std::filesystem::path const& levelPath, bool wip, SongCore::CustomJSONData::CustomBeatmapLevelSaveData* saveData, std::string& hashOut) {
+    // LevelLoader.CreateBeatmapLevelFromV4
+    CustomBeatmapLevel* LevelLoader::LoadCustomBeatmapLevel(std::filesystem::path const& levelPath, bool wip, SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData, std::string& hashOut) {
         if (!saveData) {
+            WARNING("saveData was null for level @ {}", levelPath.string());
             #ifdef THROW_ON_MISSING_DATA
             throw std::runtime_error(fmt::format("saveData was null for level @ {}", levelPath.string()));
             #else
-            WARNING("saveData was null for level @ {}", levelPath.string());
             return nullptr;
             #endif
         }
 
         if (!BasicVerifyMap(levelPath, saveData)) {
+            WARNING("Map {} was missing files!", levelPath.string());
             #ifdef THROW_ON_MISSING_DATA
             throw std::runtime_error(fmt::format("Map {} was missing files!", levelPath.string()));
             #else
-            WARNING("Map {} was missing files!", levelPath);
             return nullptr;
             #endif
         }
@@ -319,7 +321,8 @@ namespace SongCore::SongLoader {
     }
 
 
-    std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, LevelLoader::BeatmapBasicDataDict*> LevelLoader::GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, std::span<GlobalNamespace::EnvironmentName const> environmentNames, std::span<GlobalNamespace::ColorScheme* const> colorSchemes, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+    // V2 | V3
+    std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, LevelLoader::BeatmapBasicDataDict*> LevelLoader::GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, std::span<GlobalNamespace::EnvironmentName const> environmentNames, std::span<GlobalNamespace::ColorScheme* const> colorSchemes, CustomJSONData::CustomLevelInfoSaveDataV2* saveData) {
         auto fileDifficultyBeatmapsDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>::New_ctor();
         auto basicDataDict = LevelLoader::BeatmapBasicDataDict::New_ctor();
         bool saveDataHadEnvNames = saveData->environmentNames.size() > 0;
@@ -366,6 +369,7 @@ namespace SongCore::SongLoader {
                     difficulty
                 );
 
+                // This is v3 apparently so no need for a lightshow
                 fileDifficultyBeatmapsDict->Add(
                     dictKey,
                     GlobalNamespace::FileDifficultyBeatmap::New_ctor(
@@ -408,15 +412,21 @@ namespace SongCore::SongLoader {
         };
     }
 
-    std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, LevelLoader::BeatmapBasicDataDict*> LevelLoader::GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+    // V4
+    // implementation of CustomLevelLoader.CreateBeatmapLevelDataFromV4
+    std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, LevelLoader::BeatmapBasicDataDict*> LevelLoader::GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData) {
         auto fileDifficultyBeatmapsDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>::New_ctor();
         auto basicDataDict = LevelLoader::BeatmapBasicDataDict::New_ctor();
 
-        auto environmentNames = ListW<GlobalNamespace::EnvironmentName>::New();
+        std::vector<GlobalNamespace::EnvironmentName> environmentNames;
+        INFO("Environments {}", fmt::join(saveData->environmentNames, ";"));
+
         for (StringW name : saveData->environmentNames) {
-            environmentNames->Add(
-                GetEnvironmentInfo(name, false)->_environmentName
+            environmentNames.emplace_back(
+                GetEnvironmentInfo(name, false)->serializedName
             );
+            INFO("Environment {}",
+                 GetEnvironmentInfo(name, false)->serializedName);
         }
 
         auto colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
@@ -470,10 +480,10 @@ namespace SongCore::SongLoader {
         for (auto diffBeatmap : saveData->difficultyBeatmaps) {
             auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(diffBeatmap->characteristic);
             if (!characteristic) {
+                WARNING("Got null characteristic for characteristic name {}, skipping...", diffBeatmap->characteristic);
                 #ifdef THROW_ON_MISSING_DATA
                     throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", diffBeatmap->characteristic));
                 #else
-                    WARNING("Got null characteristic for characteristic name {}, skipping...", diffBeatmap->characteristic);
                     continue;
                 #endif
             }
@@ -485,30 +495,30 @@ namespace SongCore::SongLoader {
             );
 
             if (!parseSuccess) {
+                WARNING("Failed to parse a diff string: {}, skipping...", diffBeatmap->difficulty);
                 #ifdef THROW_ON_MISSING_DATA
                     throw std::runtime_error(fmt::format("Failed to parse a diff string: {}", diffBeatmap->difficulty));
                 #else
-                    WARNING("Failed to parse a diff string: {}, skipping...", diffBeatmap->difficulty);
                     continue;
                 #endif
             }
 
             auto beatmapPath = levelPath / std::string(diffBeatmap->beatmapDataFilename);
             if (!std::filesystem::exists(beatmapPath)) {
+                WARNING("Diff file '{}' does not exist, skipping...", beatmapPath.string());
                 #ifdef THROW_ON_MISSING_DATA
                     throw std::runtime_error(fmt::format("Diff file '{}' does not exist", beatmapPath.string()));
                 #else
-                    WARNING("Diff file '{}' does not exist, skipping...", beatmapPath.string());
                     continue;
                 #endif
             }
 
             auto lightingPath = levelPath / std::string(diffBeatmap->lightshowDataFilename);
             if (!std::filesystem::exists(lightingPath)) {
+                WARNING("Diff Lighting file '{}' does not exist, skipping...", lightingPath.string());
                 #ifdef THROW_ON_MISSING_DATA
                     throw std::runtime_error(fmt::format("Diff Lighting file '{}' does not exist", lightingPath.string()));
                 #else
-                    WARNING("Diff Lighting file '{}' does not exist, skipping...", lightingPath.string());
                     continue;
                 #endif
             }
@@ -628,7 +638,7 @@ namespace SongCore::SongLoader {
         return colorSchemes->ToArray();
     }
 
-    float LevelLoader::GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+    float LevelLoader::GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveDataV2* saveData) {
         // check the cached info
         auto cachedInfoOpt = Utils::GetCachedInfo(levelPath);
         if (cachedInfoOpt.has_value() && cachedInfoOpt->songDuration.has_value()) {
@@ -664,7 +674,7 @@ namespace SongCore::SongLoader {
         }
     }
 
-    float LevelLoader::GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+    float LevelLoader::GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData) {
         // check the cached info
         auto cachedInfoOpt = Utils::GetCachedInfo(levelPath);
         if (cachedInfoOpt.has_value() && cachedInfoOpt->songDuration.has_value()) {
@@ -700,9 +710,9 @@ namespace SongCore::SongLoader {
         }
     }
 
-    float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+    float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveDataV2* saveData) {
         try {
-            static auto GetFirstAvailableDiffFile = [](std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) -> GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap* {
+            static auto GetFirstAvailableDiffFile = [](std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveDataV2* saveData) -> GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap* {
                 for (auto set : saveData->difficultyBeatmapSets) {
                     auto beatmaps = set->difficultyBeatmaps;
                     for (auto itr = beatmaps.rbegin(); itr != beatmaps.rend(); itr ++) {
@@ -737,7 +747,9 @@ namespace SongCore::SongLoader {
                     auto beat = note->beat;
                     if (beat > highestBeat) highestBeat = beat;
                 }
-            } else if (beatmapSaveData->basicBeatmapEvents && beatmapSaveData->basicBeatmapEvents->Count > 0) {
+            }
+
+            if (beatmapSaveData->basicBeatmapEvents && beatmapSaveData->basicBeatmapEvents->Count > 0) {
                 for (auto event : ListW<::BeatmapSaveDataVersion3::BasicEventData*>(beatmapSaveData->basicBeatmapEvents)) {
                     auto beat = event->beat;
                     if (beat > highestBeat) highestBeat = beat;
@@ -757,9 +769,9 @@ namespace SongCore::SongLoader {
         return 0;
     }
 
-    float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+    float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData) {
         try {
-            static auto GetFirstAvailableDiffFile = [](std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData) -> BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap* {
+            static auto GetFirstAvailableDiffFile = [](std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData) -> BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap* {
                 for (auto beatmap : saveData->difficultyBeatmaps) {
                     std::string fileName(beatmap->beatmapDataFilename);
                     if (!fileName.empty() && std::filesystem::exists(levelPath / fileName)) {
@@ -792,13 +804,15 @@ namespace SongCore::SongLoader {
             float highestBeat = 0.0f;
             if (beatmapSaveData->colorNotes && beatmapSaveData->colorNotes->get_Length() > 0) {
                 for (auto note : ListW<::BeatmapSaveDataVersion4::BeatmapBeatIndex*>(beatmapSaveData->colorNotes)) {
-                    auto beat = note->beat;
-                    if (beat > highestBeat) highestBeat = beat;
+                  auto beat = note->beat;
+                  highestBeat = std::max(beat, highestBeat);
+                  
                 }
-            } else if (lightshowSaveData->basicEvents && lightshowSaveData->basicEvents->get_Length() > 0) {
+            }
+            if (lightshowSaveData->basicEvents && lightshowSaveData->basicEvents->get_Length() > 0) {
                 for (auto event : ListW<::BeatmapSaveDataVersion4::BeatIndex*>(lightshowSaveData->basicEvents)) {
                     auto beat = event->beat;
-                    if (beat > highestBeat) highestBeat = beat;
+                    highestBeat = std::max(beat, highestBeat);
                 }
             }
 
@@ -819,7 +833,7 @@ namespace SongCore::SongLoader {
         return 0;
     }
 
-    bool LevelLoader::BasicVerifyMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveData* saveData) {
+    bool LevelLoader::BasicVerifyMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveDataV2* saveData) {
         std::string songFile(saveData->songFilename);
         std::string coverFile(saveData->coverImageFilename);
 
@@ -837,7 +851,7 @@ namespace SongCore::SongLoader {
         return true;
     }
 
-    bool LevelLoader::BasicVerifyMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData) {
+    bool LevelLoader::BasicVerifyMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData) {
         std::string songFile(saveData->audio.songFilename);
         std::string coverFile(saveData->coverImageFilename);
         std::string audioFile(saveData->audio.audioDataFilename);
@@ -850,18 +864,19 @@ namespace SongCore::SongLoader {
         for (auto diff : saveData->difficultyBeatmaps) {
             std::string diffFile(diff->beatmapDataFilename);
             std::string lightFile(diff->lightshowDataFilename);
-            if (!std::filesystem::exists(levelPath / diffFile) || !std::filesystem::exists(levelPath / lightFile)) return false;
+            if (!std::filesystem::exists(levelPath / diffFile)) return false;
+            if (!std::filesystem::exists(levelPath / lightFile)) return false;
         }
 
         // no files were found to be missing, return success
         return true;
     }
 
-    SongCore::CustomJSONData::CustomLevelInfoSaveData* LevelLoader::LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string const& stringData) {
+    SongCore::CustomJSONData::CustomLevelInfoSaveDataV2* LevelLoader::LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string_view stringData) {
         auto customBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>(il2cpp_array_size_t(saveData->difficultyBeatmapSets.size()));
 
-        SongCore::CustomJSONData::CustomLevelInfoSaveData *customSaveData =
-                SongCore::CustomJSONData::CustomLevelInfoSaveData::New_ctor(
+        SongCore::CustomJSONData::CustomLevelInfoSaveDataV2 *customSaveData =
+                SongCore::CustomJSONData::CustomLevelInfoSaveDataV2::New_ctor(
                     saveData->songName,
                     saveData->songSubName,
                     saveData->songAuthorName,
@@ -888,7 +903,7 @@ namespace SongCore::SongLoader {
         customSaveData->_customSaveDataInfo->doc = sharedDoc;
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
-        doc.Parse(stringData.c_str());
+        doc.Parse(stringData.data());
 
         auto dataItr = doc.FindMember(u"_customData");
         if (dataItr != doc.MemberEnd()) {
@@ -943,7 +958,7 @@ namespace SongCore::SongLoader {
         return customSaveData;
     }
 
-    SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LevelLoader::LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string const& stringData) {
+    SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4* LevelLoader::LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string_view stringData) {
         if (!saveData) {
             WARNING("Save Data is not valid!");
             return nullptr;
@@ -951,8 +966,8 @@ namespace SongCore::SongLoader {
 
         auto customDiffBeatmaps = ArrayW<BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap*>(il2cpp_array_size_t(saveData->difficultyBeatmaps.size()));
 
-        SongCore::CustomJSONData::CustomBeatmapLevelSaveData *customSaveData =
-                SongCore::CustomJSONData::CustomBeatmapLevelSaveData::New_ctor();
+        SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4 *customSaveData =
+                SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4::New_ctor();
         customSaveData->song = saveData->song;
         customSaveData->audio = saveData->audio;
         customSaveData->colorSchemes = saveData->colorSchemes;
@@ -962,7 +977,7 @@ namespace SongCore::SongLoader {
         customSaveData->environmentNames = saveData->environmentNames;
         customSaveData->version = saveData->version;
 
-        std::u16string str(stringData);
+        std::u16string_view str(stringData);
 
         auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
         customSaveData->_customSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
@@ -970,7 +985,7 @@ namespace SongCore::SongLoader {
         customSaveData->_customSaveDataInfo->doc = sharedDoc;
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
-        doc.Parse(str.c_str());
+        doc.Parse(str.data());
 
         auto dataItr = doc.FindMember(u"customData");
         if (dataItr != doc.MemberEnd()) {

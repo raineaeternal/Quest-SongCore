@@ -242,8 +242,8 @@ namespace SongCore::CustomJSONData {
 	};
 }
 
-// V2
-DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveData, GlobalNamespace::StandardLevelInfoSaveData,
+// V2 | V3
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveDataV2, GlobalNamespace::StandardLevelInfoSaveData,
 
 		DECLARE_CTOR(ctor,
 			StringW songName,
@@ -304,7 +304,7 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalN
 )
 
 // V4
-DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomBeatmapLevelSaveData, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData,
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomBeatmapLevelSaveDataV4, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData,
 
 	//Manually assign fields
 	DECLARE_CTOR(ctor);
