@@ -97,8 +97,8 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
         static float GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveData* saveData);
 
         /// @brief gets the v3 savedata with custom data from the base game save data
-        SongCore::CustomJSONData::CustomLevelInfoSaveData* LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string const& stringData);
+        SongCore::CustomJSONData::CustomLevelInfoSaveData* LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string_view stringData);
 
         /// @brief gets the v4 savedata with custom data from the base game save data
-        SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string const& stringData);
+        SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string_view stringData);
 )

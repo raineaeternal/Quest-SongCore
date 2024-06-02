@@ -6,12 +6,12 @@
 
 using namespace GlobalNamespace;
 
-//V2
+//V2 | V3
 DEFINE_TYPE(SongCore::CustomJSONData, CustomLevelInfoSaveData);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmapSet);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmap);
 
-//V3
+//V4
 DEFINE_TYPE(SongCore::CustomJSONData, CustomBeatmapLevelSaveData);
 DEFINE_TYPE(SongCore::CustomJSONData, CustomDifficultyBeatmapV4);
 

@@ -366,6 +366,7 @@ namespace SongCore::SongLoader {
                     difficulty
                 );
 
+                // This is v3 apparently so no need for a lightshow
                 fileDifficultyBeatmapsDict->Add(
                     dictKey,
                     GlobalNamespace::FileDifficultyBeatmap::New_ctor(
@@ -789,13 +790,15 @@ namespace SongCore::SongLoader {
             float highestBeat = 0.0f;
             if (beatmapSaveData->colorNotes && beatmapSaveData->colorNotes->get_Length() > 0) {
                 for (auto note : ListW<::BeatmapSaveDataVersion4::BeatmapBeatIndex*>(beatmapSaveData->colorNotes)) {
-                    auto beat = note->beat;
-                    if (beat > highestBeat) highestBeat = beat;
+                  auto beat = note->beat;
+                  highestBeat = std::max(beat, highestBeat);
+                  
                 }
-            } else if (lightshowSaveData->basicEvents && lightshowSaveData->basicEvents->get_Length() > 0) {
+            }
+            if (lightshowSaveData->basicEvents && lightshowSaveData->basicEvents->get_Length() > 0) {
                 for (auto event : ListW<::BeatmapSaveDataVersion4::BeatIndex*>(lightshowSaveData->basicEvents)) {
                     auto beat = event->beat;
-                    if (beat > highestBeat) highestBeat = beat;
+                    highestBeat = std::max(beat, highestBeat);
                 }
             }
 
@@ -854,7 +857,7 @@ namespace SongCore::SongLoader {
         return true;
     }
 
-    SongCore::CustomJSONData::CustomLevelInfoSaveData* LevelLoader::LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string const& stringData) {
+    SongCore::CustomJSONData::CustomLevelInfoSaveData* LevelLoader::LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string_view stringData) {
         auto customBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>(il2cpp_array_size_t(saveData->difficultyBeatmapSets.size()));
 
         SongCore::CustomJSONData::CustomLevelInfoSaveData *customSaveData =
@@ -885,7 +888,7 @@ namespace SongCore::SongLoader {
         customSaveData->_customSaveDataInfo->doc = sharedDoc;
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
-        doc.Parse(stringData.c_str());
+        doc.Parse(stringData.data());
 
         auto dataItr = doc.FindMember(u"_customData");
         if (dataItr != doc.MemberEnd()) {
@@ -940,7 +943,7 @@ namespace SongCore::SongLoader {
         return customSaveData;
     }
 
-    SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LevelLoader::LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string const& stringData) {
+    SongCore::CustomJSONData::CustomBeatmapLevelSaveData* LevelLoader::LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string_view stringData) {
         if (!saveData) {
             WARNING("Save Data is not valid!");
             return nullptr;
@@ -959,7 +962,7 @@ namespace SongCore::SongLoader {
         customSaveData->environmentNames = saveData->environmentNames;
         customSaveData->version = saveData->version;
 
-        std::u16string str(stringData);
+        std::u16string_view str(stringData);
 
         auto sharedDoc = std::make_shared<SongCore::CustomJSONData::DocumentUTF16>();
         customSaveData->_customSaveDataInfo = SongCore::CustomJSONData::CustomSaveDataInfo();
@@ -967,7 +970,7 @@ namespace SongCore::SongLoader {
         customSaveData->_customSaveDataInfo->doc = sharedDoc;
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
-        doc.Parse(str.c_str());
+        doc.Parse(str.data());
 
         auto dataItr = doc.FindMember(u"customData");
         if (dataItr != doc.MemberEnd()) {
