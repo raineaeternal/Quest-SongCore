@@ -243,7 +243,7 @@ namespace SongCore::CustomJSONData {
 }
 
 // V2 | V3
-DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveDataV3, GlobalNamespace::StandardLevelInfoSaveData,
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveDataV2, GlobalNamespace::StandardLevelInfoSaveData,
 
 		DECLARE_CTOR(ctor,
 			StringW songName,

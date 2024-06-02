@@ -224,10 +224,10 @@ namespace SongCore::API {
             };
 
             /// @brief if this is a V2-V3 custom level, this should be set
-            std::optional<CustomJSONData::CustomLevelInfoSaveData*> customLevelInfoSaveDataV2 = std::nullopt;
+            std::optional<CustomJSONData::CustomLevelInfoSaveDataV2*> customLevelInfoSaveDataV2 = std::nullopt;
 
             /// @brief if this is a V4 custom level, this should be set
-            std::optional<CustomJSONData::CustomBeatmapLevelSaveData*> customBeatmapLevelSaveDataV4 = std::nullopt;
+            std::optional<CustomJSONData::CustomBeatmapLevelSaveDataV4*> customBeatmapLevelSaveDataV4 = std::nullopt;
 
             /// @brief if this is a custom level, this should be set
             std::optional<BasicCustomLevelDetailsGroup> customLevelDetails = std::nullopt;
