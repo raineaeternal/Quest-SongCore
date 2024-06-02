@@ -413,11 +413,15 @@ namespace SongCore::SongLoader {
         auto fileDifficultyBeatmapsDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>::New_ctor();
         auto basicDataDict = LevelLoader::BeatmapBasicDataDict::New_ctor();
 
-        auto environmentNames = ListW<GlobalNamespace::EnvironmentName>::New();
+        std::vector<GlobalNamespace::EnvironmentName> environmentNames;
+        INFO("Environments {}", fmt::join(saveData->environmentNames, ";"));
+
         for (StringW name : saveData->environmentNames) {
-            environmentNames->Add(
-                GetEnvironmentInfo(name, false)->_environmentName
+            environmentNames.emplace_back(
+                GetEnvironmentInfo(name, false)->serializedName
             );
+            INFO("Environment {}",
+                 GetEnvironmentInfo(name, false)->serializedName);
         }
 
         auto colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
