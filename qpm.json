@@ -5,7 +5,7 @@
   "info": {
     "name": "Quest-SongCore",
     "id": "songcore",
-    "version": "1.1.7",
+    "version": "1.1.12",
     "url": "https://github.com/raineio/quest-songcore",
     "additionalData": {
       "overrideSoName": "libsongcore.so"
@@ -35,7 +35,7 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^5.1.6",
+      "versionRange": "^5.1.7",
       "additionalData": {}
     },
     {
@@ -45,12 +45,12 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^3602.*",
+      "versionRange": "^3700.*",
       "additionalData": {}
     },
     {
       "id": "bsml",
-      "versionRange": "^0.4.33",
+      "versionRange": "^0.5.0",
       "additionalData": {
         "private": true
       }
@@ -64,7 +64,7 @@
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.17.7",
+      "versionRange": "^0.17.8",
       "additionalData": {}
     },
     {
