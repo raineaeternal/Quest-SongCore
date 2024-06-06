@@ -25,6 +25,7 @@ namespace SongCore::SongLoader {
     ) {
         INVOKE_CTOR();
         _ctor(
+            -1,
             hasPrecalculatedData,
             levelID,
             songName,

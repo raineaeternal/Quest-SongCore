@@ -13,7 +13,7 @@ DEFINE_TYPE(SongCore::UI, IconCache);
 } while(0)
 
 #define DestroyIcon(fieldname) do { \
-    if (fieldname && fieldname->m_CachedPtr) \
+    if (fieldname && fieldname->m_CachedPtr.m_value) \
         UnityEngine::Object::Destroy(fieldname); \
     fieldname = nullptr; \
 } while(0)
@@ -32,7 +32,7 @@ namespace SongCore::UI {
         auto enumerator = _pathIcons->GetEnumerator();
         while (enumerator.MoveNext()) {
             auto [path, icon] = enumerator.Current;
-            if (icon && icon->m_CachedPtr) UnityEngine::Object::Destroy(icon);
+            if (icon && icon->m_CachedPtr.m_value) UnityEngine::Object::Destroy(icon);
         }
         enumerator.Dispose();
 

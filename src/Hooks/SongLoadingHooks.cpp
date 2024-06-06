@@ -5,9 +5,8 @@
 
 #include "CustomJSONData.hpp"
 #include "SongCore.hpp"
+#include "SongLoader/CustomBeatmapLevelsRepository.hpp"
 
-#include "UnityEngine/Object.hpp"
-#include "System/Version.hpp"
 #include "GlobalNamespace/BeatmapSaveDataHelpers.hpp"
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
 #include "GlobalNamespace/LevelFilteringNavigationController.hpp"
@@ -15,19 +14,24 @@
 #include "GlobalNamespace/StandardLevelInfoSaveData.hpp"
 #include "GlobalNamespace/PlatformLeaderboardViewController.hpp"
 #include "GlobalNamespace/LoadingControl.hpp"
-
 #include "GlobalNamespace/OculusPlatformAdditionalContentModel.hpp"
 #include "GlobalNamespace/BeatmapLevelsModel.hpp"
 #include "GlobalNamespace/BeatmapLevelsEntitlementModel.hpp"
 #include "GlobalNamespace/BeatmapLevelLoader.hpp"
 #include "GlobalNamespace/BeatmapLevelDataLoader.hpp"
 #include "GlobalNamespace/FileHelpers.hpp"
-#include "SongLoader/CustomBeatmapLevelsRepository.hpp"
+
 #include "System/Threading/Tasks/Task_1.hpp"
 #include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
 #include "System/Collections/Generic/IReadOnlyList_1.hpp"
+#include "System/Version.hpp"
+
+#include "UnityEngine/Object.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
+#include "UnityEngine/Sprite.hpp"
+
 #include "BGLib/Polyglot/Localization.hpp"
+#include "BGLib/DotnetExtension/Collections/LRUCache_2.hpp"
 
 #include "utf8.h"
 #include <string>
@@ -263,3 +267,27 @@ MAKE_AUTO_HOOK_MATCH(
 
     return result;
 }
+
+
+// https://github.com/Kylemc1413/SongCore/pull/148/files
+// This partially fixes a bug that was introduced in v1.36.0, which saves null covers when the loading operation is canceled.
+// It still shows the default cover at times, but at least it reloads it now.
+// TODO: Remove when fixed.
+// Generic Patching ):
+template <>
+struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<
+    &BGLib::DotnetExtension::Collections::LRUCache_2<StringW, UnityEngine::Sprite*>::Add> {
+  static MethodInfo const* get() {
+    return il2cpp_utils::FindMethodUnsafe(classof(BGLib::DotnetExtension::Collections::LRUCache_2<StringW, UnityEngine::Sprite*>*),
+                                          "Add", 2);
+  }
+};
+
+MAKE_HOOK(LRUCache_Add, nullptr, void, BGLib::DotnetExtension::Collections::LRUCache_2<StringW, UnityEngine::Sprite*>* self,
+          MethodInfo* methodInfo, StringW key, UnityEngine::Sprite* value) {
+    if(value != nullptr) {
+        LRUCache_Add(self, methodInfo, key, value);
+    }
+}
+
+HOOK_AUTO_INSTALL(LRUCache_Add);

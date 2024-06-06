@@ -228,7 +228,7 @@ namespace SongCore::UI {
     }
 
     void ProgressBar::Dispose() {
-        if (_canvas && _canvas->m_CachedPtr) {
+        if (_canvas && _canvas->m_CachedPtr.m_value) {
             UnityEngine::Object::Destroy(_canvas->gameObject);
         }
         _canvas = nullptr;
