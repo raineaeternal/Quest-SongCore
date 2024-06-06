@@ -61,7 +61,7 @@
       },
       {
         "id": "lapiz",
-        "versionRange": "^0.2.10",
+        "versionRange": "^0.2.11",
         "additionalData": {
           "private": true
         }
