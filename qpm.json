@@ -50,7 +50,7 @@
     },
     {
       "id": "bsml",
-      "versionRange": "^0.5.0",
+      "versionRange": "^0.4.34",
       "additionalData": {
         "private": true
       }
