@@ -55,6 +55,7 @@ namespace SongCore::UI {
         _authorNamePos = UnityEngine::Vector2(10, 31);
         _headerPos = UnityEngine::Vector2(0, 15);
         _headerSize = UnityEngine::Vector2(120, 20);
+        _pluginSize = UnityEngine::Vector2(120, 20);
 
         HeaderText = "Loading songs <size=60%><mspace=0.35em>[0000/0000]</mspace></size>";
         PluginText = "SongCore Loader";
@@ -115,6 +116,7 @@ namespace SongCore::UI {
         rect = _pluginNameText->transform.cast<UnityEngine::RectTransform>();
         rect->SetParent(_canvas->transform, false);
         rect->anchoredPosition = _pluginTextPos;
+        rect->sizeDelta = _pluginSize;
         _pluginNameText->text = PluginText;
         _pluginNameText->fontSize = _pluginTextSize;
         _pluginNameText->set_alignment(::TMPro::TextAlignmentOptions::Right);

@@ -54,6 +54,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     DECLARE_INSTANCE_FIELD(UnityEngine::Vector2, _authorNamePos);
     DECLARE_INSTANCE_FIELD(UnityEngine::Vector2, _headerPos);
     DECLARE_INSTANCE_FIELD(UnityEngine::Vector2, _headerSize);
+    DECLARE_INSTANCE_FIELD(UnityEngine::Vector2, _pluginSize);
 
     DECLARE_INSTANCE_FIELD(UnityEngine::Vector2, _pluginTextPos);
 

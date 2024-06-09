@@ -229,14 +229,16 @@ MAKE_AUTO_HOOK_MATCH(
     SelectLevelCategoryViewController::LevelCategory levelCategory
 ) {
     std::optional<LevelFilter> searchFilter = std::nullopt;
+    bool inSearch = levelCategory == SelectLevelCategoryViewController::LevelCategory::Favorites
+                    || levelCategory == SelectLevelCategoryViewController::LevelCategory::All;
     // cancellationTokenSource is only non null during UpdateCustomSongs
-    if (self->_cancellationTokenSource
-        && self->_levelSearchViewController
-        && (levelCategory == SelectLevelCategoryViewController::LevelCategory::Favorites
-            || levelCategory == SelectLevelCategoryViewController::LevelCategory::All)) {
+    if (inSearch && self->_cancellationTokenSource && self->_levelSearchViewController) {
         searchFilter = self->_levelSearchViewController->_currentSearchFilter;
         if (searchFilter->searchText == nullptr) searchFilter->searchText = "";
     }
+    // packs are not initialized, so filters aren't yet either
+    if (inSearch && !self->_allBeatmapLevelPacks)
+        self->_levelSearchViewController->ResetAllFilterSettings(levelCategory == SelectLevelCategoryViewController::LevelCategory::Favorites);
 
     LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
 
@@ -274,20 +276,22 @@ MAKE_AUTO_HOOK_MATCH(
 // It still shows the default cover at times, but at least it reloads it now.
 // TODO: Remove when fixed.
 // Generic Patching ):
-template <>
-struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<
-    &BGLib::DotnetExtension::Collections::LRUCache_2<StringW, UnityEngine::Sprite*>::Add> {
-  static MethodInfo const* get() {
-    return il2cpp_utils::FindMethodUnsafe(classof(BGLib::DotnetExtension::Collections::LRUCache_2<StringW, UnityEngine::Sprite*>*),
-                                          "Add", 2);
-  }
-};
 
-MAKE_HOOK(LRUCache_Add, nullptr, void, BGLib::DotnetExtension::Collections::LRUCache_2<StringW, UnityEngine::Sprite*>* self,
-          MethodInfo* methodInfo, StringW key, UnityEngine::Sprite* value) {
-    if(value != nullptr) {
-        LRUCache_Add(self, methodInfo, key, value);
-    }
+using LRUCacheInst = BGLib::DotnetExtension::Collections::LRUCache_2<StringW, UnityEngine::Sprite*>;
+
+MAKE_HOOK(LRUCache_Add, nullptr, void, LRUCacheInst* self, StringW key, UnityEngine::Sprite* value, MethodInfo* methodInfo) {
+    if (value != nullptr)
+        LRUCache_Add(self, key, value, methodInfo);
 }
 
-HOOK_AUTO_INSTALL(LRUCache_Add);
+struct Auto_Hook_LRUCache_Add {
+    static void Auto_Hook_LRUCache_Add_Install() {
+        static constexpr auto logger = Paper::ConstLoggerContext("SongCore_Install_LRUCache_Add");
+        static auto addr = il2cpp_utils::FindMethodUnsafe(classof(LRUCacheInst*), "Add", 2);
+        INSTALL_HOOK_DIRECT(logger, LRUCache_Add, (void*) addr->methodPointer);
+    }
+    Auto_Hook_LRUCache_Add() {
+        SongCore::Hooking::AddInstallFunc(Auto_Hook_LRUCache_Add_Install);
+    }
+};
+static Auto_Hook_LRUCache_Add Auto_Hook_Instance_LRUCache_Add;
