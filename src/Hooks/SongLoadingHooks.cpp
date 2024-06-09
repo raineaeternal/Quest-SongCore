@@ -229,14 +229,16 @@ MAKE_AUTO_HOOK_MATCH(
     SelectLevelCategoryViewController::LevelCategory levelCategory
 ) {
     std::optional<LevelFilter> searchFilter = std::nullopt;
+    bool inSearch = levelCategory == SelectLevelCategoryViewController::LevelCategory::Favorites
+                    || levelCategory == SelectLevelCategoryViewController::LevelCategory::All;
     // cancellationTokenSource is only non null during UpdateCustomSongs
-    if (self->_cancellationTokenSource
-        && self->_levelSearchViewController
-        && (levelCategory == SelectLevelCategoryViewController::LevelCategory::Favorites
-            || levelCategory == SelectLevelCategoryViewController::LevelCategory::All)) {
+    if (inSearch && self->_cancellationTokenSource && self->_levelSearchViewController) {
         searchFilter = self->_levelSearchViewController->_currentSearchFilter;
         if (searchFilter->searchText == nullptr) searchFilter->searchText = "";
     }
+    // packs are not initialized, so filters aren't yet either
+    if (inSearch && !self->_allBeatmapLevelPacks)
+        self->_levelSearchViewController->ResetAllFilterSettings(levelCategory == SelectLevelCategoryViewController::LevelCategory::Favorites);
 
     LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
 
