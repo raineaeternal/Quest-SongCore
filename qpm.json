@@ -25,7 +25,7 @@
       ],
       "qmod": [
         "pwsh ./scripts/build.ps1",
-        "qpm qmod build",
+        "qpm qmod manifest",
         "pwsh ./scripts/createqmod.ps1 SongCore"
       ],
       "restart": [
