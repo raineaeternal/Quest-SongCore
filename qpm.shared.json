@@ -9,7 +9,8 @@
       "version": "1.1.12",
       "url": "https://github.com/raineio/quest-songcore",
       "additionalData": {
-        "overrideSoName": "libsongcore.so"
+        "overrideSoName": "libsongcore.so",
+        "cmake": true
       }
     },
     "workspace": {
@@ -177,13 +178,13 @@
     {
       "dependency": {
         "id": "sombrero",
-        "versionRange": "=0.1.40",
+        "versionRange": "=0.1.42",
         "additionalData": {
           "headersOnly": true,
-          "branchName": "version/v0_1_40"
+          "branchName": "version/v0_1_42"
         }
       },
-      "version": "0.1.40"
+      "version": "0.1.42"
     },
     {
       "dependency": {
