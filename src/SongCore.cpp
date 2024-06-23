@@ -207,6 +207,12 @@ namespace SongCore::API {
             return instance->RefreshSongs(fullRefresh);
         }
 
+        std::shared_future<void> RefreshSongsPaths(std::span<std::filesystem::path const> paths) {
+            auto instance = SongLoader::RuntimeSongLoader::get_instance();
+            if (!instance) return std::future<void>();
+            return instance->RefreshSongsPaths(paths);
+        }
+
         void RefreshLevelPacks() {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
             if (!instance) return;

@@ -111,6 +111,10 @@ namespace SongCore::API {
         /// @return future you can use to check whether songs are done refreshing. if you want an onFinished see `GetSongsLoadedEvent`
         SONGCORE_EXPORT std::shared_future<void> RefreshSongs(bool fullRefresh = false);
 
+        /// @brief refresh the loaded songs in the songloader only in selected paths, if the songloader doesn't exist an invalid future is returned. the returned future can be ignored safely
+        /// @return future you can use to check whether songs are done refreshing
+        SONGCORE_EXPORT std::shared_future<void> RefreshSongsPaths(std::span<std::filesystem::path const> paths);
+
         /// @brief refresh the level packs, since this does not take long, it is not async
         SONGCORE_EXPORT void RefreshLevelPacks();
 

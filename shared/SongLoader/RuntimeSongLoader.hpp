@@ -57,6 +57,11 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         /// @return shared future which you may await for when the songs are finished refreshing. if you want an onFinished use the `LevelsLoaded` event
         std::shared_future<void> RefreshSongs(bool fullRefresh = false);
 
+        /// @brief refreshes the loaded songs, loading any new ones from the provided paths
+        /// @param paths the paths to search for songs in
+        /// @return shared future which you may await for when the songs are finished refreshing. if you want an onFinished use the `LevelsLoaded` event
+        std::shared_future<void> RefreshSongsPaths(std::span<const std::filesystem::path> paths);
+
         /// @brief refreshes the level packs in the beatmaplevelsmodel
         void RefreshLevelPacks();
 
@@ -203,11 +208,17 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         /// @brief collects levels from the roots into the given set, and keeps the wip status
         static void CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out);
 
+        /// @brief collects levels from the paths into the given set, and keeps the wip status
+        static void CollectLevelsInPaths(std::span<const std::filesystem::path> paths, bool isWip, std::set<LevelPathAndWip>& out);
+
         /// @brief method used when a double (or triple, quadruple...) refresh is requested
         void RefreshRequestedWhileRefreshing();
 
         /// @brief method kicked of by RefreshSongs on an il2cpp async
         void RefreshSongs_internal(bool fullRefresh);
+
+        /// @brief method kicked of by RefreshSongsPaths on an il2cpp async
+        void RefreshSongsPaths_internal(std::span<const std::filesystem::path> paths);
 
         /// @brief worker thread for loading songs from a set
         void RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd);

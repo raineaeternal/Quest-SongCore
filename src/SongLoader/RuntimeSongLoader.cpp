@@ -104,6 +104,30 @@ namespace SongCore::SongLoader {
         }
     }
 
+    void RuntimeSongLoader::CollectLevelsInPaths(std::span<const std::filesystem::path> paths, bool isWip, std::set<LevelPathAndWip>& out) {
+        // Grab levels from the given paths
+        for (auto entry : paths) {
+            DEBUG("Collecting level in path {}", std::string(entry));
+            std::filesystem::directory_entry dir(entry);
+            if (!dir.is_directory()) continue;
+            DEBUG("Directory entry is a directory");
+            auto songPath = dir.path();
+            // if this is an autosaves dir, just skip silently
+            if (songPath.string().ends_with("autosaves")) continue;
+
+            auto dataPath = songPath / "info.dat";
+            if (!std::filesystem::exists(dataPath)) {
+                dataPath = songPath / "Info.dat";
+                if (!std::filesystem::exists(dataPath)) {
+                    WARNING("Possible song folder '{}' had no info.dat file! skipping...", songPath.string());
+                    continue;
+                }
+            }
+
+            out.emplace(songPath, isWip);
+        }
+    }
+
     void RuntimeSongLoader::CollectLevels(std::span<const std::filesystem::path> roots, bool isWip, std::set<LevelPathAndWip>& out) {
         for (auto& rootPath : roots) {
             if (!std::filesystem::exists(rootPath)) {
@@ -139,6 +163,159 @@ namespace SongCore::SongLoader {
         std::unique_lock<std::shared_mutex> writingLock(_currentRefreshMutex);
         _currentlyLoadingFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshSongs_internal, this, std::forward<bool>(fullRefresh));
         return _currentlyLoadingFuture;
+    }
+
+    std::shared_future<void> RuntimeSongLoader::RefreshSongsPaths(std::span<const std::filesystem::path> paths) {
+        bool fullRefresh = false;
+
+        for (auto entry : paths) {
+            DEBUG("Checking path before future {}", std::string(entry));
+        }
+
+
+        if (AreSongsRefreshing) {
+            INFO("Refresh was requested while songs were refreshing, queueing up a new refresh for afterwards, or returning the already queued up refresh");
+            // if double future isn't valid, that means we need to make a new one here
+            if (!_doubleRefreshRequestedFuture.valid()) {
+                std::unique_lock<std::shared_mutex> writingLock(_doubleRefreshMutex);
+                // if it wasn't marked as a full refresh, mark it as such
+                _doubleRefreshIsFull = fullRefresh;
+                _doubleRefreshRequestedFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshRequestedWhileRefreshing, this);
+            } else {
+                // if the double refresh isn't full, update it
+                if (!_doubleRefreshIsFull) {
+                    std::unique_lock<std::shared_mutex> writingLock(_doubleRefreshMutex);
+                    _doubleRefreshIsFull = fullRefresh;
+                }
+            }
+
+            std::shared_lock<std::shared_mutex> readingLock(_doubleRefreshMutex);
+            return _doubleRefreshRequestedFuture;
+        }
+
+        std::unique_lock<std::shared_mutex> writingLock(_currentRefreshMutex);
+        _currentlyLoadingFuture = il2cpp_utils::il2cpp_async(
+            std::launch::async,
+            &RuntimeSongLoader::RefreshSongsPaths_internal,
+            this,
+            std::forward<std::span<const std::filesystem::path>>(paths)
+        );
+        return _currentlyLoadingFuture;
+    }
+
+
+    void RuntimeSongLoader::RefreshSongsPaths_internal(std::span<const std::filesystem::path> paths) {
+        for (auto entry : paths) {
+            DEBUG("Checking path in future {}", std::string(entry));
+        }
+        InvokeSongsWillRefresh();
+        auto refreshStartTime = high_resolution_clock::now();
+
+        std::set<LevelPathAndWip> levels;
+        CollectLevelsInPaths(paths, false, levels);
+
+        // load songs on multiple threads
+        std::mutex levelsItrMutex;
+        std::set<LevelPathAndWip>::const_iterator levelsItr = levels.begin();
+        std::set<LevelPathAndWip>::const_iterator levelsEnd = levels.end();
+
+        using namespace std::chrono;
+        auto loadStartTime = high_resolution_clock::now();
+
+        auto workerThreadCount = std::clamp<size_t>(levels.size(), 1, MAX_THREAD_COUNT);
+        std::vector<std::future<void>> songLoadFutures;
+        songLoadFutures.reserve(workerThreadCount);
+        _totalSongs = levels.size();
+
+        INFO("Now going to load {} levels on {} threads", (int)_totalSongs, workerThreadCount);
+        for (int i = 0; i < workerThreadCount; i++) {
+            songLoadFutures.emplace_back(
+                il2cpp_utils::il2cpp_async(
+                    &RuntimeSongLoader::RefreshSongWorkerThread,
+                    this,
+                    &levelsItrMutex,
+                    &levelsItr,
+                    &levelsEnd
+                )
+            );
+        }
+
+        for (auto& t : songLoadFutures) {
+            t.wait();
+        }
+
+        size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
+        auto time = high_resolution_clock::now() - loadStartTime;
+        if (auto ms = duration_cast<milliseconds>(time).count(); ms > 0) {
+            INFO("Loaded {} (actual: {}) songs in {}ms", levels.size(), actualCount, ms);
+        } else {
+            auto µs = (float)duration_cast<nanoseconds>(time).count() / 1000.0f;
+            INFO("Loaded {} (actual: {}) songs in {}us", levels.size(), actualCount, µs);
+        }
+
+        // save cache to file after all songs are loaded
+        Utils::SaveSongInfoCache();
+
+        // anonymous function to get the values from a songdict into a vector
+        static auto GetValues = [](SongDict* dict){
+            std::vector<CustomBeatmapLevel*> vec;
+            vec.reserve(dict->Count);
+
+            auto enumerator = dict->GetEnumerator();
+            while(enumerator->i___System__Collections__IEnumerator()->MoveNext()) {
+                vec.emplace_back(enumerator->Current.Value);
+            }
+            enumerator->i___System__IDisposable()->Dispose();
+
+            return vec;
+        };
+
+        auto collectionUpdateStartTime = high_resolution_clock::now();
+
+        auto customLevelValues = GetValues(_customLevels);
+        auto customWIPLevelValues = GetValues(_customWIPLevels);
+
+        _customLevelPack->SetLevels(customLevelValues);
+        _customLevelPack->SortLevels();
+
+        _customWIPLevelPack->SetLevels(customWIPLevelValues);
+        _customWIPLevelPack->SortLevels();
+
+        {
+            std::vector<CustomBeatmapLevel*> allLevels;
+            allLevels.reserve(actualCount);
+
+            // insert wip levels before other loaded levels
+            allLevels.insert(allLevels.begin(), customWIPLevelValues.begin(), customWIPLevelValues.end());
+            allLevels.insert(allLevels.begin(), customLevelValues.begin(), customLevelValues.end());
+
+            std::unordered_map<std::string, CustomBeatmapLevel*> levelIdsToLevels;
+            std::unordered_map<std::string, CustomBeatmapLevel*> hashesToLevels;
+            levelIdsToLevels.reserve(actualCount);
+            hashesToLevels.reserve(actualCount);
+
+            for (auto const level : allLevels) {
+                std::string levelID = lowerString(static_cast<std::string>(level->levelID));
+
+                levelIdsToLevels[levelID] = level;
+                hashesToLevels[std::string(GetHashFromLevelID(levelID))] = level;
+            }
+
+            // touch collections as short as possible by using move
+            _allLoadedLevels = std::move(allLevels);
+            _levelIdsToLevels = std::move(levelIdsToLevels);
+            _hashesToLevels = std::move(hashesToLevels);
+        }
+
+        INFO("Updated collections after load in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - collectionUpdateStartTime).count());
+
+        // events happen on main thread anyway so we don't have to queue up on main thread
+        RefreshLevelPacks();
+
+        // same goes here, it's already on main thread
+        InvokeSongsLoaded(_allLoadedLevels);
+        _areSongsLoaded = true;
+        INFO("Paths refresh performed in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - refreshStartTime).count());
     }
 
     void RuntimeSongLoader::RefreshRequestedWhileRefreshing() {
