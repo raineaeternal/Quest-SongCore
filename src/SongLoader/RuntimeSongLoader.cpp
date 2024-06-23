@@ -107,10 +107,8 @@ namespace SongCore::SongLoader {
     void RuntimeSongLoader::CollectLevelsInPaths(std::span<const std::filesystem::path> paths, bool isWip, std::set<LevelPathAndWip>& out) {
         // Grab levels from the given paths
         for (auto entry : paths) {
-            DEBUG("Collecting level in path {}", std::string(entry));
             std::filesystem::directory_entry dir(entry);
             if (!dir.is_directory()) continue;
-            DEBUG("Directory entry is a directory");
             auto songPath = dir.path();
             // if this is an autosaves dir, just skip silently
             if (songPath.string().ends_with("autosaves")) continue;
@@ -168,10 +166,6 @@ namespace SongCore::SongLoader {
     std::shared_future<void> RuntimeSongLoader::RefreshSongsPaths(std::span<const std::filesystem::path> paths) {
         bool fullRefresh = false;
 
-        for (auto entry : paths) {
-            DEBUG("Checking path before future {}", std::string(entry));
-        }
-
 
         if (AreSongsRefreshing) {
             INFO("Refresh was requested while songs were refreshing, queueing up a new refresh for afterwards, or returning the already queued up refresh");
@@ -205,9 +199,6 @@ namespace SongCore::SongLoader {
 
 
     void RuntimeSongLoader::RefreshSongsPaths_internal(std::span<const std::filesystem::path> paths) {
-        for (auto entry : paths) {
-            DEBUG("Checking path in future {}", std::string(entry));
-        }
         InvokeSongsWillRefresh();
         auto refreshStartTime = high_resolution_clock::now();
 
