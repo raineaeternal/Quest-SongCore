@@ -23,7 +23,7 @@ namespace SongCore::API {
             std::string sanitized;
             sanitized.reserve(capability.size());
             for (auto c : capability) {
-                if (c == ' ') continue;
+                if (isspace(c)) continue;
                 sanitized.push_back(tolower(c));
             }
             return sanitized;
