@@ -873,6 +873,11 @@ namespace SongCore::SongLoader {
     }
 
     SongCore::CustomJSONData::CustomLevelInfoSaveDataV2* LevelLoader::LoadCustomSaveData(GlobalNamespace::StandardLevelInfoSaveData* saveData, std::u16string_view stringData) {
+        if (!saveData) {
+            WARNING("Save Data is not valid!");
+            return nullptr;
+        }
+        
         auto customBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>(il2cpp_array_size_t(saveData->difficultyBeatmapSets.size()));
 
         SongCore::CustomJSONData::CustomLevelInfoSaveDataV2 *customSaveData =
