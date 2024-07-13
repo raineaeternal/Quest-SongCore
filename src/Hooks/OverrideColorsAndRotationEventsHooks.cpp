@@ -40,6 +40,7 @@ MAKE_AUTO_HOOK_MATCH(
             ::GlobalNamespace::AudioClipAsyncLoader*,
             ::BeatSaber::PerformancePresets::PerformancePreset*,
             ::GlobalNamespace::BeatmapDataLoader*,
+            ::GlobalNamespace::BeatmapLevelsEntitlementModel*,
             ::StringW,
             bool,
             bool,
@@ -61,6 +62,7 @@ MAKE_AUTO_HOOK_MATCH(
     ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
     ::BeatSaber::PerformancePresets::PerformancePreset* performancePreset,
     ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
+    ::GlobalNamespace::BeatmapLevelsEntitlementModel* beatmapLevelsEntitlementModel,
     ::StringW backButtonText,
     bool useTestNoteCutSoundEffects,
     bool startPaused,
@@ -84,6 +86,7 @@ MAKE_AUTO_HOOK_MATCH(
             audioClipAsyncLoader,
             performancePreset,
             beatmapDataLoader,
+            beatmapLevelsEntitlementModel,
             backButtonText,
             useTestNoteCutSoundEffects,
             startPaused,
@@ -129,6 +132,7 @@ MAKE_AUTO_HOOK_MATCH(
         audioClipAsyncLoader,
         performancePreset,
         beatmapDataLoader,
+        beatmapLevelsEntitlementModel,
         backButtonText,
         useTestNoteCutSoundEffects,
         startPaused,
@@ -158,6 +162,7 @@ MAKE_AUTO_HOOK_MATCH(
             ::BeatSaber::PerformancePresets::PerformancePreset*,
             ::StringW,
             ::GlobalNamespace::BeatmapLevelsModel*,
+            ::GlobalNamespace::BeatmapLevelsEntitlementModel*,
             bool,
             bool,
             ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
@@ -179,6 +184,7 @@ MAKE_AUTO_HOOK_MATCH(
     ::BeatSaber::PerformancePresets::PerformancePreset* performancePreset, 
     ::StringW backButtonText,
     ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, 
+    ::GlobalNamespace::BeatmapLevelsEntitlementModel* beatmapLevelsEntitlementModel,
     bool useTestNoteCutSoundEffects, 
     bool startPaused,
     ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
@@ -202,6 +208,7 @@ MAKE_AUTO_HOOK_MATCH(
             performancePreset,
             backButtonText,
             beatmapLevelsModel,
+            beatmapLevelsEntitlementModel,
             useTestNoteCutSoundEffects,
             startPaused,
             recordingToolData
@@ -247,6 +254,7 @@ MAKE_AUTO_HOOK_MATCH(
         performancePreset,
         backButtonText,
         beatmapLevelsModel,
+        beatmapLevelsEntitlementModel,
         useTestNoteCutSoundEffects,
         startPaused,
         recordingToolData
