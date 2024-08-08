@@ -60,7 +60,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &
     }
 
     custom->FixBackingDictionaries();
-    
+
     self->_allLoadedBeatmapLevelsRepository = custom;
 }
 
@@ -149,7 +149,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
 
 // get the level data async
 // TODO: rip out this level data loading from the SongLoader/LevelLoader.cpp and implement it async here to improve level loading speed and not do redundant things here
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
             static auto Error = LoadBeatmapLevelDataResult(true, nullptr);
@@ -161,12 +161,12 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &Beatmap
         }, std::forward<SongCore::CancellationToken>(token));
     }
 
-    return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, token);
+    return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, beatmapLevelDataVersion, token);
 }
 
 // get the level data async
 // TODO: rip out this level data loading from the SongLoader/LevelLoader.cpp and implement it async here to improve level loading speed and not do redundant things here
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, CancellationToken token) {
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return SongCore::StartTask<bool>([=](SongCore::CancellationToken token){
             auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
@@ -175,7 +175,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &
         }, std::forward<SongCore::CancellationToken>(token));
     }
 
-    return BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync(self, levelID, token);
+    return BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync(self, levelID, beatmapLevelDataVersion, token);
 }
 
 // override getting beatmap level if original method didn't return anything
