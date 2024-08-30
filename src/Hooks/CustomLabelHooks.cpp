@@ -149,7 +149,7 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     int selectedCellIdx = self->_difficultySegmentedControl->selectedCellNumber;
 
     for (auto difficulty : difficulties) {
-        auto difficultyDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
+        auto difficultyDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristic->serializedName->Replace("ReBeat_", ""), difficulty);
         if (!difficultyDetailsOpt.has_value()) { success = false; break; }
 
         auto& difficultyDetails = difficultyDetailsOpt->get();

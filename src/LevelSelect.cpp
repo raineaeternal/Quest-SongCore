@@ -96,8 +96,9 @@ namespace SongCore {
 
         auto levelDetails = saveData->get().TryGetBasicLevelDetails();
         if (!levelDetails.has_value()) return;
-
-        auto characteristicDetails = levelDetails->get().TryGetCharacteristic(eventArgs.beatmapKey.beatmapCharacteristic->serializedName);
+		
+		// Filter out ReBeat identifier for requirement duplication.
+        auto characteristicDetails = levelDetails->get().TryGetCharacteristic(eventArgs.beatmapKey.beatmapCharacteristic->serializedName->Replace("ReBeat_", ""));
         if (!characteristicDetails.has_value()) return;
 
         auto diffDetails = characteristicDetails->get().TryGetDifficulty(eventArgs.beatmapKey.difficulty);
