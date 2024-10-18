@@ -7,7 +7,7 @@ DEFINE_TYPE(SongCore::SongLoader, CustomLevelPack);
 
 namespace SongCore::SongLoader {
     void CustomLevelPack::ctor(StringW packId, StringW packName, UnityEngine::Sprite* coverImage) {
-        _ctor(packId, packName, packName, coverImage, coverImage, ArrayW<GlobalNamespace::BeatmapLevel*>::Empty(), GlobalNamespace::PlayerSensitivityFlag::Unknown);
+        _ctor(packId, packName, packName, coverImage, coverImage, GlobalNamespace::PackBuyOption::DisableBuyOption, ArrayW<GlobalNamespace::BeatmapLevel*>::Empty(), GlobalNamespace::PlayerSensitivityFlag::Unknown);
     }
 
     CustomLevelPack* CustomLevelPack::New(std::string_view packId, std::string_view packName, UnityEngine::Sprite* coverImage) {
@@ -19,16 +19,16 @@ namespace SongCore::SongLoader {
     }
 
     void CustomLevelPack::SortLevels(WeakSortingFunc sortingFunc) {
-        std::stable_sort(beatmapLevels.begin(), beatmapLevels.end(), sortingFunc);
+        std::stable_sort(_beatmapLevels.begin(), _beatmapLevels.end(), sortingFunc);
     }
 
     void CustomLevelPack::SetLevels(std::span<CustomBeatmapLevel* const> levels) {
-        beatmapLevels = ArrayW<GlobalNamespace::BeatmapLevel*>(levels.size());
-        std::copy(levels.begin(), levels.end(), beatmapLevels.begin());
+        _beatmapLevels = ArrayW<GlobalNamespace::BeatmapLevel*>(levels.size());
+        std::copy(levels.begin(), levels.end(), _beatmapLevels.begin());
     }
 
     void CustomLevelPack::SetLevels(std::span<GlobalNamespace::BeatmapLevel* const> levels) {
-        beatmapLevels = ArrayW<GlobalNamespace::BeatmapLevel*>(levels.size());
-        std::copy(levels.begin(), levels.end(), beatmapLevels.begin());
+        _beatmapLevels = ArrayW<GlobalNamespace::BeatmapLevel*>(levels.size());
+        std::copy(levels.begin(), levels.end(), _beatmapLevels.begin());
     }
 }

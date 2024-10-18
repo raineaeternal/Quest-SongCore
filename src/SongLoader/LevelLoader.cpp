@@ -236,7 +236,7 @@ namespace SongCore::SongLoader {
             songDuration,
             GlobalNamespace::PlayerSensitivityFlag::Safe,
             previewMediaData->i___GlobalNamespace__IPreviewMediaData(),
-            beatmapBasicData->i___System__Collections__Generic__IReadOnlyDictionary_2_TKey_TValue_()
+            beatmapBasicData
         );
 
         return result;
@@ -314,7 +314,7 @@ namespace SongCore::SongLoader {
             songDuration,
             GlobalNamespace::PlayerSensitivityFlag::Safe,
             previewMediaData->i___GlobalNamespace__IPreviewMediaData(),
-            beatmapBasicData->i___System__Collections__Generic__IReadOnlyDictionary_2_TKey_TValue_()
+            beatmapBasicData
         );
 
         return result;
@@ -391,6 +391,7 @@ namespace SongCore::SongLoader {
                         difficultyBeatmap->noteJumpStartBeatOffset,
                         environmentNames[envNameIndex],
                         colorScheme,
+                        0,
                         0,
                         0,
                         0,
@@ -558,6 +559,7 @@ namespace SongCore::SongLoader {
                         diffBeatmap->noteJumpStartBeatOffset,
                         environmentName,
                         colorScheme,
+                        0,
                         0,
                         0,
                         0,

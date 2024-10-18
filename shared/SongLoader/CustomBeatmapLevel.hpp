@@ -23,7 +23,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
         float_t songDuration,
         ::GlobalNamespace::PlayerSensitivityFlag contentRating,
         ::GlobalNamespace::IPreviewMediaData* previewMediaData,
-        ::System::Collections::Generic::IReadOnlyDictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
+        ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
     );
 
     public:
@@ -72,7 +72,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
             float_t songDuration,
             ::GlobalNamespace::PlayerSensitivityFlag contentRating,
             ::GlobalNamespace::IPreviewMediaData* previewMediaData,
-            ::System::Collections::Generic::IReadOnlyDictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
+            ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
         );
     private:
         CustomJSONData::CustomLevelInfoSaveDataV2* _customLevelSaveDataV2;
