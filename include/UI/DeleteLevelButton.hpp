@@ -18,7 +18,7 @@
 #include "ProgressBar.hpp"
 #include "bsml/shared/BSML/Components/ModalView.hpp"
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, DeleteLevelButton, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(Zenject::ITickable*), classof(System::IDisposable*)}),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, DeleteLevelButton, System::Object, Zenject::IInitializable*, Zenject::ITickable*, System::IDisposable*) {
         DECLARE_CTOR(ctor, SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* standardLevelDetailViewController, LevelSelect* levelSelect, IconCache* iconCache, ProgressBar* progressBar);
         DECLARE_INSTANCE_FIELD_PRIVATE(SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
         DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
@@ -43,4 +43,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, DeleteLevelButton, System::Object
         void UpdateButtonState();
 
         void LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs);
-)
+};

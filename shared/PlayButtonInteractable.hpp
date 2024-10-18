@@ -6,7 +6,7 @@
 #include "System/Object.hpp"
 #include "SongCore.hpp"
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, PlayButtonInteractable, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, PlayButtonInteractable, System::Object, Zenject::IInitializable*, System::IDisposable*) {
     DECLARE_CTOR(ctor);
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &Zenject::IInitializable::Initialize);
@@ -43,4 +43,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, PlayButtonInteractable, System::Objec
     private:
         /// @brief invokes the PlayButtonDisablingModsChanged event
         void InvokePlayButtonDisablingModsChanged(std::span<PlayButtonDisablingModInfo const> disablingModInfos);
-)
+};

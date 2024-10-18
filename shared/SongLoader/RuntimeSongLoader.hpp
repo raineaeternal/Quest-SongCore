@@ -31,7 +31,7 @@ namespace SongCore::SongLoader {
     using SongDict = ::System::Collections::Concurrent::ConcurrentDictionary_2<StringW, CustomBeatmapLevel*>;
 }
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System::Object, Zenject::IInitializable*, System::IDisposable*) {
     DECLARE_CTOR(ctor, GlobalNamespace::CustomLevelLoader* customLevelLoader, GlobalNamespace::BeatmapLevelsModel* _beatmapLevelsModel, LevelLoader* levelLoader);
 
     DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &Zenject::IInitializable::Initialize);
@@ -254,4 +254,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         void InvokeSongWillBeDeleted(CustomBeatmapLevel* level) const;
         /// @brief invoker method for SongDeleted event
         void InvokeSongDeleted() const;
-)
+};

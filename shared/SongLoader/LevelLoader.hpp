@@ -21,7 +21,7 @@
 #include "System/Collections/Generic/Dictionary_2.hpp"
 #include <filesystem>
 
-DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
+DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object) {
     DECLARE_CTOR(ctor, GlobalNamespace::SpriteAsyncLoader* spriteAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel, GlobalNamespace::EnvironmentsListModel* environmentsListModel);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::SpriteAsyncLoader*, _spriteAsyncLoader);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapCharacteristicCollection*, _beatmapCharacteristicCollection);
@@ -101,4 +101,4 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object,
 
         /// @brief gets the v4 savedata with custom data from the base game save data
         SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4* LoadCustomSaveData(BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData* saveData, std::u16string_view stringData);
-)
+};

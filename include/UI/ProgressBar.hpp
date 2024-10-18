@@ -27,7 +27,7 @@
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "bsml/shared/BSML/Components/TextGradientUpdater.hpp"
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std::vector<Il2CppClass *>({classof(::Zenject::IInitializable *), classof(::System::IDisposable *), classof(::Zenject::ITickable *)}),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, Zenject::IInitializable*, System::IDisposable*, Zenject::ITickable *) {
     DECLARE_CTOR(ctor, SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController);
     DECLARE_INSTANCE_FIELD(SongLoader::RuntimeSongLoader*, _runtimeSongLoader);
     DECLARE_INSTANCE_FIELD(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
@@ -90,4 +90,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, std:
     DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &::Zenject::IInitializable::Initialize);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &::System::IDisposable::Dispose);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Tick, &::Zenject::ITickable::Tick);
-)
+};

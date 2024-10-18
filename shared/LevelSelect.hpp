@@ -9,7 +9,7 @@
 #include "GlobalNamespace/StandardLevelDetailViewController.hpp"
 
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, Zenject::IInitializable*, System::IDisposable*) {
         DECLARE_CTOR(ctor, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController);
 
         DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
@@ -52,4 +52,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, std::vec
 
         /// @brief invoker method for the events
         void InvokeLevelWasSelected(LevelWasSelectedEventArgs const& eventArgs);
-)
+};

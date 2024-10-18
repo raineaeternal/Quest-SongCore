@@ -18,7 +18,7 @@
 #include "bsml/shared/BSML/Components/CustomListTableData.hpp"
 #include "bsml/shared/BSML/Components/ModalView.hpp"
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, RequirementsListManager, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, RequirementsListManager, System::Object, Zenject::IInitializable*, System::IDisposable*) {
     DECLARE_CTOR(ctor, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, ColorsOptions* colorsOptions, Capabilities* capabilities, LevelSelect* levelSelect, PlayButtonInteractable* playButtonInteractable, IconCache* _iconCache);
 
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
@@ -59,4 +59,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, RequirementsListManager, System::
 
         void ShowColorsOptions();
         void UpdateRequirementButton();
-)
+};

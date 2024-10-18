@@ -6,7 +6,7 @@
 #include "../CustomJSONData.hpp"
 
 // type which is basically a beatmaplevel but one made by songcore, helps with identification
-DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace::BeatmapLevel,
+DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace::BeatmapLevel) {
     DECLARE_CTOR(ctor,
         bool hasPrecalculatedData,
         ::StringW levelID,
@@ -79,4 +79,4 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
         CustomJSONData::CustomBeatmapLevelSaveDataV4* _customBeatmapLevelSaveDataV4;
         GlobalNamespace::IBeatmapLevelData* _beatmapLevelData;
         std::string _customLevelPath;
-)
+};

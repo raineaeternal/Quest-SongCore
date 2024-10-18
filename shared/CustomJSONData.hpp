@@ -243,7 +243,7 @@ namespace SongCore::CustomJSONData {
 }
 
 // V2 | V3
-DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveDataV2, GlobalNamespace::StandardLevelInfoSaveData,
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveDataV2, GlobalNamespace::StandardLevelInfoSaveData) {
 
 		DECLARE_CTOR(ctor,
 			StringW songName,
@@ -275,9 +275,9 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomLevelInfoSaveDataV2, Globa
 	private:
 		friend class ::SongCore::SongLoader::LevelLoader;
 		std::optional<CustomJSONData::CustomSaveDataInfo> _customSaveDataInfo;
-)
+};
 
-DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapSet, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet,
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapSet, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet) {
 
 		DECLARE_CTOR(ctor,
 			StringW beatmapCharacteristicName,
@@ -285,9 +285,9 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapSet, Glob
 		);
 	public:
 		std::optional<std::reference_wrapper<const ValueUTF16>> customData;
-)
+};
 
-DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap,
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmap) {
 
 	DECLARE_CTOR(ctor,
 		StringW difficultyName,
@@ -301,10 +301,10 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmap, GlobalN
 
 	public:
 		std::optional<std::reference_wrapper<const ValueUTF16>> customData;
-)
+};
 
 // V4
-DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomBeatmapLevelSaveDataV4, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData,
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomBeatmapLevelSaveDataV4, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData) {
 
 	//Manually assign fields
 	DECLARE_CTOR(ctor);
@@ -320,9 +320,9 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomBeatmapLevelSaveDataV4, Be
 	private:
 		friend class ::SongCore::SongLoader::LevelLoader;
 		std::optional<CustomJSONData::CustomSaveDataInfo> _customSaveDataInfo;
-)
+};
 
-DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapV4, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap,
+DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapV4, BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap) {
 
 	DECLARE_CTOR(ctor,
 		BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::BeatmapAuthors beatmapAuthors,
@@ -338,4 +338,4 @@ DECLARE_CLASS_CODEGEN(SongCore::CustomJSONData, CustomDifficultyBeatmapV4, Beatm
 
 public:
 	std::optional<std::reference_wrapper<const ValueUTF16>> customData;
-)
+};

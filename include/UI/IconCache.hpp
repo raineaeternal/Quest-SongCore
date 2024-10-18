@@ -7,7 +7,7 @@
 #include "System/IDisposable.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, IconCache, System::Object, classof(System::IDisposable*),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, IconCache, System::Object, System::IDisposable*) {
     DECLARE_CTOR(ctor);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);
 
@@ -77,4 +77,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, IconCache, System::Object, classo
         std::list<std::filesystem::path> _lastUsedIcons;
 
         void PathWasUsed(std::filesystem::path const& path);
-)
+};
