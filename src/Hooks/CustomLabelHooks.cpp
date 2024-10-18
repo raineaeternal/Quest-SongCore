@@ -96,7 +96,7 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
     if (!customSaveDataInfoOpt) return;
     auto& customSaveDataInfo = customSaveDataInfoOpt->get();
 
-    auto beatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(self->_beatmapCharacteristics);
+    auto beatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(self->_currentlyAvailableBeatmapCharacteristics);
     std::vector<TemporaryCharacteristicSegmentedControlData> cellData;
     auto success = !beatmapCharacteristics.empty();
     int selectedCellIdx = self->_segmentedControl->selectedCellNumber;
@@ -127,7 +127,7 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
         ArrayW<HMUI::IconSegmentedControl::DataItem*> dataItems(cellData.size());
         for (int i = 0; auto& [_, icon, label] : cellData) {
             dataItems[i++] = HMUI::IconSegmentedControl::DataItem::New_ctor(
-                icon, label
+                icon, label, true
             );
         }
 
@@ -161,7 +161,7 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     }
 
     if (success) { // we found labels
-        self->_difficultySegmentedControl->SetTexts(labels->i___System__Collections__Generic__IReadOnlyList_1_T_());
+        self->_difficultySegmentedControl->SetTexts(labels->i___System__Collections__Generic__IReadOnlyList_1_T_(), nullptr);
         self->_difficultySegmentedControl->SelectCellWithNumber(selectedCellIdx);
     }
 }

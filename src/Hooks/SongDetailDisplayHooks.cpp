@@ -17,9 +17,10 @@ MAKE_AUTO_HOOK_MATCH(
     GlobalNamespace::BeatmapLevel* level,
     bool isFavorite,
     bool isPromoted,
-    bool isUpdated
+    bool isUpdated,
+    bool interactable
 ) {
-    LevelListTableCell_SetDataFromLevelAsync(self, level, isFavorite, isPromoted, isUpdated);
+    LevelListTableCell_SetDataFromLevelAsync(self, level, isFavorite, isPromoted, isUpdated, interactable);
     if (!level) return;
 
     self->_songBpmText->text = std::to_string((int)level->beatsPerMinute);
