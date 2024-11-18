@@ -10,7 +10,6 @@
 #include "Overrides/RotationSpawnLinesOverride.hpp"
 #include "UI/DeleteLevelButton.hpp"
 #include "UI/RefreshSongButton.hpp"
-#include "UI/SongLoaderWarning.hpp"
 #include "Utils/Cache.hpp"
 
 #include "UI/ProgressBar.hpp"
@@ -67,24 +66,6 @@ SONGCORE_EXPORT_FUNC void late_load() {
     custom_types::Register::AutoRegister();
     BSML::Init();
     if (!LoadConfig()) SaveConfig();
-
-    CModInfo songloaderInfo {
-        .id = "SongLoader",
-        .version = nullptr,
-        .version_long = 0
-    };
-
-    // check for songloader, and if its installed then don't do any songcore things and tell the user about it
-    auto result = modloader_require_mod(&songloaderInfo, CMatchType::MatchType_IdOnly);
-    if (result == CLoadResultEnum::MatchType_Loaded) {
-        SongLoaderInstalled();
-        return;
-    }
-
-    if (config.dontShowSongloaderWarningAgain) {
-        config.dontShowSongloaderWarningAgain = false;
-        SaveConfig();
-    }
 
     SongCore::Hooking::InstallHooks();
     auto z = Lapiz::Zenject::Zenjector::Get();
@@ -177,14 +158,4 @@ void EnsureNoMedia() {
         std::ofstream file(noMediaFilePath);
         file << '\0';
     }
-}
-
-void SongLoaderInstalled() {
-    // if config says dont show, dont show
-    if (config.dontShowSongloaderWarningAgain) return;
-
-    auto z = Lapiz::Zenject::Zenjector::Get();
-    z->Install(Lapiz::Zenject::Location::Menu, [](::Zenject::DiContainer* container) {
-        container->BindInterfacesAndSelfTo<SongCore::UI::SongLoaderWarning*>()->AsSingle()->NonLazy();
-    });
 }
