@@ -26,7 +26,7 @@ namespace SongCore {
 
         _levelDetailViewController->add_didChangeDifficultyBeatmapEvent(_changeDifficultyBeatmapAction);
 
-        _changeContentAction = BSML::MakeSystemAction<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType>(
+        _changeContentAction = custom_types::MakeDelegate<System::Action_2<UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType>*, false>(
             std::function<void(UnityW<GlobalNamespace::StandardLevelDetailViewController>, GlobalNamespace::StandardLevelDetailViewController::ContentType)>(
                 std::bind(&LevelSelect::LevelDetailContentChanged, this, std::placeholders::_1, std::placeholders::_2)
             )
