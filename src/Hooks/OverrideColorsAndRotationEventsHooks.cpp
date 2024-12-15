@@ -32,6 +32,7 @@ MAKE_AUTO_HOOK_MATCH(
             ::GlobalNamespace::BeatmapLevel*,
             ::GlobalNamespace::OverrideEnvironmentSettings*,
             ::GlobalNamespace::ColorScheme*,
+            bool,
             ::GlobalNamespace::ColorScheme*,
             ::GlobalNamespace::GameplayModifiers*,
             ::GlobalNamespace::PlayerSpecificSettings*,
@@ -44,7 +45,7 @@ MAKE_AUTO_HOOK_MATCH(
             ::StringW,
             bool,
             bool,
-            ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
+            ::System::Nullable_1<::GlobalNamespace::RecordingToolManager::SetupData>
     )>(&GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init),
     void,
     GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
@@ -54,6 +55,7 @@ MAKE_AUTO_HOOK_MATCH(
     ::GlobalNamespace::BeatmapLevel* beatmapLevel,
     ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
     ::GlobalNamespace::ColorScheme* overrideColorScheme,
+    bool playerOverrideLightshowColors,
     ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme,
     ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
     ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
@@ -66,7 +68,7 @@ MAKE_AUTO_HOOK_MATCH(
     ::StringW backButtonText,
     bool useTestNoteCutSoundEffects,
     bool startPaused,
-    ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
+    ::System::Nullable_1<::GlobalNamespace::RecordingToolManager::SetupData> recordingToolData
 ) {
     auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
     if (!customLevel) {
@@ -78,6 +80,7 @@ MAKE_AUTO_HOOK_MATCH(
             beatmapLevel,
             overrideEnvironmentSettings,
             overrideColorScheme,
+            playerOverrideLightshowColors,
             beatmapOverrideColorScheme,
             gameplayModifiers,
             playerSpecificSettings,
@@ -124,6 +127,7 @@ MAKE_AUTO_HOOK_MATCH(
         beatmapLevel,
         overrideEnvironmentSettings,
         overrideColorScheme,
+        playerOverrideLightshowColors,
         beatmapOverrideColorScheme,
         gameplayModifiers,
         playerSpecificSettings,
@@ -152,6 +156,7 @@ MAKE_AUTO_HOOK_MATCH(
             ::GlobalNamespace::BeatmapLevel*,
             ::GlobalNamespace::OverrideEnvironmentSettings*,
             ::GlobalNamespace::ColorScheme*,
+            bool playerOverrideLightshowColors,
             ::GlobalNamespace::ColorScheme*,
             ::GlobalNamespace::GameplayModifiers*,
             ::GlobalNamespace::PlayerSpecificSettings*,
@@ -165,7 +170,7 @@ MAKE_AUTO_HOOK_MATCH(
             ::GlobalNamespace::BeatmapLevelsEntitlementModel*,
             bool,
             bool,
-            ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
+            ::System::Nullable_1<::GlobalNamespace::RecordingToolManager::SetupData>
     )>(&GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init),
     void,
     GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
@@ -174,6 +179,7 @@ MAKE_AUTO_HOOK_MATCH(
     ::GlobalNamespace::BeatmapLevel* beatmapLevel,
     ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings, 
     ::GlobalNamespace::ColorScheme* overrideColorScheme,
+    bool playerOverrideLightshowColors,
     ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme, 
     ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
     ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings, 
@@ -187,7 +193,7 @@ MAKE_AUTO_HOOK_MATCH(
     ::GlobalNamespace::BeatmapLevelsEntitlementModel* beatmapLevelsEntitlementModel,
     bool useTestNoteCutSoundEffects, 
     bool startPaused,
-    ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
+    ::System::Nullable_1<::GlobalNamespace::RecordingToolManager::SetupData> recordingToolData
 ) {
     auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
     if (!customLevel) {
@@ -198,6 +204,7 @@ MAKE_AUTO_HOOK_MATCH(
             beatmapLevel,
             overrideEnvironmentSettings,
             overrideColorScheme,
+            playerOverrideLightshowColors,
             beatmapOverrideColorScheme,
             gameplayModifiers,
             playerSpecificSettings,
@@ -244,6 +251,7 @@ MAKE_AUTO_HOOK_MATCH(
         beatmapLevel,
         overrideEnvironmentSettings,
         overrideColorScheme,
+        playerOverrideLightshowColors,
         beatmapOverrideColorScheme,
         gameplayModifiers,
         playerSpecificSettings,
@@ -275,9 +283,10 @@ MAKE_AUTO_HOOK_MATCH(
     void,
     GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
     ::GlobalNamespace::ColorScheme* overrideColorScheme,
+    bool playerOverrideLightshowColors,
     ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme
 ) {
-    StandardLevelScenesTransitionSetupDataSO_InitColorInfo(self, overrideColorScheme, beatmapOverrideColorScheme);
+    StandardLevelScenesTransitionSetupDataSO_InitColorInfo(self, overrideColorScheme, playerOverrideLightshowColors, beatmapOverrideColorScheme);
     FixupAndApplyColorScheme(self);
 }
 
@@ -394,8 +403,10 @@ GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorSchem
         false,
         "SongCoreOverrideColorScheme",
         false,
+        true,
         saberAColor,
         saberBColor,
+        true,
         environmentColor0,
         environmentColor1,
         environmentColorW,
