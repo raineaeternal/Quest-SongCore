@@ -25,10 +25,16 @@ namespace SongCore::SongLoader {
     void CustomLevelPack::SetLevels(std::span<CustomBeatmapLevel* const> levels) {
         _beatmapLevels = ArrayW<GlobalNamespace::BeatmapLevel*>(levels.size());
         std::copy(levels.begin(), levels.end(), _beatmapLevels.begin());
+		_allBeatmapLevels = ListW<GlobalNamespace::BeatmapLevel*>::New();
+        _allBeatmapLevels->AddRange(static_cast<::System::Collections::Generic::IEnumerable_1<GlobalNamespace::BeatmapLevel*>*>(_beatmapLevels.convert()));
+        _allBeatmapLevels->AddRange(static_cast<::System::Collections::Generic::IEnumerable_1<GlobalNamespace::BeatmapLevel*>*>(static_cast<void*>(_additionalBeatmapLevels)));
     }
 
     void CustomLevelPack::SetLevels(std::span<GlobalNamespace::BeatmapLevel* const> levels) {
         _beatmapLevels = ArrayW<GlobalNamespace::BeatmapLevel*>(levels.size());
         std::copy(levels.begin(), levels.end(), _beatmapLevels.begin());
+		_allBeatmapLevels = ListW<GlobalNamespace::BeatmapLevel*>::New();
+        _allBeatmapLevels->AddRange(static_cast<::System::Collections::Generic::IEnumerable_1<GlobalNamespace::BeatmapLevel*>*>(_beatmapLevels.convert()));
+        _allBeatmapLevels->AddRange(static_cast<::System::Collections::Generic::IEnumerable_1<GlobalNamespace::BeatmapLevel*>*>(static_cast<void*>(_additionalBeatmapLevels)));
     }
 }
