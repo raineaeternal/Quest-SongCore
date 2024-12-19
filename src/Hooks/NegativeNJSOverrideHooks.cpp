@@ -12,27 +12,16 @@ MAKE_AUTO_HOOK_MATCH(
     void,
     GlobalNamespace::BeatmapObjectSpawnMovementData* self,
     int32_t noteLinesCount,
-    float_t startNoteJumpMovementSpeed,
-    float_t startBpm,
-    GlobalNamespace::BeatmapObjectSpawnMovementData::NoteJumpValueType noteJumpValueType,
-    float_t noteJumpValue,
     GlobalNamespace::IJumpOffsetYProvider* jumpOffsetYProvider,
-    UnityEngine::Vector3 rightVec,
-    UnityEngine::Vector3 forwardVec
+    UnityEngine::Vector3 rightVec
 ) {
-    if (NegativeNJSOverrideNoteJumpSpeed.has_value() && NegativeNJSOverrideNoteJumpSpeed < 0) {
-        startNoteJumpMovementSpeed = NegativeNJSOverrideNoteJumpSpeed.value();
-    }
+
+    // TODO: Port new patches https://github.com/Kylemc1413/SongCore/blob/master/source/SongCore/Patches/AllowNegativeNoteJumpSpeedPatch.cs
 
     BeatmapObjectSpawnMovementData_Init(
         self,
         noteLinesCount,
-        startNoteJumpMovementSpeed,
-        startBpm,
-        noteJumpValueType,
-        noteJumpValue,
         jumpOffsetYProvider,
-        rightVec,
-        forwardVec
+        rightVec
     );
 }
