@@ -69,7 +69,7 @@
       },
       {
         "id": "custom-types",
-        "versionRange": "^0.17.12",
+        "versionRange": "^0.18.0",
         "additionalData": {}
       },
       {
@@ -92,6 +92,11 @@
         "additionalData": {
           "private": true
         }
+      },
+      {
+        "id": "capstone",
+        "versionRange": "^0.1.0",
+        "additionalData": {}
       }
     ]
   },
@@ -106,6 +111,77 @@
         }
       },
       "version": "0.5.0"
+    },
+    {
+      "dependency": {
+        "id": "libil2cpp",
+        "versionRange": "=0.4.0",
+        "additionalData": {
+          "headersOnly": true,
+          "compileOptions": {
+            "systemIncludes": [
+              "il2cpp/external/baselib/Include",
+              "il2cpp/external/baselib/Platforms/Android/Include"
+            ]
+          }
+        }
+      },
+      "version": "0.4.0"
+    },
+    {
+      "dependency": {
+        "id": "sombrero",
+        "versionRange": "=0.1.42",
+        "additionalData": {
+          "headersOnly": true,
+          "branchName": "version/v0_1_42"
+        }
+      },
+      "version": "0.1.42"
+    },
+    {
+      "dependency": {
+        "id": "capstone",
+        "versionRange": "=0.1.0",
+        "additionalData": {
+          "staticLinking": true,
+          "soLink": "https://github.com/sc2ad/capstone-qpm/releases/download/v0.1.0/libcapstone.a",
+          "overrideSoName": "libcapstone.a"
+        }
+      },
+      "version": "0.1.0"
+    },
+    {
+      "dependency": {
+        "id": "tinyxml2",
+        "versionRange": "=10.0.0",
+        "additionalData": {
+          "soLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/libtinyxml2.so",
+          "debugSoLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/debug_libtinyxml2.so",
+          "overrideSoName": "libtinyxml2.so",
+          "modLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/tinyxml2.qmod",
+          "branchName": "version/v10_0_0",
+          "cmake": true
+        }
+      },
+      "version": "10.0.0"
+    },
+    {
+      "dependency": {
+        "id": "kaleb",
+        "versionRange": "=0.1.9",
+        "additionalData": {
+          "headersOnly": true,
+          "branchName": "version/v0_1_9",
+          "compileOptions": {
+            "cppFlags": [
+              "-DKALEB_VERSION=\"0.1.9\""
+            ]
+          },
+          "cmake": false
+        }
+      },
+      "version": "0.1.9"
     },
     {
       "dependency": {
@@ -129,22 +205,6 @@
     },
     {
       "dependency": {
-        "id": "libil2cpp",
-        "versionRange": "=0.4.0",
-        "additionalData": {
-          "headersOnly": true,
-          "compileOptions": {
-            "systemIncludes": [
-              "il2cpp/external/baselib/Include",
-              "il2cpp/external/baselib/Platforms/Android/Include"
-            ]
-          }
-        }
-      },
-      "version": "0.4.0"
-    },
-    {
-      "dependency": {
         "id": "libcryptopp",
         "versionRange": "=8.5.0",
         "additionalData": {
@@ -159,13 +219,13 @@
     {
       "dependency": {
         "id": "custom-types",
-        "versionRange": "=0.17.13",
+        "versionRange": "=0.18.0",
         "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.13/libcustom-types.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.13/debug_libcustom-types.so",
+          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.18.0/libcustom-types.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.18.0/debug_libcustom-types.so",
           "overrideSoName": "libcustom-types.so",
-          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.13/CustomTypes.qmod",
-          "branchName": "version/v0_17_13",
+          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.18.0/CustomTypes.qmod",
+          "branchName": "version/v0_18_0",
           "compileOptions": {
             "cppFlags": [
               "-Wno-invalid-offsetof"
@@ -174,50 +234,7 @@
           "cmake": true
         }
       },
-      "version": "0.17.13"
-    },
-    {
-      "dependency": {
-        "id": "sombrero",
-        "versionRange": "=0.1.42",
-        "additionalData": {
-          "headersOnly": true,
-          "branchName": "version/v0_1_42"
-        }
-      },
-      "version": "0.1.42"
-    },
-    {
-      "dependency": {
-        "id": "beatsaber-hook",
-        "versionRange": "=6.2.0",
-        "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v6.2.0/libbeatsaber-hook.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v6.2.0/debug_libbeatsaber-hook.so",
-          "overrideSoName": "libbeatsaber-hook.so",
-          "modLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v6.2.0/beatsaber-hook.qmod",
-          "branchName": "version/v6_2_0",
-          "cmake": true
-        }
-      },
-      "version": "6.2.0"
-    },
-    {
-      "dependency": {
-        "id": "kaleb",
-        "versionRange": "=0.1.9",
-        "additionalData": {
-          "headersOnly": true,
-          "branchName": "version/v0_1_9",
-          "compileOptions": {
-            "cppFlags": [
-              "-DKALEB_VERSION=\"0.1.9\""
-            ]
-          },
-          "cmake": false
-        }
-      },
-      "version": "0.1.9"
+      "version": "0.18.0"
     },
     {
       "dependency": {
@@ -256,6 +273,21 @@
     },
     {
       "dependency": {
+        "id": "beatsaber-hook",
+        "versionRange": "=6.2.0",
+        "additionalData": {
+          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v6.2.0/libbeatsaber-hook.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v6.2.0/debug_libbeatsaber-hook.so",
+          "overrideSoName": "libbeatsaber-hook.so",
+          "modLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v6.2.0/beatsaber-hook.qmod",
+          "branchName": "version/v6_2_0",
+          "cmake": true
+        }
+      },
+      "version": "6.2.0"
+    },
+    {
+      "dependency": {
         "id": "fmt",
         "versionRange": "=11.0.2",
         "additionalData": {
@@ -275,31 +307,16 @@
     },
     {
       "dependency": {
-        "id": "tinyxml2",
-        "versionRange": "=10.0.0",
-        "additionalData": {
-          "soLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/libtinyxml2.so",
-          "debugSoLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/debug_libtinyxml2.so",
-          "overrideSoName": "libtinyxml2.so",
-          "modLink": "https://github.com/MillzyDev/NDK-tinyxml2/releases/download/v10.0.0/tinyxml2.qmod",
-          "branchName": "version/v10_0_0",
-          "cmake": true
-        }
-      },
-      "version": "10.0.0"
-    },
-    {
-      "dependency": {
         "id": "scotland2",
-        "versionRange": "=0.1.4",
+        "versionRange": "=0.1.6",
         "additionalData": {
-          "soLink": "https://github.com/sc2ad/scotland2/releases/download/v0.1.4/libsl2.so",
-          "debugSoLink": "https://github.com/sc2ad/scotland2/releases/download/v0.1.4/debug_libsl2.so",
+          "soLink": "https://github.com/sc2ad/scotland2/releases/download/v0.1.6/libsl2.so",
+          "debugSoLink": "https://github.com/sc2ad/scotland2/releases/download/v0.1.6/debug_libsl2.so",
           "overrideSoName": "libsl2.so",
-          "branchName": "version/v0_1_4"
+          "branchName": "version/v0_1_6"
         }
       },
-      "version": "0.1.4"
+      "version": "0.1.6"
     }
   ]
 }

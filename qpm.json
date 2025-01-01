@@ -31,7 +31,10 @@
       "restart": [
         "pwsh ./scripts/restart-game.ps1"
       ]
-    }
+    },
+    "qmodIncludeDirs": [],
+    "qmodIncludeFiles": [],
+    "qmodOutput": null
   },
   "dependencies": [
     {
@@ -46,7 +49,7 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^4000.*",
+      "versionRange": "4000.*",
       "additionalData": {}
     },
     {
@@ -65,7 +68,7 @@
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.17.12",
+      "versionRange": "^0.18.0",
       "additionalData": {}
     },
     {
@@ -88,6 +91,11 @@
       "additionalData": {
         "private": true
       }
+    },
+    {
+      "id": "capstone",
+      "versionRange": "^0.1.0",
+      "additionalData": {}
     }
   ]
 }
