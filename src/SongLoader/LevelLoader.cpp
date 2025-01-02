@@ -158,7 +158,7 @@ namespace SongCore::SongLoader {
             #ifdef THROW_ON_MISSING_DATA
             throw std::runtime_error(fmt::format("Map {} was missing files!", levelPath.string()));
             #else
-            WARNING("Map {} was missing files!", levelPath);
+            WARNING("Map {} was missing files!", levelPath.string());
             return nullptr;
             #endif
         }
@@ -368,6 +368,14 @@ namespace SongCore::SongLoader {
                     characteristic,
                     difficulty
                 );
+                if (fileDifficultyBeatmapsDict->ContainsKey(dictKey)) {
+                    #ifdef THROW_ON_MISSING_DATA
+                        throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty));
+                    #else
+                        WARNING("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty);
+                        continue;
+                    #endif
+                }
 
                 // This is v3 apparently so no need for a lightshow
                 fileDifficultyBeatmapsDict->Add(
