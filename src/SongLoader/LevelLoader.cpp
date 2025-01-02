@@ -40,8 +40,6 @@
 
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
 
-#define THROW_ON_MISSING_DATA
-
 namespace SongCore::SongLoader {
     void LevelLoader::ctor(GlobalNamespace::SpriteAsyncLoader* spriteAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel, GlobalNamespace::EnvironmentsListModel* environmentsListModel) {
         INVOKE_CTOR();
