@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <fstream>
 
-#include "paper/shared/utfcpp/source/utf8.h"
+#include "paper2_scotland2/shared/utfcpp/source/utf8.h"
 
 namespace SongCore::Utils {
     rapidjson::Value CachedSongData::Serialize(rapidjson::Document::AllocatorType& allocator) const {
