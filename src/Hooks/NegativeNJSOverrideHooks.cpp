@@ -10,7 +10,9 @@
 MAKE_AUTO_HOOK_MATCH(BeatmapDifficultyMethods_NoteJumpMovementSpeed, &GlobalNamespace::BeatmapDifficultyMethods::NoteJumpMovementSpeed, float, GlobalNamespace::BeatmapDifficulty difficulty, float_t noteJumpMovementSpeed, bool fastNotes)
 {
     float result = BeatmapDifficultyMethods_NoteJumpMovementSpeed(difficulty, noteJumpMovementSpeed, fastNotes);
-    if(noteJumpMovementSpeed <= -GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed)
+
+    // cordl bug causes GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed to be 0, breaking base game mapsalso
+    if(noteJumpMovementSpeed <= -0.01)
     {
         result = noteJumpMovementSpeed;
     }
