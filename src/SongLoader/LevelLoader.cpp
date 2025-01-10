@@ -883,6 +883,10 @@ namespace SongCore::SongLoader {
             WARNING("Save Data is not valid!");
             return nullptr;
         }
+        if (!saveData->difficultyBeatmapSets) {
+            WARNING("Save Data has no difficulty beatmaps!");
+            return nullptr;
+        }
         
         auto customBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>(il2cpp_array_size_t(saveData->difficultyBeatmapSets.size()));
 
