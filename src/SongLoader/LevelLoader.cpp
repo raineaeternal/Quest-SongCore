@@ -974,6 +974,10 @@ namespace SongCore::SongLoader {
             WARNING("Save Data is not valid!");
             return nullptr;
         }
+        if (!saveData->difficultyBeatmaps) {
+            WARNING("Save Data has no difficulty beatmaps!");
+            return nullptr;
+        }
 
         auto customDiffBeatmaps = ArrayW<BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap*>(il2cpp_array_size_t(saveData->difficultyBeatmaps.size()));
 
