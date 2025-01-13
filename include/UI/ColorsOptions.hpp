@@ -8,7 +8,7 @@
 #include "bsml/shared/BSML/Components/Settings/ToggleSetting.hpp"
 #include "bsml/shared/BSML/Components/ModalView.hpp"
 
-DECLARE_CLASS_CODEGEN(SongCore::UI, ColorsOptions, System::Object,
+DECLARE_CLASS_CODEGEN(SongCore::UI, ColorsOptions, System::Object) {
         DECLARE_CTOR(ctor, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController);
 
         DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::StandardLevelDetailViewController*, _levelDetailViewController);
@@ -35,4 +35,4 @@ DECLARE_CLASS_CODEGEN(SongCore::UI, ColorsOptions, System::Object,
 
         void ShowColors(CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails const& details);
         std::function<void()> onModalHide;
-)
+};

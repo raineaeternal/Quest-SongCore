@@ -234,7 +234,7 @@ namespace SongCore::SongLoader {
             songDuration,
             GlobalNamespace::PlayerSensitivityFlag::Safe,
             previewMediaData->i___GlobalNamespace__IPreviewMediaData(),
-            beatmapBasicData->i___System__Collections__Generic__IReadOnlyDictionary_2_TKey_TValue_()
+            beatmapBasicData
         );
 
         return result;
@@ -312,7 +312,7 @@ namespace SongCore::SongLoader {
             songDuration,
             GlobalNamespace::PlayerSensitivityFlag::Safe,
             previewMediaData->i___GlobalNamespace__IPreviewMediaData(),
-            beatmapBasicData->i___System__Collections__Generic__IReadOnlyDictionary_2_TKey_TValue_()
+            beatmapBasicData
         );
 
         return result;
@@ -400,6 +400,7 @@ namespace SongCore::SongLoader {
                         0,
                         0,
                         0,
+                        0,
                         ArrayW<StringW>::Empty(),
                         ArrayW<StringW>::Empty()
                     )
@@ -465,8 +466,10 @@ namespace SongCore::SongLoader {
                     nonLocalized,
                     name,
                     editable,
+                    true,
                     saberAColor,
                     saberBColor,
+                    true,
                     envColor0,
                     envColor1,
                     {1, 1, 1, 1},
@@ -567,6 +570,7 @@ namespace SongCore::SongLoader {
                         0,
                         0,
                         0,
+                        0,
                         mappers.to_array(),
                         lighters.to_array()
                     )
@@ -627,8 +631,10 @@ namespace SongCore::SongLoader {
                         false,
                         "",
                         false,
+                        true,
                         colorScheme->saberAColor,
                         colorScheme->saberBColor,
+                        true,
                         colorScheme->environmentColor0,
                         colorScheme->environmentColor1,
                         {1, 1, 1, 1},

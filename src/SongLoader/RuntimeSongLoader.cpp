@@ -9,7 +9,7 @@
 #include "config.hpp"
 #include "assets.hpp"
 
-#include "paper/shared/utfcpp/source/utf8.h"
+#include "paper2_scotland2/shared/utfcpp/source/utf8.h"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 

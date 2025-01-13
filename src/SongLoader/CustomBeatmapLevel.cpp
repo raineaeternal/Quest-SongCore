@@ -21,7 +21,7 @@ namespace SongCore::SongLoader {
         float_t songDuration,
         ::GlobalNamespace::PlayerSensitivityFlag contentRating,
         ::GlobalNamespace::IPreviewMediaData* previewMediaData,
-        ::System::Collections::Generic::IReadOnlyDictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
+        ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
     ) {
         INVOKE_CTOR();
         _ctor(
@@ -65,7 +65,7 @@ namespace SongCore::SongLoader {
         float_t songDuration,
         ::GlobalNamespace::PlayerSensitivityFlag contentRating,
         ::GlobalNamespace::IPreviewMediaData* previewMediaData,
-        ::System::Collections::Generic::IReadOnlyDictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
+        ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
     ) {
         auto level = CustomBeatmapLevel::New_ctor(
             hasPrecalculatedData,

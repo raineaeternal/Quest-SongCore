@@ -20,7 +20,7 @@ MAKE_AUTO_HOOK_MATCH(
     bool leftHanded,
     GlobalNamespace::EnvironmentEffectsFilterPreset environmentEffectsFilterPreset,
     GlobalNamespace::EnvironmentIntensityReductionOptions* environmentIntensityReductionOptions,
-    BeatSaber::PerformancePresets::PerformancePreset* performancePreset
+    ByRef<::BeatSaber::Settings::Settings> settings
 ) {
     ByPassMergeTransformForCustomLevel = beatmapLevel && beatmapLevel->levelID.starts_with(u"custom_level_");
 
@@ -31,7 +31,7 @@ MAKE_AUTO_HOOK_MATCH(
         leftHanded,
         environmentEffectsFilterPreset,
         environmentIntensityReductionOptions,
-        performancePreset
+        settings
     );
 }
 

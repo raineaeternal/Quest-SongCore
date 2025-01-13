@@ -6,7 +6,7 @@
 #include "CustomBeatmapLevel.hpp"
 #include <string>
 
-DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomLevelPack, GlobalNamespace::BeatmapLevelPack,
+DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomLevelPack, GlobalNamespace::BeatmapLevelPack) {
     DECLARE_CTOR(ctor, StringW packId, StringW packName, UnityEngine::Sprite* coverImage);
 
     public:
@@ -26,4 +26,4 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomLevelPack, GlobalNamespace::Be
 
         /// @brief sets the levels in the collection based on the inputted span
         void SetLevels(std::span<CustomBeatmapLevel* const> levels);
-)
+};

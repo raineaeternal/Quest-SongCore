@@ -48,7 +48,7 @@ namespace SongCore::SongLoader {
             _idToBeatmapLevelPack->TryAdd(packID, pack);
 
             // for every level
-            for (auto level : pack->beatmapLevels) {
+            for (auto level : pack->_beatmapLevels) {
                 auto levelID = level->levelID;
 
                 _beatmapLevelIdToBeatmapLevelPackId->TryAdd(levelID, packID);

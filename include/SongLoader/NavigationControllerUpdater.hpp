@@ -14,7 +14,7 @@
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include <vector>
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdater, System::Object, std::vector<Il2CppClass*>({classof(System::IDisposable*), classof(Zenject::IInitializable*)}),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdater, System::Object, System::IDisposable*, Zenject::IInitializable*) {
     DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &Zenject::IInitializable::Initialize);
     DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);
 
@@ -29,4 +29,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, NavigationControllerUpdat
     private:
         void SongsWillRefresh();
         void SongsLoaded(std::span<SongLoader::CustomBeatmapLevel* const> levels);
-)
+};

@@ -10,7 +10,7 @@
 #include <string>
 #include <ranges>
 
-DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Capabilities, System::Object, std::vector<Il2CppClass*>({classof(Zenject::IInitializable*), classof(System::IDisposable*)}),
+DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Capabilities, System::Object, Zenject::IInitializable*, System::IDisposable*) {
         DECLARE_OVERRIDE_METHOD_MATCH(void, Initialize, &Zenject::IInitializable::Initialize);
         DECLARE_OVERRIDE_METHOD_MATCH(void, Dispose, &System::IDisposable::Dispose);
     public:
@@ -42,4 +42,4 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Capabilities, System::Object, std::ve
         /// @brief method to register to the general API one
         void CapabilitiesUpdated(std::string_view capability, SongCore::API::Capabilities::CapabilityEventKind eventKind);
         UnorderedEventCallback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind> _capabilitiesUpdated;
-)
+};
