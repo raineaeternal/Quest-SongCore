@@ -463,15 +463,14 @@ namespace SongCore::SongLoader {
         std::string idString(lowerString(levelID));
         auto itr = _levelIdsToLevels.find(idString);
         if (itr != _levelIdsToLevels.end()) return itr->second;
-        return GetLevelByFunction([levelID](auto level){ return level->levelID == levelID; });
+        return nullptr;
     }
 
     CustomBeatmapLevel* RuntimeSongLoader::GetLevelByHash(std::string_view hash_view) {
         std::string hashString = lowerString(hash_view);
         auto itr = _hashesToLevels.find(hashString);
         if (itr != _hashesToLevels.end()) return itr->second;
-
-        return GetLevelByFunction([hashString](auto level){ return GetHashFromLevelID(lowerString(std::string(level->levelID))) == hashString; });
+        return nullptr;
     }
 
     CustomBeatmapLevel* RuntimeSongLoader::GetLevelByFunction(std::function<bool(CustomBeatmapLevel*)> searchFunction) {
