@@ -11,7 +11,7 @@ MAKE_AUTO_HOOK_MATCH(BeatmapDifficultyMethods_NoteJumpMovementSpeed, &GlobalName
 {
     float result = BeatmapDifficultyMethods_NoteJumpMovementSpeed(difficulty, noteJumpMovementSpeed, fastNotes);
 
-    if(noteJumpMovementSpeed <= GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed)
+    if(noteJumpMovementSpeed <= -GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed)
     {
         result = noteJumpMovementSpeed;
     }
