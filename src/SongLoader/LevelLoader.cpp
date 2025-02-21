@@ -536,6 +536,14 @@ namespace SongCore::SongLoader {
                 characteristic,
                 difficulty
             );
+            if (fileDifficultyBeatmapsDict->ContainsKey(dictKey)) {
+                #ifdef THROW_ON_MISSING_DATA
+                    throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty));
+                #else
+                    WARNING("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty);
+                    continue;
+                #endif
+            }
 
             fileDifficultyBeatmapsDict->Add(
                 dictKey,
