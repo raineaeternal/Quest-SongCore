@@ -213,6 +213,10 @@ namespace SongCore::SongLoader {
 
         auto previewMediaData = GetPreviewMediaData(levelPath, saveData->coverImageFilename, saveData->songFilename);
         auto [beatmapLevelData, beatmapBasicData] = GetBeatmapLevelAndBasicData(levelPath, levelId, environmentNameList, colorSchemes, saveData);
+        
+        if(beatmapBasicData->Count == 0) {
+            return nullptr;
+        }
 
         auto result = CustomBeatmapLevel::New(
             levelPath.string(),
@@ -279,6 +283,10 @@ namespace SongCore::SongLoader {
 
         auto previewMediaData = GetPreviewMediaData(levelPath, saveData->coverImageFilename, saveData->audio.songFilename);
         auto [beatmapLevelData, beatmapBasicData] = GetBeatmapLevelAndBasicData(levelPath, levelId, saveData);
+
+        if(beatmapBasicData->Count == 0) {
+            return nullptr;
+        }
 
         auto allMappers = ListW<StringW>::New();
         auto allLighters = ListW<StringW>::New();
