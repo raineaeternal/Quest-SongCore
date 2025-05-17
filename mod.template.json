@@ -6,7 +6,7 @@
   "author": "Raine & RedBrumbler",
   "version": "${version}",
   "packageId": "com.beatgames.beatsaber",
-  "packageVersion": "1.40.4_5283",
+  "packageVersion": "1.40.5_5928",
   "coverImage": "cover.jpg",
   "description": "Adds songloading, map requirement handling and related utilities to the game.",
   "dependencies": [],
