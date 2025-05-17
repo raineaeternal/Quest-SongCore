@@ -45,24 +45,24 @@
     },
     {
       "id": "paper2_scotland2",
-      "versionRange": "^4.6.1",
+      "versionRange": "^4.6.4",
       "additionalData": {}
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^4004.0.0",
+      "versionRange": "^4005.0.0",
       "additionalData": {}
     },
     {
       "id": "bsml",
-      "versionRange": "^0.4.51",
+      "versionRange": "^0.4.52",
       "additionalData": {
         "private": true
       }
     },
     {
       "id": "lapiz",
-      "versionRange": "^0.2.19",
+      "versionRange": "^0.2.20",
       "additionalData": {
         "private": true
       }
