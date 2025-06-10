@@ -33,9 +33,12 @@
         "pwsh ./scripts/restart-game.ps1"
       ]
     },
-    "qmodIncludeDirs": [],
+    "qmodIncludeDirs": [
+      "extern/libs",
+      "build"
+    ],
     "qmodIncludeFiles": [],
-    "qmodOutput": null
+    "qmodOutput": "SongCore.qmod"
   },
   "dependencies": [
     {
