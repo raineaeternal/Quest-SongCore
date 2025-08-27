@@ -87,6 +87,8 @@ namespace SongCore::SongLoader {
             return opt.value();
         } catch(std::runtime_error& e) {
             ERROR("GetSaveDataFromV3 can't Load File {}: {}!", path.string(), e.what());
+        } catch (...) {
+            ERROR("GetSaveDataFromV3 can't Load File {}: Unknown error, may be invalid JSON!", path.string());
         }
 
         // we errored out while doing things. return null
@@ -126,6 +128,8 @@ namespace SongCore::SongLoader {
             return opt.value();
         } catch(std::runtime_error& e) {
             ERROR("GetSaveDataFromV4 can't Load File {}: {}!", path.string(), e.what());
+        } catch (...) {
+            ERROR("GetSaveDataFromV4 can't Load File {}: Unknown error, may be invalid JSON!", path.string());
         }
 
         // we errored out while doing things. return null
@@ -941,6 +945,10 @@ namespace SongCore::SongLoader {
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
         doc.Parse(stringData.data());
+        if (doc.HasParseError()) {
+            WARNING("Failed to parse JSON!");
+            return nullptr;
+        }
 
         auto dataItr = doc.FindMember(u"_customData");
         if (dataItr != doc.MemberEnd()) {
@@ -1027,6 +1035,10 @@ namespace SongCore::SongLoader {
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
         doc.Parse(str.data());
+        if (doc.HasParseError()) {
+            WARNING("Failed to parse JSON!");
+            return nullptr;
+        }
 
         auto dataItr = doc.FindMember(u"customData");
         if (dataItr != doc.MemberEnd()) {

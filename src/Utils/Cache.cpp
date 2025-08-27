@@ -123,6 +123,10 @@ namespace SongCore::Utils {
 
         rapidjson::Document doc;
         doc.Parse(text);
+        if (doc.HasParseError()) {
+            WARNING("Failed to parse cached song data JSON!");
+            return false;
+        }
         auto memberEnd = doc.MemberEnd();
 
         std::unique_lock<std::shared_mutex> lock(_cacheMutex);
