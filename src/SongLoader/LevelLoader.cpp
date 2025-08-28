@@ -12,6 +12,7 @@
 #include "Utils/OggVorbis.hpp"
 #include "Utils/WavRiff.hpp"
 #include "Utils/Cache.hpp"
+#include "Utils/Errors.hpp"
 
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
@@ -36,6 +37,8 @@
 #include <filesystem>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include "beatsaber-hook/shared/rapidjson/include/rapidjson/error/en.h"
+
 #include <limits>
 
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
@@ -946,7 +949,7 @@ namespace SongCore::SongLoader {
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
         doc.Parse(stringData.data());
         if (doc.HasParseError()) {
-            WARNING("Failed to parse JSON!");
+            Utils::PrintJSONError<rapidjson::UTF16<char16_t>>(doc, "loading custom level info v2", stringData);
             return nullptr;
         }
 
@@ -1036,7 +1039,7 @@ namespace SongCore::SongLoader {
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
         doc.Parse(str.data());
         if (doc.HasParseError()) {
-            WARNING("Failed to parse JSON!");
+            Utils::PrintJSONError(doc, "loading custom level info v4", str);
             return nullptr;
         }
 

@@ -1,4 +1,5 @@
 #include "Utils/Cache.hpp"
+#include "Utils/Errors.hpp"
 #include "Utils/Hashing.hpp"
 #include "Utils/File.hpp"
 #include "logging.hpp"
@@ -124,7 +125,7 @@ namespace SongCore::Utils {
         rapidjson::Document doc;
         doc.Parse(text);
         if (doc.HasParseError()) {
-            WARNING("Failed to parse cached song data JSON!");
+            Utils::PrintJSONError<rapidjson::UTF8<>>(doc, "loading song info cache", text);
             return false;
         }
         auto memberEnd = doc.MemberEnd();
