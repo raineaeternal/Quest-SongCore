@@ -12,6 +12,7 @@
 #include "Utils/OggVorbis.hpp"
 #include "Utils/WavRiff.hpp"
 #include "Utils/Cache.hpp"
+#include "Utils/Errors.hpp"
 
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
@@ -36,6 +37,8 @@
 #include <filesystem>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include "beatsaber-hook/shared/rapidjson/include/rapidjson/error/en.h"
+
 #include <limits>
 
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
@@ -87,6 +90,8 @@ namespace SongCore::SongLoader {
             return opt.value();
         } catch(std::runtime_error& e) {
             ERROR("GetSaveDataFromV3 can't Load File {}: {}!", path.string(), e.what());
+        } catch (...) {
+            ERROR("GetSaveDataFromV3 can't Load File {}: Unknown error, may be invalid JSON!", path.string());
         }
 
         // we errored out while doing things. return null
@@ -126,6 +131,8 @@ namespace SongCore::SongLoader {
             return opt.value();
         } catch(std::runtime_error& e) {
             ERROR("GetSaveDataFromV4 can't Load File {}: {}!", path.string(), e.what());
+        } catch (...) {
+            ERROR("GetSaveDataFromV4 can't Load File {}: Unknown error, may be invalid JSON!", path.string());
         }
 
         // we errored out while doing things. return null
@@ -941,6 +948,10 @@ namespace SongCore::SongLoader {
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
         doc.Parse(stringData.data());
+        if (doc.HasParseError()) {
+            Utils::PrintJSONError<rapidjson::UTF16<char16_t>>(doc, "loading custom level info v2", stringData);
+            return nullptr;
+        }
 
         auto dataItr = doc.FindMember(u"_customData");
         if (dataItr != doc.MemberEnd()) {
@@ -1027,6 +1038,10 @@ namespace SongCore::SongLoader {
 
         rapidjson::GenericDocument<rapidjson::UTF16<char16_t>> &doc = *sharedDoc;
         doc.Parse(str.data());
+        if (doc.HasParseError()) {
+            Utils::PrintJSONError(doc, "loading custom level info v4", str);
+            return nullptr;
+        }
 
         auto dataItr = doc.FindMember(u"customData");
         if (dataItr != doc.MemberEnd()) {
