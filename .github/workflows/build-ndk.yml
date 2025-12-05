@@ -88,6 +88,12 @@ jobs:
         qpm_qmod: ${{ env.qmod_name }}.qmod
         resolve_ndk: true
 
+      # Run Rust tests
+    - name: Run Rust Tests
+      run: |
+        cd ${GITHUB_WORKSPACE}/song_load_rs
+        cargo +nightly test
+
     - name: Build & Create Qmod
       run: |
         cd ${GITHUB_WORKSPACE}
