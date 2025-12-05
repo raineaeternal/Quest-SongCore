@@ -3,11 +3,17 @@ use std::path::PathBuf;
 
 fn main() {
     // Tell cargo to look for shared libraries in the specified directory
-    // println!("cargo:rustc-link-search=/path/to/lib");
 
-    // Tell cargo to tell rustc to link the system bzip2
-    // shared library.
-    // println!("cargo:rustc-link-lib=bz2");
+    if cfg!(target_os = "android") {
+        // link to ../extern/libs
+        println!(
+            "cargo:rustc-link-search=/{}/extern/libs",
+            env::var("CARGO_MANIFEST_DIR").unwrap()
+        );
+
+        // link to paper2_scotland2
+        println!("cargo:rustc-link-lib=paper2_scotland2");
+    }
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for

@@ -19,6 +19,10 @@ zip = "6.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
+# Android aarch64 dependencies
+[target.aarch64-linux-android.features]
+default = ["paper2-logging"]
+
 [features]
 default = []
 paper2-logging = ["dep:paper2_tracing"]
