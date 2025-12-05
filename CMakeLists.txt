@@ -29,6 +29,7 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # compile options used
 add_compile_options(-frtti -fexceptions -fdeclspec -Wunknown-warning-option -fvisibility=hidden)
 add_compile_options(-O3)
+
 # compile definitions used
 add_compile_definitions(VERSION=\"${MOD_VERSION}\")
 add_compile_definitions(MOD_ID=\"${MOD_ID}\")
@@ -56,6 +57,27 @@ add_library(
 # Add any assets
 add_assets(assets_${COMPILE_ID} STATIC ${CMAKE_CURRENT_LIST_DIR}/assets ${INCLUDE_DIR}/assets.hpp)
 
+set(Rust_TOOLCHAIN "nightly")
+# set(Rust_CARGO_TARGET "aarch64-linux-android")
+include(FetchContent)
+
+FetchContent_Declare(
+        Corrosion
+        GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
+        GIT_TAG v0.6 # Optionally specify a commit hash, version tag or branch here
+)
+FetchContent_MakeAvailable(Corrosion)
+
+# Import targets defined in a package or workspace manifest `Cargo.toml` file
+corrosion_import_crate(MANIFEST_PATH song_load_rs/Cargo.toml)
+
+corrosion_experimental_cbindgen(
+        TARGET song_load_rs
+        HEADER_NAME "song_load_rs.h"
+)
+
+target_link_libraries(${COMPILE_ID} PUBLIC song_load_rs)
+
 target_include_directories(${COMPILE_ID} PRIVATE .)
 
 # add src dir as include dir
@@ -67,8 +89,6 @@ target_include_directories(${COMPILE_ID} PUBLIC ${SHARED_DIR})
 # codegen includes
 target_include_directories(${COMPILE_ID} PRIVATE ${EXTERN_DIR}/includes/${CODEGEN_ID}/include)
 
-
-target_link_libraries(${COMPILE_ID} PRIVATE -llog)
 target_link_libraries(${COMPILE_ID} PRIVATE assets_${COMPILE_ID})
 # add extern stuff like libs and other includes
 include(extern.cmake)
@@ -81,19 +101,20 @@ add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
 add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory debug
         COMMENT "Make directory for debug symbols"
-        )
+)
 
 add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E rename lib${COMPILE_ID}.so debug/lib${COMPILE_ID}.so
         COMMENT "Rename the lib to debug_ since it has debug symbols"
-        )
+)
 
 # strip debug symbols from the .so and all dependencies
 add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E rename stripped_lib${COMPILE_ID}.so lib${COMPILE_ID}.so
         COMMENT "Rename the stripped lib to regular"
-        )
-        foreach(so_file ${so_list})
+)
+
+foreach(so_file ${so_list})
         cmake_path(GET so_file FILENAME file)
 
         add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
@@ -104,12 +125,12 @@ add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
         add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
                 COMMAND ${CMAKE_STRIP} -g -S -d --strip-all ${so_file} -o ${file}
                 COMMENT "Strip debug symbols from the dependencies")
-        endforeach()
+endforeach()
 
-        foreach(a_file ${a_list})
+foreach(a_file ${a_list})
         cmake_path(GET a_file FILENAME file)
 
         add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${a_file} debug/${file}
-        COMMENT "Copy a files for ndk stack")
-        endforeach()
+                COMMAND ${CMAKE_COMMAND} -E copy ${a_file} debug/${file}
+                COMMENT "Copy a files for ndk stack")
+endforeach()
