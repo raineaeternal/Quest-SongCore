@@ -38,14 +38,14 @@ namespace SongCore::SongLoader {
 
     void NavigationControllerUpdater::SongsWillRefresh() {
         _levelFilteringNavigationController->_customLevelPacks = nullptr;
-        _levelFilteringNavigationController->____annotatedBeatmapLevelCollectionsViewController->ShowLoading();
+        _levelFilteringNavigationController->_annotatedBeatmapLevelCollectionsViewController->ShowLoading();
         _levelCollectionNavigationController->ShowLoading();
 
         _levelFilteringNavigationController->UpdateCustomSongs();
     }
 
     void NavigationControllerUpdater::SongsLoaded(std::span<SongLoader::CustomBeatmapLevel* const> levels) {
-        auto levelCollectionTableView = _levelCollectionViewController->____levelCollectionTableView;
+        auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
         auto level = levelCollectionTableView ? levelCollectionTableView->_selectedBeatmapLevel : nullptr;
         auto levelId = level ? level->levelID : "";
 
@@ -77,10 +77,10 @@ namespace SongCore::SongLoader {
             [this, levelId, scrollPosition](){
                 INFO("Selecting level '{}'", levelId);
                 // TODO: Better implement
-                auto ignoreCase = true;
+                auto ignoreCase = false;
                 auto level = _beatmapLevelsModel->GetBeatmapLevel(levelId, ignoreCase);
 
-                auto levelCollectionTableView = _levelCollectionViewController->____levelCollectionTableView;
+                auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
                 if (level && levelCollectionTableView) levelCollectionTableView->SelectLevel(level);
 
                 auto tableView = levelCollectionTableView ? levelCollectionTableView->_tableView : nullptr;

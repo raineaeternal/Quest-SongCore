@@ -60,7 +60,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &
     }
 
     custom->FixBackingDictionaries();
-    
+
     self->_allLoadedBeatmapLevelsRepository = custom;
 }
 
@@ -152,7 +152,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
-            auto errorType = System::Nullable_1<::LoadBeatmapLevelDataResult_ErrorType>();
+            auto errorType = System::Nullable_1(true, LoadBeatmapLevelDataResult_ErrorType::BeatmapLevelNotFoundInRepository);
             static auto Error = LoadBeatmapLevelDataResult(errorType, nullptr);
             auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
             if (!level || token.IsCancellationRequested) return Error;
@@ -161,7 +161,6 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &Beatmap
             return LoadBeatmapLevelDataResult::Success(data);
         }, std::forward<SongCore::CancellationToken>(token));
     }
-
     return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, beatmapLevelDataVersion, token);
 }
 
@@ -180,6 +179,14 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &
 }
 
 // override getting beatmap level if original method didn't return anything
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelsRepository_GetBeatmapLevelById, &BeatmapLevelsRepository::GetBeatmapLevelById, GlobalNamespace::BeatmapLevel*, BeatmapLevelsRepository* self, ::StringW levelId, bool ignoreCase) {
+    auto result = BeatmapLevelsRepository_GetBeatmapLevelById(self, levelId, ignoreCase);
+    if (!result && levelId.starts_with(u"custom_level_")) {
+        result = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelId));
+    }
+    return result;
+}
+
 MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_GetBeatmapLevel, &BeatmapLevelsModel::GetBeatmapLevel, BeatmapLevel*, BeatmapLevelsModel* self, StringW levelID, bool ignoreCase) {
     auto result = BeatmapLevelsModel_GetBeatmapLevel(self, levelID, ignoreCase);
     if (!result && levelID.starts_with(u"custom_level_")) {
@@ -278,6 +285,7 @@ MAKE_AUTO_HOOK_MATCH(
 // TODO: Remove when fixed.
 // Generic Patching ):
 
+/*
 using LRUCacheInst = BGLib::DotnetExtension::Collections::LRUCache_2<StringW, UnityEngine::Sprite*>;
 
 MAKE_HOOK(LRUCache_Add, nullptr, void, LRUCacheInst* self, StringW key, UnityEngine::Sprite* value, MethodInfo* methodInfo) {
@@ -296,3 +304,4 @@ struct Auto_Hook_LRUCache_Add {
     }
 };
 static Auto_Hook_LRUCache_Add Auto_Hook_Instance_LRUCache_Add;
+*/
