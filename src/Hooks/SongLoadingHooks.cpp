@@ -152,7 +152,8 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
-            static auto Error = LoadBeatmapLevelDataResult(true, nullptr);
+            auto errorType = System::Nullable_1<::LoadBeatmapLevelDataResult_ErrorType>();
+            static auto Error = LoadBeatmapLevelDataResult(errorType, nullptr);
             auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
             if (!level || token.IsCancellationRequested) return Error;
             auto data = level->beatmapLevelData;
@@ -179,8 +180,8 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &
 }
 
 // override getting beatmap level if original method didn't return anything
-MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_GetBeatmapLevel, &BeatmapLevelsModel::GetBeatmapLevel, BeatmapLevel*, BeatmapLevelsModel* self, StringW levelID) {
-    auto result = BeatmapLevelsModel_GetBeatmapLevel(self, levelID);
+MAKE_AUTO_HOOK_MATCH(BeatmapLevelsModel_GetBeatmapLevel, &BeatmapLevelsModel::GetBeatmapLevel, BeatmapLevel*, BeatmapLevelsModel* self, StringW levelID, bool ignoreCase) {
+    auto result = BeatmapLevelsModel_GetBeatmapLevel(self, levelID, ignoreCase);
     if (!result && levelID.starts_with(u"custom_level_")) {
         result = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
     }

@@ -38,14 +38,14 @@ namespace SongCore::SongLoader {
 
     void NavigationControllerUpdater::SongsWillRefresh() {
         _levelFilteringNavigationController->_customLevelPacks = nullptr;
-        _levelFilteringNavigationController->_annotatedBeatmapLevelCollectionsViewController->ShowLoading();
+        _levelFilteringNavigationController->____annotatedBeatmapLevelCollectionsViewController->ShowLoading();
         _levelCollectionNavigationController->ShowLoading();
 
         _levelFilteringNavigationController->UpdateCustomSongs();
     }
 
     void NavigationControllerUpdater::SongsLoaded(std::span<SongLoader::CustomBeatmapLevel* const> levels) {
-        auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
+        auto levelCollectionTableView = _levelCollectionViewController->____levelCollectionTableView;
         auto level = levelCollectionTableView ? levelCollectionTableView->_selectedBeatmapLevel : nullptr;
         auto levelId = level ? level->levelID : "";
 
@@ -59,7 +59,9 @@ namespace SongCore::SongLoader {
             auto pack = _levelFilteringNavigationController->selectedBeatmapLevelPack;
             if (pack) {
                 // check whether the pack was still in the beatmap levels model
-                if (_beatmapLevelsModel->GetLevelPack(pack->packID)) {
+                // TODO: Implement properly?
+                auto ignoreCase = false;
+                if (_beatmapLevelsModel->GetLevelPack(pack->packID, ignoreCase)) {
                     _levelFilteringNavigationController->_levelPackIdToBeSelectedAfterPresent = pack->packID;
                 }
                 // don't scroll back to the last position if the same pack won't be reselected
@@ -74,9 +76,11 @@ namespace SongCore::SongLoader {
             },
             [this, levelId, scrollPosition](){
                 INFO("Selecting level '{}'", levelId);
-                auto level = _beatmapLevelsModel->GetBeatmapLevel(levelId);
+                // TODO: Better implement
+                auto ignoreCase = true;
+                auto level = _beatmapLevelsModel->GetBeatmapLevel(levelId, ignoreCase);
 
-                auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
+                auto levelCollectionTableView = _levelCollectionViewController->____levelCollectionTableView;
                 if (level && levelCollectionTableView) levelCollectionTableView->SelectLevel(level);
 
                 auto tableView = levelCollectionTableView ? levelCollectionTableView->_tableView : nullptr;
