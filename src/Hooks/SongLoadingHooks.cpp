@@ -20,15 +20,20 @@
 #include "GlobalNamespace/BeatmapLevelLoader.hpp"
 #include "GlobalNamespace/BeatmapLevelDataLoader.hpp"
 #include "GlobalNamespace/FileHelpers.hpp"
+#include "GlobalNamespace/GameScenesManager.hpp"
+
+#include "custom-types/shared/coroutine.hpp"
 
 #include "System/Threading/Tasks/Task_1.hpp"
 #include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
 #include "System/Collections/Generic/IReadOnlyList_1.hpp"
 #include "System/Version.hpp"
+#include "System/GC.hpp"
 
 #include "UnityEngine/Object.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
 #include "UnityEngine/Sprite.hpp"
+#include "UnityEngine/Resources.hpp"
 
 #include "BGLib/Polyglot/Localization.hpp"
 #include "BGLib/DotnetExtension/Collections/LRUCache_2.hpp"
@@ -47,6 +52,32 @@ using namespace GlobalNamespace;
 using namespace System::Threading;
 using namespace System::Threading::Tasks;
 using namespace System::Collections::Generic;
+
+// If the garbage collector is enabled then the game changes the audio configuration, which invalidates the custom level AudioClip
+// Dont let the game run that code, instead reimplement without the audio configuration change
+// Does require game restart when changing bluetooth state (connecting/disconnecting device)
+custom_types::Helpers::Coroutine TransitionCoroutineOverride(
+    System::Collections::IEnumerator*(*orig)(GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback),
+    GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback
+) {
+    canTriggerGarbageCollector = false;
+    co_yield orig(self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, afterMinDurationCallback, extraBindingsCallback, finishCallback);
+
+    if (GameScenesManager::ShouldUnloadUnusedAssets(scenesToDismiss)) {
+        co_yield reinterpret_cast<System::Collections::IEnumerator*>(UnityEngine::Resources::UnloadUnusedAssets());
+    }
+    System::GC::Collect();
+    
+    co_return;
+}
+
+MAKE_AUTO_HOOK_MATCH(GameScenesManager_ScenesTransitionCoroutine, &GameScenesManager::ScenesTransitionCoroutine, System::Collections::IEnumerator*, GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback)
+{
+    if(canTriggerGarbageCollector)
+        return custom_types::Helpers::new_coro(TransitionCoroutineOverride(GameScenesManager_ScenesTransitionCoroutine, self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, afterMinDurationCallback, extraBindingsCallback, finishCallback));
+
+    return GameScenesManager_ScenesTransitionCoroutine(self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, afterMinDurationCallback, extraBindingsCallback, finishCallback);
+}
 
 // we return our own levels repository to which we can add packs we please
 MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::LoadAllBeatmapLevelPacks, void, BeatmapLevelsModel* self) {
