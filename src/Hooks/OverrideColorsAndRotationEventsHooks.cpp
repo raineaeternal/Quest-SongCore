@@ -8,11 +8,14 @@
 #include "GlobalNamespace/EnvironmentsListModel.hpp"
 #include "GlobalNamespace/ColorSchemeSO.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
+#include "GlobalNamespace/BeatmapBasicData.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/RecordingToolManager.hpp"
 #include "UnityEngine/Color.hpp"
 #include "System/Nullable_1.hpp"
+#include "System/ValueTuple_2.hpp"
 #include "System/Collections/Generic/IReadOnlyList_1.hpp"
+#include "System/Collections/Generic/Dictionary_2.hpp"
 
 #include "SongLoader/CustomBeatmapLevel.hpp"
 #include "CustomJSONData.hpp"
@@ -21,43 +24,37 @@
 GlobalNamespace::ColorScheme* ApplyOverrideColors(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::CustomJSONData::CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails::CustomColors const& customColors);
 
 // TODO: extract similiar code into seperate method from both these hooks
+GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::SongLoader::CustomBeatmapLevel* level, GlobalNamespace::BeatmapKey& beatmapKey);
+
 MAKE_AUTO_HOOK_MATCH(
-    StandardLevelScenesTransitionSetupDataSO_Init_1,
-    static_cast<void (GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::*)(
-            ::StringW, 
-            ::ByRef<::GlobalNamespace::BeatmapKey> ,
-            ::GlobalNamespace::BeatmapLevel* ,
-            ::GlobalNamespace::OverrideEnvironmentSettings* ,
-            ::GlobalNamespace::ColorScheme* ,
-            bool ,
-            ::GlobalNamespace::GameplayModifiers*,
-            ::GlobalNamespace::PlayerSpecificSettings*,
-            ::GlobalNamespace::PracticeSettings*,
-            ::GlobalNamespace::EnvironmentsListModel*,
-            ::GlobalNamespace::AudioClipAsyncLoader*,
-            ::GlobalNamespace::SettingsManager*,
-            ::GlobalNamespace::BeatmapDataLoader*,
-            ::GlobalNamespace::BeatmapLevelsEntitlementModel*,
-            ::StringW,
-            bool,
-            bool,
-            ::GlobalNamespace::BeatmapLevelsModel*,
-            ::GlobalNamespace::IBeatmapLevelData*,
-            ::System::Nullable_1<::GlobalNamespace::RecordingToolManager_SetupData>
-    )>(&GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init),
+    StandardLevelScenesTransitionSetupDataSO_Init,
+    &GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::Init,
     void,
     GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
-    ::StringW gameMode, ::ByRef<::GlobalNamespace::BeatmapKey> beatmapKey, ::GlobalNamespace::BeatmapLevel* beatmapLevel, ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
-    ::GlobalNamespace::ColorScheme* playerOverrideColorScheme, bool playerOverrideLightshowColors, ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
-    ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings, ::GlobalNamespace::PracticeSettings* practiceSettings, ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
-    ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader, ::GlobalNamespace::SettingsManager* settingsManager, ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
-    ::GlobalNamespace::BeatmapLevelsEntitlementModel* beatmapLevelsEntitlementModel, ::StringW backButtonText, bool useTestNoteCutSoundEffects, bool startPaused,
-    ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel, ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
+    ::StringW gameMode,
+    ::ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
+    ::GlobalNamespace::BeatmapLevel* beatmapLevel,
+    ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
+    ::GlobalNamespace::ColorScheme* playerOverrideColorScheme,
+    bool playerOverrideLightshowColors,
+    ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
+    ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+    ::GlobalNamespace::PracticeSettings* practiceSettings,
+    ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
+    ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
+    ::GlobalNamespace::SettingsManager* settingsManager,
+    ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
+    ::GlobalNamespace::BeatmapLevelsEntitlementModel* beatmapLevelsEntitlementModel,
+    ::StringW backButtonText,
+    bool useTestNoteCutSoundEffects,
+    bool startPaused,
+    ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel,
+    ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
     ::System::Nullable_1<::GlobalNamespace::RecordingToolManager_SetupData> recordingToolData
 ) {
     auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
     if (!customLevel) {
-        return StandardLevelScenesTransitionSetupDataSO_Init_1(
+        return StandardLevelScenesTransitionSetupDataSO_Init(
             self,
             gameMode,
             beatmapKey,
@@ -86,6 +83,24 @@ MAKE_AUTO_HOOK_MATCH(
     auto diff = beatmapKey->difficulty;
     bool containsRotation = characteristic->containsRotationEvents;
 
+    auto beatmapDatas = customLevel->_beatmapBasicDatas;
+    auto targetEnvironmentInfo = GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::GetEnvironmentInfo(*beatmapKey, beatmapLevel, overrideEnvironmentSettings, environmentsListModel);
+
+
+    GlobalNamespace::BeatmapBasicData* basicData;
+    auto tuple = ::System::ValueTuple_2(characteristic, diff);
+
+    // TODO: Do we still need fixup?
+    if (beatmapDatas && beatmapDatas->TryGetValue(tuple, byref(basicData))) {
+        auto target = targetEnvironmentInfo.Item2;
+        if (target.isAlive()) {
+            auto colorScheme = GetOverrideColorScheme(target->colorScheme->colorScheme, customLevel, *beatmapKey);
+            if (colorScheme != nullptr) {
+                basicData->beatmapColorScheme = colorScheme;
+            }
+        }
+    }
+
     auto customSaveDataInfoOpt = customLevel->CustomSaveDataInfo;
     if (customSaveDataInfoOpt) {
         auto& customSaveDataInfo = customSaveDataInfoOpt->get();
@@ -104,7 +119,7 @@ MAKE_AUTO_HOOK_MATCH(
         }
     }
 
-    StandardLevelScenesTransitionSetupDataSO_Init_1(
+    StandardLevelScenesTransitionSetupDataSO_Init(
         self,
         gameMode,
         beatmapKey,
@@ -133,26 +148,11 @@ MAKE_AUTO_HOOK_MATCH(
 
 // Hooks and methods to fix override color scheme stuff
 
-void FixupAndApplyColorScheme(GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self);
 void FixupAndApplyColorScheme(GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO* self);
-GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::SongLoader::CustomBeatmapLevel* level, GlobalNamespace::BeatmapKey& beatmapKey);
 
-// TODO: Fix these!!
-/*MAKE_AUTO_HOOK_MATCH(
-    StandardLevelScenesTransitionSetupDataSO_GetColorInfo,
-    &GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::GetColorInfo,
-    ::System::ValueTuple_2<bool, ::GlobalNamespace::ColorScheme*>,
-    ::GlobalNamespace::ColorScheme* playerOverrideColorScheme,
-    bool playerOverrideLightshowColors,
-    ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme,
-    ::GlobalNamespace::EnvironmentInfoSO* targetEnvironmentInfo,
-    bool usingOverrideEnvironment
-) {
-    auto returnValues = StandardLevelScenesTransitionSetupDataSO_GetColorInfo(playerOverrideColorScheme,playerOverrideLightshowColors,beatmapOverrideColorScheme,targetEnvironmentInfo,usingOverrideEnvironment);
-    //FixupAndApplyColorScheme(self);
-    return returnValues;
-}
-
+typedef ::System::ValueTuple_2<bool, ::GlobalNamespace::ColorScheme*> GetColorInfoType;
+// TODO: FIX for multiplayer!!
+/*
 MAKE_AUTO_HOOK_MATCH(
     MultiplayerLevelScenesTransitionSetupDataSO_InitColorInfo,
     &GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO::InitColorInfo,
@@ -182,23 +182,6 @@ void Fixup(GlobalNamespace::ColorScheme* colorScheme) {
     FIX_BOOST(environmentColorW);
 }
 
-void FixupAndApplyColorScheme(GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self) {
-    auto level = self->beatmapLevel;
-    auto beatmapKey = self->beatmapKey;
-
-    auto colorScheme = self->colorScheme;
-    Fixup(colorScheme);
-
-    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level).value_or(nullptr);
-    if (!customLevel) return;
-
-    auto overrideColorScheme = GetOverrideColorScheme(colorScheme, customLevel, beatmapKey);
-    if (overrideColorScheme) {
-        self->colorScheme = overrideColorScheme;
-        self->usingOverrideColorScheme = true;
-    }
-}
-
 void FixupAndApplyColorScheme(GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO* self) {
     auto level = self->beatmapLevel;
     auto beatmapKey = self->beatmapKey;
@@ -215,6 +198,7 @@ void FixupAndApplyColorScheme(GlobalNamespace::MultiplayerLevelScenesTransitionS
         self->usingOverrideColorScheme = true;
     }
 }
+
 
 GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorScheme* baseColorScheme, SongCore::SongLoader::CustomBeatmapLevel* level, GlobalNamespace::BeatmapKey& beatmapKey) {
     // if we're not allowed to apply any colors, don't do anything
