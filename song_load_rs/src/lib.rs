@@ -102,6 +102,10 @@ pub struct CSongCache {
 /// Loads a song from the given path (file or directory).
 /// If a directory is given, it will attempt to load the song from there.
 /// If a file is given, it will attempt to load the song from the zip file.
+/// 
+/// # Parameters
+/// - `path`: A pointer to a null-terminated C string representing the path to the song (zip file or directory).
+/// - `cache`: A pointer to a `CSongCache` struct representing the song cache (can be null to ignore cache).
 ///
 /// # Safety
 /// The `path` pointer must be a valid null-terminated C string.
@@ -127,6 +131,11 @@ pub unsafe extern "C" fn song_loader_load_path(
 }
 
 /// Loads all songs from the given directory.
+/// 
+/// # Parameters
+/// - `path`: A pointer to a null-terminated C string representing the path to the directory of songs
+/// - `cache`: A pointer to a `CSongCache` instance for caching (can be null to ignore cache).
+/// 
 /// # Safety
 /// The `path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
