@@ -152,6 +152,7 @@ void FixupAndApplyColorScheme(GlobalNamespace::MultiplayerLevelScenesTransitionS
 
 typedef ::System::ValueTuple_2<bool, ::GlobalNamespace::ColorScheme*> GetColorInfoType;
 // TODO: FIX for multiplayer!!
+// See git history for FixupAndApplyColorScheme
 /*
 MAKE_AUTO_HOOK_MATCH(
     MultiplayerLevelScenesTransitionSetupDataSO_InitColorInfo,
@@ -171,32 +172,6 @@ static bool operator==(UnityEngine::Color lhs, UnityEngine::Color rhs) {
         lhs.b != rhs.b &&
         lhs.a != rhs.a
     );
-}
-
-#define FIX_BOOST(colortype) if (colorScheme->_##colortype##Boost == DefaultColor) colorScheme->_##colortype##Boost = colorScheme->colortype
-
-void Fixup(GlobalNamespace::ColorScheme* colorScheme) {
-    static auto DefaultColor = ::UnityEngine::Color();
-    FIX_BOOST(environmentColor0);
-    FIX_BOOST(environmentColor1);
-    FIX_BOOST(environmentColorW);
-}
-
-void FixupAndApplyColorScheme(GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO* self) {
-    auto level = self->beatmapLevel;
-    auto beatmapKey = self->beatmapKey;
-
-    auto colorScheme = self->colorScheme;
-    Fixup(colorScheme);
-
-    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level).value_or(nullptr);
-    if (!customLevel) return;
-
-    auto overrideColorScheme = GetOverrideColorScheme(colorScheme, customLevel, beatmapKey);
-    if (overrideColorScheme) {
-        self->colorScheme = overrideColorScheme;
-        self->usingOverrideColorScheme = true;
-    }
 }
 
 
