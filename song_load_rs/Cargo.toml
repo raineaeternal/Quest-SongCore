@@ -3,6 +3,14 @@ name = "song_load_rs"
 version = "0.1.0"
 edition = "2024"
 
+[[bench]]
+name = "song_load_bench"
+harness = false
+
+[[bench]]
+name = "hash_bench"
+harness = false
+
 [lib]
 name = "song_load_rs"
 path = "src/lib.rs"
@@ -31,3 +39,6 @@ paper2-logging = ["dep:paper2_tracing"]
 [build-dependencies]
 bindgen = "0.72"
 cbindgen = "0.29"
+
+[dev-dependencies]
+criterion = "0.8"
