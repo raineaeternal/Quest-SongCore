@@ -13,11 +13,11 @@ fn load_song_from_zip_and_directory_match() -> Result<(), Box<dyn std::error::Er
     let dir_path = tests_dir.join("f4c3 (Despacito - cookie)");
 
     // Load from zip
-    let song_from_zip = song_load_rs::song_load::load_song_from_path(zip_path.clone())
+    let song_from_zip = song_load_rs::song_load::load_song_from_path(zip_path.clone(), None)
         .map_err(|e| format!("load from zip failed: {}", e))?;
 
     // Load from directory (the public API accepts both file and directory)
-    let song_from_dir = song_load_rs::song_load::load_song_from_path(dir_path.clone())
+    let song_from_dir = song_load_rs::song_load::load_song_from_path(dir_path.clone(), None)
         .map_err(|e| format!("load from dir failed: {}", e))?;
 
     // The hashes should match
@@ -36,7 +36,7 @@ fn load_song_directory_finds_songs() -> Result<(), Box<dyn std::error::Error>> {
     let tests_dir = manifest_dir.join("tests");
 
     // Use the directory-loading API which scans entries in the given folder
-    let loaded = song_load_rs::song_load::load_song_directory(&tests_dir)
+    let loaded = song_load_rs::song_load::load_song_directory(&tests_dir, None)
         .map_err(|e| format!("load_song_directory failed: {}", e))?;
 
     // Expect at least one song was found

@@ -1,9 +1,10 @@
 use std::{ffi::CStr, path::Path};
 
-use crate::song_load::LoadedSong;
+use crate::{cache::SongCache, song_load::LoadedSong};
 
 pub mod bindings;
 
+pub mod cache;
 pub mod hash;
 pub mod models;
 pub mod song_load;
@@ -93,14 +94,22 @@ impl From<CLoadedSongs> for song_load::LoadedSongs {
     }
 }
 
+#[repr(C)]
+pub struct CSongCache {
+    pub inner: Box<dyn SongCache>,
+}
+
 /// Loads a song from the given path (file or directory).
 /// If a directory is given, it will attempt to load the song from there.
 /// If a file is given, it will attempt to load the song from the zip file.
-/// 
+///
 /// # Safety
 /// The `path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn load_path(path: *const std::os::raw::c_char) -> CLoadedSong {
+pub unsafe extern "C" fn song_loader_load_path(
+    path: *const std::os::raw::c_char,
+    cache: *mut CSongCache,
+) -> CLoadedSong {
     if path.is_null() {
         panic!("Path is null");
     }
@@ -109,8 +118,10 @@ pub unsafe extern "C" fn load_path(path: *const std::os::raw::c_char) -> CLoaded
         .map(Path::new)
         .expect("Failed to convert path to str");
 
+    let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
+
     let song_load =
-        song_load::load_song_from_path(path.into()).expect("Failed to load song from path");
+        song_load::load_song_from_path(path.into(), cache).expect("Failed to load song from path");
 
     song_load.into()
 }
@@ -119,7 +130,10 @@ pub unsafe extern "C" fn load_path(path: *const std::os::raw::c_char) -> CLoaded
 /// # Safety
 /// The `path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn load_directory(path: *const std::os::raw::c_char) -> CLoadedSongs {
+pub unsafe extern "C" fn song_loader_load_directory(
+    path: *const std::os::raw::c_char,
+    cache: *mut CSongCache,
+) -> CLoadedSongs {
     if path.is_null() {
         panic!("Path is null");
     }
@@ -127,16 +141,21 @@ pub unsafe extern "C" fn load_directory(path: *const std::os::raw::c_char) -> CL
         .to_str()
         .map(Path::new)
         .expect("Failed to convert path to str");
-    let songs = song_load::load_song_directory(path)
-        .expect("Failed to load song directory");
+
+    let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
+
+    let songs = song_load::load_song_directory(path, cache).expect("Failed to load song directory");
 
     let c_loaded_songs: CLoadedSongs = songs.into();
     c_loaded_songs
 }
 
-pub extern "C" fn free_loaded_song(loaded_song: CLoadedSong) {
+#[unsafe(no_mangle)]
+pub extern "C" fn song_loader_free_loaded_song(loaded_song: CLoadedSong) {
     let _ = LoadedSong::from(loaded_song);
 }
-pub extern "C" fn free_loaded_songs(loaded_songs: CLoadedSongs) {
+
+#[unsafe(no_mangle)]
+pub extern "C" fn song_loader_free_loaded_songs(loaded_songs: CLoadedSongs) {
     let _ = song_load::LoadedSongs::from(loaded_songs);
 }
