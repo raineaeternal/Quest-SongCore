@@ -49,7 +49,7 @@ namespace SongCore::UI {
 
         _pos = UnityEngine::Vector3(0, 0.05f, 3);
         _rot = UnityEngine::Vector3(90, 0, 0);
-        _scale = UnityEngine::Vector3(0.02f, 0.02f, 0.0f);
+        _scale = UnityEngine::Vector3(0.02f, 0.02f, 0.02f);
 
         _canvasScale = UnityEngine::Vector2(100, 50);
         _authorNamePos = UnityEngine::Vector2(10, 31);
@@ -105,6 +105,8 @@ namespace SongCore::UI {
 
         _canvas = gameObject->AddComponent<UnityEngine::Canvas *>();
         _canvasGroup = gameObject->AddComponent<UnityEngine::CanvasGroup*>();
+        _curvedCanvasSettings = gameObject->AddComponent<HMUI::CurvedCanvasSettings*>();
+        _curvedCanvasSettings->_radius = 0.0f;
         _canvasGroup->alpha = 0.0f;
         _canvas->renderMode = UnityEngine::RenderMode::WorldSpace;
         _canvas->enabled = true;
@@ -165,7 +167,7 @@ namespace SongCore::UI {
         _headerText->text = message;
         _canvas->enabled = true;
         _showingMessage = true;
-        ShowCanvasForSeconds(5);
+        ShowCanvasForSeconds(time);
     }
 
     void ProgressBar::ShowCanvasForSeconds(float time) {
