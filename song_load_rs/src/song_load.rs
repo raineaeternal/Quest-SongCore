@@ -1,9 +1,13 @@
 use std::path::{Path, PathBuf};
 
 use rayon::iter::{ParallelBridge, ParallelIterator};
+use thiserror::Error;
 use tracing::warn;
 
-use crate::{cache::SongCache, hash::compute_custom_level_from_path};
+use crate::{
+    cache::{CacheError, SongCache},
+    hash::compute_custom_level_from_path,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LoadedSong {
@@ -16,19 +20,31 @@ pub struct LoadedSongs {
     pub songs: Vec<LoadedSong>,
 }
 
+#[derive(Debug, Error)]
+pub enum LoadSongError {
+    #[error("Path does not exist")]
+    PathDoesNotExist(PathBuf),
+    #[error("Failed to compute hash: {0}")]
+    ComputeHashError(String),
+    #[error("Cache error: {0}")]
+    CacheError(#[from] CacheError),
+
+    #[error("I/O error: {0}")]
+    IoError(#[from] std::io::Error),
+}
+
 pub fn load_song_from_path(
     path: PathBuf,
     mut cache: Option<&mut dyn SongCache>,
-) -> Result<LoadedSong, String> {
+) -> Result<LoadedSong, LoadSongError> {
     if !path.exists() {
-        return Err("Path does not exist".to_owned());
+        return Err(LoadSongError::PathDoesNotExist(path));
     }
 
     let cached_hash = cache
         .as_mut()
         .map(|c| c.get_cached_song(&path))
-        .transpose()
-        .map_err(|s| format!("{s}"))?
+        .transpose()?
         .flatten();
 
     // Return cached hash if available
@@ -36,17 +52,13 @@ pub fn load_song_from_path(
         return Ok(cached);
     }
 
-    let hash = match compute_custom_level_from_path(&path.to_path_buf()) {
-        Ok(hash) => hash,
-        Err(e) => return Err(format!("Failed to compute hash: {}", e)),
-    };
+    let hash = compute_custom_level_from_path(&path.to_path_buf())?;
 
     if let Some(c) = cache {
         c.cache_song(LoadedSong {
             hash: hash.clone(),
             path: path.clone(),
-        })
-        .map_err(|s| format!("{s}"))?;
+        })?;
     }
 
     Ok(LoadedSong { hash, path })
@@ -59,14 +71,13 @@ pub fn load_song_from_path(
 pub fn load_song_directory(
     path: &std::path::Path,
     cache: Option<&mut dyn SongCache>,
-) -> Result<LoadedSongs, String> {
+) -> Result<LoadedSongs, LoadSongError> {
     if !path.exists() || !path.is_dir() {
-        return Err("Path does not exist or is not a directory".to_owned());
+        return Err(LoadSongError::PathDoesNotExist(path.to_path_buf()));
     }
 
     // read_dir is fine here, we don't need recursion
-    let loaded_songs: Vec<LoadedSong> = std::fs::read_dir(path)
-        .map_err(|e| e.to_string())?
+    let loaded_songs: Vec<LoadedSong> = std::fs::read_dir(path)?
         .filter_map(|entry| {
             let entry = entry.ok()?;
             let path = entry.path();
@@ -85,8 +96,7 @@ pub fn load_song_directory(
 
     // cache
     if let Some(c) = cache {
-        c.cache_songs(loaded_songs.clone())
-            .map_err(|s| format!("{s}"))?;
+        c.cache_songs(loaded_songs.clone())?;
     }
 
     Ok(LoadedSongs {
@@ -101,14 +111,13 @@ pub fn load_song_directory(
 pub fn load_song_directory_parallel(
     path: &Path,
     cache: Option<&mut dyn SongCache>,
-) -> Result<LoadedSongs, String> {
+) -> Result<LoadedSongs, LoadSongError> {
     if !path.exists() || !path.is_dir() {
-        return Err("Path does not exist or is not a directory".to_owned());
+        return Err(LoadSongError::PathDoesNotExist(path.to_path_buf()));
     }
 
     // Compute hashes in parallel but do not touch the mutable cache from the parallel closure.
-    let loaded_songs: Vec<LoadedSong> = std::fs::read_dir(path)
-        .map_err(|e| e.to_string())?
+    let loaded_songs: Vec<LoadedSong> = std::fs::read_dir(path)?
         .par_bridge()
         .filter_map(|entry| {
             let entry = entry.ok()?;
@@ -125,8 +134,7 @@ pub fn load_song_directory_parallel(
 
     // Cache songs sequentially to avoid moving a mutable reference into the parallel closure.
     if let Some(c) = cache {
-        c.cache_songs(loaded_songs.clone())
-            .map_err(|s| format!("{s}"))?;
+        c.cache_songs(loaded_songs.clone())?;
     }
 
     Ok(LoadedSongs {
