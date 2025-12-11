@@ -22,15 +22,9 @@ pub trait SongCache: Send + Sync {
     fn reset_song_cache(&mut self, song_path: &Path) -> Result<(), CacheError>;
 
     /// Caches the loaded song data for the given song path.
-    fn cache_song(
-        &mut self,
-        loaded_song_data: LoadedSong,
-    ) -> Result<(), CacheError>;
+    fn cache_song(&mut self, loaded_song_data: LoadedSong) -> Result<(), CacheError>;
 
-    fn cache_songs(
-        &mut self,
-        loaded_songs: Vec<LoadedSong>,
-    ) -> Result<(), CacheError> {
+    fn cache_songs(&mut self, loaded_songs: Vec<LoadedSong>) -> Result<(), CacheError> {
         for song in loaded_songs {
             self.cache_song(song)?;
         }
@@ -38,8 +32,5 @@ pub trait SongCache: Send + Sync {
     }
 
     /// Retrieves the cached loaded song data for the given song path, if it exists.
-    fn get_cached_song(
-        &self,
-        song_path: &Path,
-    ) -> Result<Option<LoadedSong>, CacheError>;
+    fn get_cached_song(&self, song_path: &Path) -> Result<Option<LoadedSong>, CacheError>;
 }

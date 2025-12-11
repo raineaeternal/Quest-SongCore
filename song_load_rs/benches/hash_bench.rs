@@ -14,9 +14,12 @@ fn bench_hash_from_zip(c: &mut Criterion) {
         .join("tests")
         .join("f4c3 (Despacito - cookie).zip");
 
+    let beatmap =
+        song_load_rs::beatmap::Beatmap::from_path(&zip_path).expect("load beatmap from zip");
+
     c.bench_function("hash_from_zip", |b| {
         b.iter(|| {
-            let hash = song_load_rs::hash::compute_custom_level_from_path(&zip_path)
+            let hash = song_load_rs::hash::compute_custom_level_hash_from_beatmap(&beatmap)
                 .expect("compute hash from zip failed");
             std::hint::black_box(hash);
         })
@@ -27,9 +30,12 @@ fn bench_hash_from_dir(c: &mut Criterion) {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let dir_path = manifest_dir.join("tests").join("f4c3 (Despacito - cookie)");
 
+    let beatmap =
+        song_load_rs::beatmap::Beatmap::from_path(&dir_path).expect("load beatmap from dir");
+
     c.bench_function("hash_from_dir", |b| {
         b.iter(|| {
-            let hash = song_load_rs::hash::compute_custom_level_from_path(&dir_path)
+            let hash = song_load_rs::hash::compute_custom_level_hash_from_beatmap(&beatmap)
                 .expect("compute hash from dir failed");
             std::hint::black_box(hash);
         })
@@ -44,11 +50,10 @@ fn bench_create_sha1_in_memory(c: &mut Criterion) {
     let info_path = dir_path.join("Info.dat");
     let info_bytes = std::fs::read(&info_path).expect("read Info.dat");
     let info_contents = String::from_utf8(info_bytes.clone()).expect("info utf8");
-    let info_dat: InfoDat =
-        serde_json::from_str(&info_contents).expect("parse info dat");
+    let info_dat: InfoDat = serde_json::from_str(&info_contents).expect("parse info dat");
 
     let files_vec: Vec<(std::path::PathBuf, bytes::Bytes)> =
-        song_load_rs::hash::necessary_files_from_info_dat(&dir_path, &info_dat)
+        song_load_rs::hash::necessary_files_from_info_dat(&info_dat)
             .into_iter()
             .filter_map(|p| {
                 let full = dir_path.join(&p);

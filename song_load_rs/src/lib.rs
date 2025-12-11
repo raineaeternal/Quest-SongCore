@@ -4,8 +4,11 @@ use crate::{cache::SongCache, song_load::LoadedSong};
 
 pub mod bindings;
 
-pub mod cache;
+pub mod audio_load;
 pub mod hash;
+
+pub mod beatmap;
+pub mod cache;
 pub mod models;
 pub mod song_load;
 
@@ -23,6 +26,8 @@ pub extern "C" fn hello_from_rust() {
 pub struct CLoadedSong {
     pub path: *const std::os::raw::c_char,
     pub hash: *const std::os::raw::c_char,
+    pub duration_secs: u64,
+    pub duration_nanos: u32,
 }
 
 #[repr(C)]
@@ -40,6 +45,14 @@ impl From<song_load::LoadedSong> for CLoadedSong {
         CLoadedSong {
             path: c_path.into_raw(),
             hash: c_hash.into_raw(),
+            duration_secs: loaded_song
+                .song_length
+                .map(|d| d.as_secs())
+                .unwrap_or(u64::MAX),
+            duration_nanos: loaded_song
+                .song_length
+                .map(|d| d.subsec_nanos())
+                .unwrap_or(u32::MAX),
         }
     }
 }
@@ -73,9 +86,21 @@ impl From<CLoadedSong> for song_load::LoadedSong {
         let path_str = path_cstr.to_str().unwrap().to_owned();
         let hash_str = hash_cstr.to_str().unwrap().to_owned();
 
+        let duration = if c_loaded_song.duration_nanos != u32::MAX
+            && c_loaded_song.duration_secs != u64::MAX
+        {
+            Some(std::time::Duration::new(
+                c_loaded_song.duration_secs,
+                c_loaded_song.duration_nanos,
+            ))
+        } else {
+            None
+        };
+
         song_load::LoadedSong {
             hash: hash_str,
             path: std::path::PathBuf::from(path_str),
+            song_length: duration,
         }
     }
 }
@@ -102,7 +127,7 @@ pub struct CSongCache {
 /// Loads a song from the given path (file or directory).
 /// If a directory is given, it will attempt to load the song from there.
 /// If a file is given, it will attempt to load the song from the zip file.
-/// 
+///
 /// # Parameters
 /// - `path`: A pointer to a null-terminated C string representing the path to the song (zip file or directory).
 /// - `cache`: A pointer to a `CSongCache` struct representing the song cache (can be null to ignore cache).
@@ -131,11 +156,11 @@ pub unsafe extern "C" fn song_loader_load_path(
 }
 
 /// Loads all songs from the given directory.
-/// 
+///
 /// # Parameters
 /// - `path`: A pointer to a null-terminated C string representing the path to the directory of songs
 /// - `cache`: A pointer to a `CSongCache` instance for caching (can be null to ignore cache).
-/// 
+///
 /// # Safety
 /// The `path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]

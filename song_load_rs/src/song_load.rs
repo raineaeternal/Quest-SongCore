@@ -1,18 +1,27 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use thiserror::Error;
 use tracing::warn;
 
 use crate::{
+    audio_load,
+    beatmap::Beatmap,
     cache::{CacheError, SongCache},
-    hash::compute_custom_level_from_path,
+    hash::compute_custom_level_hash_from_beatmap,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LoadedSong {
+    /// Path to the song
     pub path: PathBuf,
+    /// SHA1 hash of the song's contents
     pub hash: String,
+    /// Optional length of the song if known
+    pub song_length: Option<Duration>,
 }
 
 #[derive(Clone)]
@@ -24,8 +33,13 @@ pub struct LoadedSongs {
 pub enum LoadSongError {
     #[error("Path does not exist")]
     PathDoesNotExist(PathBuf),
+
     #[error("Failed to compute hash: {0}")]
     ComputeHashError(String),
+
+    #[error("Audio processing error: {0}")]
+    AudioError(Box<dyn std::error::Error>),
+
     #[error("Cache error: {0}")]
     CacheError(#[from] CacheError),
 
@@ -52,16 +66,26 @@ pub fn load_song_from_path(
         return Ok(cached);
     }
 
-    let hash = compute_custom_level_from_path(&path.to_path_buf())?;
+    let beatmap = Beatmap::from_path(&path)?;
+
+    let hash = compute_custom_level_hash_from_beatmap(&beatmap)?;
+    let song_length = audio_load::get_song_length(&beatmap).map_err(|e| {
+        LoadSongError::ComputeHashError(format!("Failed to get song length: {}", e))
+    })?;
 
     if let Some(c) = cache {
         c.cache_song(LoadedSong {
             hash: hash.clone(),
             path: path.clone(),
+            song_length,
         })?;
     }
 
-    Ok(LoadedSong { hash, path })
+    Ok(LoadedSong {
+        hash,
+        path,
+        song_length,
+    })
 }
 
 /// Loads all songs from the given directory.
@@ -122,13 +146,16 @@ pub fn load_song_directory_parallel(
         .filter_map(|entry| {
             let entry = entry.ok()?;
             let path = entry.path();
-            match compute_custom_level_from_path(&path) {
-                Ok(hash) => Some(LoadedSong { hash, path }),
+            // we cache later in bulk
+            let song_data = match load_song_from_path(entry.path(), None) {
+                Ok(data) => data,
                 Err(e) => {
                     warn!("Failed to load song from path {:?}: {}", path, e);
-                    None
+                    return None;
                 }
-            }
+            };
+
+            Some(song_data)
         })
         .collect();
 

@@ -14,6 +14,7 @@ fn mem_cache_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
     let song = song_load_rs::song_load::LoadedSong {
         path: path.clone(),
         hash: "deadbeef".to_string(),
+        song_length: None,
     };
 
     // Initially the cache should not contain the song
@@ -39,10 +40,12 @@ fn mem_cache_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
     let s1 = song_load_rs::song_load::LoadedSong {
         path: PathBuf::from("/tmp/a"),
         hash: "a".into(),
+        song_length: None,
     };
     let s2 = song_load_rs::song_load::LoadedSong {
         path: PathBuf::from("/tmp/b"),
         hash: "b".into(),
+        song_length: None,
     };
     cache.cache_song(s1)?;
     cache.cache_song(s2)?;
