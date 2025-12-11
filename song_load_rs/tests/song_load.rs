@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
+use song_load_rs::audio_load;
+use song_load_rs::beatmap::Beatmap;
 use song_load_rs::cache::SongCache;
+use std::time::Duration;
 
 // Smoke tests for the public `song_load` APIs that exercise loading from
 // a zip file and a directory under the repository `tests/` folder.
@@ -29,6 +32,25 @@ fn load_song_from_zip_and_directory_match() -> Result<(), Box<dyn std::error::Er
     let expected = "4ed18607aee125f57cce73b45fc3934bbc899860";
     assert_eq!(song_from_zip.hash, expected);
 
+    // Expected duration: 3 minutes 48 seconds == 228 seconds
+    // Allow a small tolerance to account for decoder fractional differences.
+    let expected = 228.0_f64;
+    let tol = 2.0_f64; // seconds
+    let measured_dir = song_from_dir.song_length.unwrap_or_default().as_secs_f64();
+    let measured_zip = song_from_zip.song_length.unwrap_or_default().as_secs_f64();
+    assert!(
+        (measured_dir - expected).abs() <= tol,
+        "unexpected duration (secs): {} (allowed ±{}s)",
+        measured_zip,
+        tol
+    );
+    assert!(
+        (measured_zip - expected).abs() <= tol,
+        "unexpected duration (secs): {} (allowed ±{}s)",
+        measured_zip,
+        tol
+    );
+
     Ok(())
 }
 
@@ -51,6 +73,16 @@ fn load_song_directory_finds_songs() -> Result<(), Box<dyn std::error::Error>> {
     let expected = "4ed18607aee125f57cce73b45fc3934bbc899860";
     let found = loaded.songs.iter().all(|s| s.hash == expected);
     assert!(found, "expected test song hash not found in loaded songs");
+
+    // Also assert the directory audio length matches 3:48
+
+    let tol = 2.0_f64;
+    let expected = 228.0_f64;
+    let in_range = loaded
+        .songs
+        .iter()
+        .all(|s| (s.song_length.unwrap_or_default().as_secs_f64() - expected).abs() <= tol);
+    assert!(in_range, "dir length mismatch (allowed ±{}s)", tol);
 
     Ok(())
 }
