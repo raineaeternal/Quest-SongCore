@@ -1,0 +1,172 @@
+#include "song_load_rs.h"
+#include <span>
+
+namespace SongCore {
+/// A loaded song returned from Rust.
+/// Manages the memory of the underlying CLoadedSong.
+struct LoadedSong {
+  CLoadedSong song;
+
+  // take ownership
+  explicit LoadedSong(const CLoadedSong &song) : song(song) {}
+
+  // copying is disabled
+  LoadedSong(const LoadedSong &) = delete;
+  LoadedSong &operator=(const LoadedSong &) = delete;
+
+  // moving is enabled
+  LoadedSong(LoadedSong &&other) noexcept : song(other.song) {
+    other.song.path = nullptr;
+    other.song.hash = nullptr;
+    other.song.duration_secs = 0;
+    other.song.duration_nanos = 0;
+  }
+  LoadedSong &operator=(LoadedSong &&other) noexcept {
+    if (this == &other)
+      return *this;
+    // Free existing resources if necessary
+    if (song.path) {
+      song_loader_free_loaded_song(song);
+    }
+    song = other.song;
+    other.song.path = nullptr;
+    other.song.hash = nullptr;
+    other.song.duration_secs = 0;
+    other.song.duration_nanos = 0;
+
+    return *this;
+  }
+
+  ~LoadedSong() {
+    if (song.path) {
+      song_loader_free_loaded_song(song);
+    }
+  }
+
+  // simple equality check based on fields
+  [[nodiscard]]
+  bool operator==(const LoadedSong &other) const {
+    return song.path == other.song.path &&
+           song.hash == other.song.hash &&
+           song.duration_secs == other.song.duration_secs &&
+           song.duration_nanos == other.song.duration_nanos;
+  }
+
+  [[nodiscard]]
+  static LoadedSong from_path(const char *path,
+                                 CSongCache *cache = nullptr) {
+    CLoadedSong c_song = song_loader_load_path(path, cache);
+    return LoadedSong(c_song);
+  }
+
+  [[nodiscard]]
+  std::string_view get_path() const {
+    return std::string_view(song.path);
+  }
+
+  [[nodiscard]]
+  std::string_view get_hash() const {
+    return std::string_view(song.hash);
+  }
+
+  [[nodiscard]]
+  uint64_t get_duration_secs() const {
+    return song.duration_secs;
+  }
+
+  [[nodiscard]]
+  uint32_t get_duration_nanos() const {
+    return song.duration_nanos;
+  }
+
+  [[nodiscard]]
+  std::chrono::duration<float> get_duration() const {
+    return std::chrono::seconds(song.duration_secs) +
+           std::chrono::nanoseconds(song.duration_nanos);
+  }
+
+  [[nodiscard]]
+  operator CLoadedSong() const {
+    return song;
+  }
+
+  [[nodiscard]]
+  CLoadedSong const *operator->() const {
+    return &song;
+  }
+
+  [[nodiscard]]
+  CLoadedSong *operator->() {
+    return &song;
+  }
+};
+
+/// A collection of loaded songs returned from Rust.
+/// Manages the memory of the underlying CLoadedSongs.
+struct LoadedSongs {
+  CLoadedSongs songs;
+
+  // take ownership
+  explicit LoadedSongs(const CLoadedSongs &songs) : songs(songs) {}
+
+  // copying is disabled
+  LoadedSongs(const LoadedSongs &) = delete;
+  LoadedSongs &operator=(const LoadedSongs &) = delete;
+
+  // moving is enabled
+  LoadedSongs(LoadedSongs &&other) noexcept : songs(other.songs) {
+    other.songs.songs = nullptr;
+    other.songs.count = 0;
+  }
+  LoadedSongs &operator=(LoadedSongs &&other) noexcept {
+    if (this == &other)
+      return *this;
+    // Free existing resources if necessary
+    if (songs.songs) {
+      song_loader_free_loaded_songs(songs);
+    }
+    songs = other.songs;
+    other.songs.songs = nullptr;
+    other.songs.count = 0;
+
+    return *this;
+  }
+
+  ~LoadedSongs() {
+    if (songs.songs) {
+      song_loader_free_loaded_songs(songs);
+    }
+  }
+
+  // simple equality check based on pointer and count
+  [[nodiscard]]
+  bool operator==(const LoadedSongs &other) const {
+    if (songs.songs != other.songs.songs) {
+      return false;
+    }
+    if (songs.count != other.songs.count) {
+      return false;
+    }
+
+    return true;
+  }
+
+  [[nodiscard]]
+  LoadedSongs static from_directory(const char *path,
+                                       CSongCache *cache = nullptr) {
+    CLoadedSongs c_songs = song_loader_load_directory(path, cache);
+    return LoadedSongs(c_songs);
+  }
+
+  [[nodiscard]]
+  std::span<const LoadedSong> as_span() const {
+    return std::span<const LoadedSong>(
+        reinterpret_cast<const LoadedSong *>(songs.songs), songs.count);
+  }
+
+  [[nodiscard]]
+  std::span<const LoadedSong> operator->() const {
+    return as_span();
+  }
+};
+} // namespace SongCore
