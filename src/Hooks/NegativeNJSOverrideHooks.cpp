@@ -15,7 +15,7 @@ MAKE_AUTO_HOOK_MATCH(VariableMovementDataProvider_ManualUpdate, &GlobalNamespace
 {
     /* Transpiler Start */
     auto noteJumpSpeed = self->_initNoteJumpMovementSpeed + self->_relativeNoteJumpSpeedInterpolation.GetValue(songTime);
-    self->_targetNoteJumpMovementSpeed = self->_initNoteJumpMovementSpeed > 0 ?  std::max(noteJumpSpeed, GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed) : std::min(noteJumpSpeed, -GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed);
+    self->_targetNoteJumpMovementSpeed = self->_initNoteJumpMovementSpeed > 0 ? std::max(noteJumpSpeed, GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed) : std::min(noteJumpSpeed, -GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed);
     /* Transpiler End */
     self->wasUpdatedThisFrame = false;
     if(!UnityEngine::Mathf::Approximately(self->_prevNoteJumpMovementSpeed, self->_targetNoteJumpMovementSpeed))
@@ -32,7 +32,7 @@ MAKE_AUTO_HOOK_MATCH(VariableMovementDataProvider_ManualUpdate, &GlobalNamespace
         self->_waitingDuration = self->_spawnAheadTime - 0.5f - self->_halfJumpDuration;
         self->_jumpDistance = self->_noteJumpMovementSpeed * self->_jumpDuration;
         self->_halfJumpDistance = self->_jumpDistance * 0.5f;
-        self->_moveStartPosition = UnityEngine::Vector3::op_Addition(self->_centerPosition, UnityEngine::Vector3::op_Multiply(self->_forwardVector, 200.0f + self->_halfJumpDistance));
+        self->_moveStartPosition = UnityEngine::Vector3::op_Addition(self->_centerPosition, UnityEngine::Vector3::op_Multiply(self->_forwardVector, 100.0f + self->_halfJumpDistance));
         self->_moveEndPosition = UnityEngine::Vector3::op_Addition(self->_centerPosition, UnityEngine::Vector3::op_Multiply(self->_forwardVector, self->_halfJumpDistance));
         self->_jumpEndPosition = UnityEngine::Vector3::op_Subtraction(self->_centerPosition, UnityEngine::Vector3::op_Multiply(self->_forwardVector, self->_halfJumpDistance));
     }
