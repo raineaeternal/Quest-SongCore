@@ -24,7 +24,9 @@ MAKE_AUTO_HOOK_MATCH(VariableMovementDataProvider_ManualUpdate, &GlobalNamespace
 {
     /* Transpiler Start */
     auto noteJumpSpeed = self->_initNoteJumpMovementSpeed + self->_relativeNoteJumpSpeedInterpolation.GetValue(songTime);
-    self->_targetNoteJumpMovementSpeed = self->_initNoteJumpMovementSpeed > 0 ? std::max(noteJumpSpeed, GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed) : std::min(noteJumpSpeed, -GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed);
+    auto positiveNoteJumpMovementSpeed = std::max(noteJumpSpeed, GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed);
+    auto negativeNoteJumpMovementSpeed = std::min(noteJumpSpeed, -GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed);
+    self->_targetNoteJumpMovementSpeed = self->_initNoteJumpMovementSpeed > 0 ? positiveNoteJumpMovementSpeed : negativeNoteJumpMovementSpeed;
     /* Transpiler End */
     self->wasUpdatedThisFrame = false;
     if(!UnityEngine::Mathf::Approximately(self->_prevNoteJumpMovementSpeed, self->_targetNoteJumpMovementSpeed))
