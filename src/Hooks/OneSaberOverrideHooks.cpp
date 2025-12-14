@@ -1,3 +1,5 @@
+#include <GlobalNamespace/VariableMovementDataProvider.hpp>
+
 #include "hooking.hpp"
 #include "logging.hpp"
 #include "config.hpp"
@@ -6,11 +8,19 @@
 #include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicCollection.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
+#include "GlobalNamespace/BeatmapBasicData.hpp"
+#include "GlobalNamespace/BeatmapObjectSpawnController.hpp"
 #include "SongLoader/CustomBeatmapLevel.hpp"
 #include "CustomJSONData.hpp"
 
+GlobalNamespace::BeatmapBasicData* difficultyBeatmapData = nullptr;
 MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::GameplayCoreInstaller::InstallBindings, void, GlobalNamespace::GameplayCoreInstaller* self) {
     // if override is disabledl, just run orig and nothing else
+
+    GlobalNamespace::BeatmapKey beatmapKey_tmp = self->_sceneSetupData->beatmapKey;
+    GlobalNamespace::BeatmapLevel* beatmapLevel = self->_sceneSetupData->beatmapLevel;
+    difficultyBeatmapData = beatmapLevel->GetDifficultyBeatmapData(beatmapKey_tmp.beatmapCharacteristic, beatmapKey_tmp.difficulty);
+
     if (config.disableOneSaberOverride) return GameplayCoreInstaller_InstallBindings(self);
 
     auto sceneSetupData = self->_sceneSetupData;
@@ -41,4 +51,20 @@ MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::Ga
     characteristic->_numberOfColors = saberCount;
     GameplayCoreInstaller_InstallBindings(self);
     characteristic->_numberOfColors = origCount;
+}
+
+
+MAKE_AUTO_HOOK_MATCH(BeatmapObjectSpawnController_Start, &GlobalNamespace::BeatmapObjectSpawnController::Start, void, GlobalNamespace::BeatmapObjectSpawnController* self) {
+    if (difficultyBeatmapData == nullptr) {
+        return BeatmapObjectSpawnController_Start(self);
+    }
+
+    auto noteJumpMovementSpeed = difficultyBeatmapData->noteJumpMovementSpeed;
+
+    if(noteJumpMovementSpeed <= -GlobalNamespace::VariableMovementDataProvider::kMinNoteJumpMovementSpeed)
+    {
+        self->_initData->noteJumpMovementSpeed = noteJumpMovementSpeed;
+    }
+
+    BeatmapObjectSpawnController_Start(self);
 }
