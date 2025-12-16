@@ -89,12 +89,23 @@ MAKE_AUTO_HOOK_MATCH(GameScenesManager_ScenesTransitionCoroutine, &GameScenesMan
 // Without this patch, one can get the game to have no audio after restarting the map several times.
 MAKE_AUTO_HOOK_MATCH(LevelScenesTransitionSetupDataSO_BeforeScenesWillBeActivatedAsync, &LevelScenesTransitionSetupDataSO::BeforeScenesWillBeActivatedAsync, ::System::Threading::Tasks::Task* , LevelScenesTransitionSetupDataSO* self) {
     UnityEngine::AudioSettings::Reset(UnityEngine::AudioSettings::GetConfiguration());
-    auto sceneSetupData = self->gameplayCoreSceneSetupData;
 
+    auto sceneSetupData = self->gameplayCoreSceneSetupData;
+    AudioClipAsyncLoader* audioClipLoader = sceneSetupData->_audioClipAsyncLoader;
+
+    // Clear cache of AudioClip for current loading beatmap, only if it is a custom level.
     if (auto levelID = sceneSetupData->beatmapLevel->levelID; levelID.starts_with(u"custom_level")) {
-        auto audioClipLoader = sceneSetupData->_audioClipAsyncLoader;
+        // Get path of current loading Beatmap
+        const auto customLevel = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+        auto songAudioClipPath = ((FileSystemBeatmapLevelData*)customLevel->beatmapLevelData)->songAudioClipPath;
+
+        // Fetch Beatmap AudioClip cache key.
+        auto cacheKey = audioClipLoader->GetCacheKey(songAudioClipPath);
+
+        // Remove current Beatmap AudioClip from Cache to load a new one.
         auto audioClipCache = (ReferenceCountingCache_2<int32_t, Task_1<::UnityW<::UnityEngine::AudioClip>>*>*)audioClipLoader->_cache;
-        audioClipCache->_items->Clear();
+        audioClipCache->_referencesCount->Remove(cacheKey);
+        audioClipCache->_items->Remove(cacheKey);
     }
 
     return LevelScenesTransitionSetupDataSO_BeforeScenesWillBeActivatedAsync(self);
