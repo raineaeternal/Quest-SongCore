@@ -100,6 +100,8 @@ MAKE_AUTO_HOOK_MATCH(
 
         if (overrideColorScheme != nullptr) {
             playerOverrideColorScheme = overrideColorScheme;
+            // Fixes 360 map overrides
+            basicData->beatmapColorScheme = overrideColorScheme;
         }
     }
 
