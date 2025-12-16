@@ -168,7 +168,7 @@ pub unsafe extern "C" fn song_loader_load_path(
 pub unsafe extern "C" fn song_loader_load_directory(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
-    fn_callback: Option<extern "C" fn(&CLoadedSong, usize, usize)>,
+    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize)>,
 ) -> CLoadedSongs {
     if path.is_null() {
         panic!("Path is null");
@@ -181,8 +181,10 @@ pub unsafe extern "C" fn song_loader_load_directory(
     let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
     let wrapped = fn_callback.map(|callback| {
         move |song: &LoadedSong, index, count| {
-            let cloaded_song = &CLoadedSong::from(song.clone());
-            callback(cloaded_song, index, count)
+            let cloaded_song = CLoadedSong::from(song.clone());
+            callback(cloaded_song, index, count);
+            // from to avoid
+            let _ = LoadedSong::from(cloaded_song);
         }
     });
 
@@ -205,7 +207,7 @@ pub unsafe extern "C" fn song_loader_load_directory(
 pub unsafe extern "C" fn song_loader_load_directory_parallel(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
-    fn_callback: Option<extern "C" fn(&CLoadedSong, usize, usize)>,
+    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize)>,
 ) -> CLoadedSongs {
     if path.is_null() {
         panic!("Path is null");
@@ -218,8 +220,10 @@ pub unsafe extern "C" fn song_loader_load_directory_parallel(
     let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
     let wrapped = fn_callback.map(|callback| {
         move |song: &LoadedSong, index, count| {
-            let cloaded_song = &CLoadedSong::from(song.clone());
-            callback(cloaded_song, index, count)
+            let cloaded_song = CLoadedSong::from(song.clone());
+            callback(cloaded_song, index, count);
+            // from to avoid
+            let _ = LoadedSong::from(cloaded_song);
         }
     });
 
