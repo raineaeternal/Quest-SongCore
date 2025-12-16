@@ -1,5 +1,6 @@
 use std::{
     path::{Path, PathBuf},
+    sync::atomic::AtomicUsize,
     time::Duration,
 };
 
@@ -92,17 +93,26 @@ pub fn load_song_from_path(
 /// Returns an error if the path does not exist or is not a directory.
 ///
 /// Synchronous version.
-pub fn load_song_directory(
+pub fn load_song_directory<F>(
     path: &std::path::Path,
     cache: Option<&mut dyn SongCache>,
-) -> Result<LoadedSongs, LoadSongError> {
+    callback: Option<F>,
+) -> Result<LoadedSongs, LoadSongError>
+where
+    F: Fn(&LoadedSong, usize, usize),
+{
     if !path.exists() || !path.is_dir() {
         return Err(LoadSongError::PathDoesNotExist(path.to_path_buf()));
     }
 
     // read_dir is fine here, we don't need recursion
-    let loaded_songs: Vec<LoadedSong> = std::fs::read_dir(path)?
-        .filter_map(|entry| {
+    let read_dir_entries: Vec<_> = std::fs::read_dir(path)?.collect();
+    let count = read_dir_entries.len();
+
+    let loaded_songs: Vec<LoadedSong> = read_dir_entries
+        .into_iter()
+        .enumerate()
+        .filter_map(|(i, entry)| {
             let entry = entry.ok()?;
             let path = entry.path();
             // we cache later in bulk
@@ -113,6 +123,10 @@ pub fn load_song_directory(
                     return None;
                 }
             };
+
+            if let Some(cb) = &callback {
+                cb(&song_data, i, count);
+            }
 
             Some(song_data)
         })
@@ -132,16 +146,26 @@ pub fn load_song_directory(
 /// Loads all songs from the given directory in parallel.
 /// Returns an error if the path does not exist or is not a directory.
 /// Parallel version.
-pub fn load_song_directory_parallel(
+pub fn load_song_directory_parallel<F>(
     path: &Path,
     cache: Option<&mut dyn SongCache>,
-) -> Result<LoadedSongs, LoadSongError> {
+    callback: Option<F>,
+) -> Result<LoadedSongs, LoadSongError>
+where
+    F: Fn(&LoadedSong, usize, usize) + Sync,
+{
     if !path.exists() || !path.is_dir() {
         return Err(LoadSongError::PathDoesNotExist(path.to_path_buf()));
     }
 
     // Compute hashes in parallel but do not touch the mutable cache from the parallel closure.
-    let loaded_songs: Vec<LoadedSong> = std::fs::read_dir(path)?
+    let read_dir_entries: Vec<_> = std::fs::read_dir(path)?.collect();
+    let count = read_dir_entries.len();
+
+    let worked = AtomicUsize::new(0);
+
+    let loaded_songs: Vec<LoadedSong> = read_dir_entries
+        .into_iter()
         .par_bridge()
         .filter_map(|entry| {
             let entry = entry.ok()?;
@@ -154,6 +178,11 @@ pub fn load_song_directory_parallel(
                     return None;
                 }
             };
+
+            if let Some(cb) = &callback {
+                let worked = worked.fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+                cb(&song_data, worked, count);
+            }
 
             Some(song_data)
         })

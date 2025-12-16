@@ -60,8 +60,12 @@ fn load_song_directory_finds_songs() -> Result<(), Box<dyn std::error::Error>> {
     let tests_dir = manifest_dir.join("tests");
 
     // Use the directory-loading API which scans entries in the given folder
-    let loaded = song_load_rs::song_load::load_song_directory(&tests_dir, None)
-        .map_err(|e| format!("load_song_directory failed: {}", e))?;
+    let loaded = song_load_rs::song_load::load_song_directory(
+        &tests_dir,
+        None,
+        None::<fn(&song_load_rs::song_load::LoadedSong, usize, usize)>,
+    )
+    .map_err(|e| format!("load_song_directory failed: {}", e))?;
 
     // Expect at least one song was found
     assert!(
@@ -119,8 +123,10 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
 
     // Also test directory-loading populates cache entries for songs in the tests dir
     let mut cache2 = song_load_rs::cache::mem_cache::MemCache::default();
-    let loaded_dir = song_load_rs::song_load::load_song_directory(&tests_dir, Some(&mut cache2))
-        .map_err(|e| format!("load directory with cache failed: {}", e))?;
+    let loaded_dir = song_load_rs::song_load::load_song_directory::<
+        fn(&song_load_rs::song_load::LoadedSong, usize, usize),
+    >(&tests_dir, Some(&mut cache2), None)
+    .map_err(|e| format!("load directory with cache failed: {}", e))?;
 
     // Each loaded song should be cached
     for s in &loaded_dir.songs {
