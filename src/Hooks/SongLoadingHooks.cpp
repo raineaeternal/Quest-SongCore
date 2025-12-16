@@ -21,10 +21,15 @@
 #include "GlobalNamespace/BeatmapLevelDataLoader.hpp"
 #include "GlobalNamespace/FileHelpers.hpp"
 #include "GlobalNamespace/GameScenesManager.hpp"
+#include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
+#include "UnityEngine/AudioSettings.hpp"
+#include "GlobalNamespace/LevelScenesTransitionSetupDataSO.hpp"
+#include "GlobalNamespace/ReferenceCountingCache_2.hpp"
 
 #include "custom-types/shared/coroutine.hpp"
 
 #include "System/Threading/Tasks/Task_1.hpp"
+#include "System/Threading/Tasks/Task.hpp"
 #include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
 #include "System/Collections/Generic/IReadOnlyList_1.hpp"
 #include "System/Version.hpp"
@@ -37,6 +42,7 @@
 
 #include "BGLib/Polyglot/Localization.hpp"
 #include "BGLib/DotnetExtension/Collections/LRUCache_2.hpp"
+#include "SongLoader/CustomBeatmapLevel.hpp"
 
 #include "utf8.h"
 #include <string>
@@ -53,9 +59,9 @@ using namespace System::Threading;
 using namespace System::Threading::Tasks;
 using namespace System::Collections::Generic;
 
-// If the garbage collector is enabled then the game changes the audio configuration, which invalidates the custom level AudioClip
-// Dont let the game run that code, instead reimplement without the audio configuration change
-// Does require game restart when changing bluetooth state (connecting/disconnecting device)
+// If the garbage collector is enabled then the game resets the audio configuration, which invalidates the custom level AudioClip
+// reimplement without the audio configuration change and instead reset audio configuration
+// on LevelScenesTransitionSetupDataSO::BeforeScenesWillBeActivatedAsync
 custom_types::Helpers::Coroutine TransitionCoroutineOverride(
     System::Collections::IEnumerator*(*orig)(GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback),
     GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback
@@ -77,6 +83,21 @@ MAKE_AUTO_HOOK_MATCH(GameScenesManager_ScenesTransitionCoroutine, &GameScenesMan
         return custom_types::Helpers::new_coro(TransitionCoroutineOverride(GameScenesManager_ScenesTransitionCoroutine, self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, afterMinDurationCallback, extraBindingsCallback, finishCallback));
 
     return GameScenesManager_ScenesTransitionCoroutine(self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, afterMinDurationCallback, extraBindingsCallback, finishCallback);
+}
+// Reset AudioSettings
+// This is to ensure audio is intact between scenes, and custom audio gets loaded after audio settings is reset.
+// Without this patch, one can get the game to have no audio after restarting the map several times.
+MAKE_AUTO_HOOK_MATCH(LevelScenesTransitionSetupDataSO_BeforeScenesWillBeActivatedAsync, &LevelScenesTransitionSetupDataSO::BeforeScenesWillBeActivatedAsync, ::System::Threading::Tasks::Task* , LevelScenesTransitionSetupDataSO* self) {
+    UnityEngine::AudioSettings::Reset(UnityEngine::AudioSettings::GetConfiguration());
+    auto sceneSetupData = self->gameplayCoreSceneSetupData;
+
+    if (auto levelID = sceneSetupData->beatmapLevel->levelID; levelID.starts_with(u"custom_level")) {
+        auto audioClipLoader = sceneSetupData->_audioClipAsyncLoader;
+        auto audioClipCache = (ReferenceCountingCache_2<int32_t, Task_1<::UnityW<::UnityEngine::AudioClip>>*>*)audioClipLoader->_cache;
+        audioClipCache->_items->Clear();
+    }
+
+    return LevelScenesTransitionSetupDataSO_BeforeScenesWillBeActivatedAsync(self);
 }
 
 // we return our own levels repository to which we can add packs we please
