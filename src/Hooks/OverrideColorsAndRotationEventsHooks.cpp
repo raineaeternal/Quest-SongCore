@@ -90,14 +90,16 @@ MAKE_AUTO_HOOK_MATCH(
     GlobalNamespace::BeatmapBasicData* basicData;
     auto tuple = ::System::ValueTuple_2(characteristic, diff);
 
-    // TODO: Do we still need fixup?
     if (beatmapDatas && beatmapDatas->TryGetValue(tuple, byref(basicData))) {
+        auto colorScheme = basicData->beatmapColorScheme;
         auto target = targetEnvironmentInfo.Item2;
-        if (target.isAlive()) {
-            auto colorScheme = GetOverrideColorScheme(target->colorScheme->colorScheme, customLevel, *beatmapKey);
-            if (colorScheme != nullptr) {
-                basicData->beatmapColorScheme = colorScheme;
-            }
+        auto usingOverrideEnvironment = targetEnvironmentInfo.Item3;
+
+        auto colorInfo = GlobalNamespace::StandardLevelScenesTransitionSetupDataSO::GetColorInfo(playerOverrideColorScheme, playerOverrideLightshowColors, colorScheme, target, usingOverrideEnvironment);
+        auto overrideColorScheme = GetOverrideColorScheme(colorInfo.Item2, customLevel, *beatmapKey);
+
+        if (overrideColorScheme != nullptr) {
+            playerOverrideColorScheme = overrideColorScheme;
         }
     }
 
