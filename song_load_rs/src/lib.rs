@@ -329,6 +329,29 @@ pub unsafe extern "C" fn song_loader_cache_clear(cache: *mut CSongCache) {
 
 }
 
+/// Checks if the cache contains a cached song for the given path.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_loader_cache_contains_cache(cache: *const CSongCache, song_path: *const std::os::raw::c_char) -> bool {
+    if cache.is_null() {
+        panic!("Cache is null");
+    }
+    let cache = unsafe { cache.as_ref().unwrap() };
+    if song_path.is_null() {
+        panic!("Song path is null");
+    }
+    let song_path = unsafe { CStr::from_ptr(song_path) }
+        .to_str()
+        .map(Path::new)
+        .expect("Failed to convert song path to str");
+
+    match cache.inner.get_cached_song(song_path) {
+        Ok(opt) => opt.is_some(),
+        Err(e) => {
+            panic!("Failed to check if cache contains song: {}", e);
+        }
+    }
+}
+
 /// Frees the given song cache.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_free_song_cache(cache: *mut CSongCache) {

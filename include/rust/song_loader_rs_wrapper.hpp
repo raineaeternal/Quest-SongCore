@@ -203,28 +203,42 @@ struct SongCache {
 
   /// Reloads the cache from disk.
   void reload() {
-    song_loader_reload_song_cache(cache);
+    song_loader_cache_load(cache);
   }
 
   /// Saves the cache to disk.
   void save() const {
-    song_loader_save_song_cache(cache);
+    song_loader_cache_save(cache);
   }
 
   void reset_song(std::filesystem::path const& path) {
-    song_loader_cache_reset_song(path.c_str(), cache);
+    song_loader_cache_reset_song(cache, path.c_str());
   }
 
   void clear() {
-    song_loader_clear_song_cache(cache);
+    song_loader_cache_clear(cache);
   }
 
+  
+  /// Checks if the cache contains an entry for the given path.
+  [[nodiscard]]
+  bool contains(std::filesystem::path const& path) const {
+    CLoadedSong c_song = song_loader_load_path(path.c_str(), cache);
+    bool exists = c_song.path != nullptr;
+    song_loader_free_loaded_song(c_song);
+    return exists;
+  }
+
+  /// Loads the cached song data for the given path.
+  /// If the song is not cached, loads and caches it.
   [[nodiscard]]
   LoadedSong load_song(std::filesystem::path const& path) {
     CLoadedSong c_song = song_loader_load_path(path.c_str(), cache);
     return LoadedSong(c_song);
   }
 
+  /// Loads all songs from the given directory, using the cache.
+  /// If a song is not cached, loads and caches it.
   [[nodiscard]]
   LoadedSongs from_directory(std::filesystem::path const& path,
                                        void (*fn_callback)(CLoadedSong,
@@ -234,9 +248,11 @@ struct SongCache {
     CLoadedSongs c_songs = song_loader_load_directory(path.c_str(), cache, OpaqueUserData{user_data}, fn_callback);
     return LoadedSongs(c_songs);
   }
+
+  /// Loads all songs from the given directory in parallel, using the cache.
+  /// If a song is not cached, loads and caches it.
   [[nodiscard]]
-  LoadedSongs from_directory_parallel(std::filesystem::path const& path,
-                                       CSongCache *cache, void (*fn_callback)(CLoadedSong,
+  LoadedSongs from_directory_parallel(std::filesystem::path const& path, void (*fn_callback)(CLoadedSong,
                                                             uintptr_t,
                                                             uintptr_t,
                                                             OpaqueUserData) = nullptr, void* user_data = nullptr) {
