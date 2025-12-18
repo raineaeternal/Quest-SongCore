@@ -1,4 +1,5 @@
 pub mod mem_cache;
+pub mod file_cache;
 
 use std::path::Path;
 
@@ -33,4 +34,11 @@ pub trait SongCache: Send + Sync {
 
     /// Retrieves the cached loaded song data for the given song path, if it exists.
     fn get_cached_song(&self, song_path: &Path) -> Result<Option<LoadedSong>, CacheError>;
+
+    fn reload_cache(&mut self) -> Result<(), CacheError> {
+        Ok(())
+    }
+    fn save_cache(&self) -> Result<(), CacheError> {
+        Ok(())
+    }
 }

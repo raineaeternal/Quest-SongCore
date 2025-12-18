@@ -5,6 +5,7 @@ use std::{
 };
 
 use rayon::iter::{ParallelBridge, ParallelIterator};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::warn;
 
@@ -15,7 +16,7 @@ use crate::{
     hash::compute_custom_level_hash_from_beatmap,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct LoadedSong {
     /// Path to the song
     pub path: PathBuf,

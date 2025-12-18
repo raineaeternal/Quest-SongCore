@@ -5,9 +5,29 @@ use crate::{
     song_load::LoadedSong,
 };
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct MemCache {
     cache: HashMap<PathBuf, LoadedSong>,
+}
+
+impl MemCache {
+    pub fn new() -> Self {
+        Self {
+            cache: HashMap::new(),
+        }
+    }
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            cache: HashMap::with_capacity(capacity),
+        }
+    }
+    pub fn from_cache(cache: HashMap<PathBuf, LoadedSong>) -> Self {
+        Self { cache }
+    }
+
+    pub fn get_cache(&self) -> &HashMap<PathBuf, LoadedSong> {
+        &self.cache
+    }
 }
 
 impl SongCache for MemCache {

@@ -1,4 +1,5 @@
 #include "song_load_rs.h"
+#include <filesystem>
 #include <span>
 
 namespace SongCore {
@@ -179,6 +180,63 @@ struct LoadedSongs {
   [[nodiscard]]
   std::span<const LoadedSong> operator->() const {
     return as_span();
+  }
+};
+
+struct SongCache {
+  CSongCache *cache;
+
+  // take ownership
+  explicit SongCache(CSongCache *cache) : cache(cache) {}
+
+  // copying is disabled
+  SongCache(const SongCache &) = delete;
+  SongCache &operator=(const SongCache &) = delete;
+
+  // moving is enabled
+  SongCache(SongCache &&other) noexcept : cache(other.cache) {
+    other.cache = nullptr;
+  }
+  SongCache &operator=(SongCache &&other) noexcept {
+    if (this == &other)
+      return *this;
+    // Free existing resources if necessary
+    if (cache) {
+      song_loader_free_song_cache(cache);
+    }
+    cache = other.cache;
+    other.cache = nullptr;
+
+    return *this;
+  }
+
+  ~SongCache() {
+    if (cache) {
+      song_loader_free_song_cache(cache);
+    }
+  }
+
+  /// Creates a new file-based song cache at the given path.
+  /// Does not load the cache from disk; call `reload` to do so.
+  [[nodiscard]]
+  static SongCache file_cache(std::filesystem::path const& cache_path) {
+    CSongCache* c_cache = song_loader_file_cache_new(cache_path.c_str());
+    return SongCache(c_cache);
+  }
+
+  /// Reloads the cache from disk.
+  void reload() {
+    song_loader_reload_song_cache(cache);
+  }
+
+  /// Saves the cache to disk.
+  void save() const {
+    song_loader_save_song_cache(cache);
+  }
+
+  [[nodiscard]]
+  operator CSongCache *() const {
+    return cache;
   }
 };
 } // namespace SongCore

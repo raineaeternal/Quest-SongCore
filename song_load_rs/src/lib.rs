@@ -243,6 +243,66 @@ pub unsafe extern "C" fn song_loader_load_directory_parallel(
     c_loaded_songs
 }
 
+/// Creates a new file based song cache and returns a pointer to it.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_loader_file_cache_new(path: *const std::os::raw::c_char) -> *mut CSongCache {
+    if path.is_null() {
+        panic!("Path is null");
+    }
+    let path = unsafe { CStr::from_ptr(path) }
+        .to_str()
+        .map(Path::new)
+        .expect("Failed to convert path to str");
+
+    let file_cache = crate::cache::file_cache::FileCache::new(path.into());
+
+    let song_cache = CSongCache {
+        inner: Box::new(file_cache),
+    };
+
+    Box::into_raw(Box::new(song_cache))
+}
+
+/// Reloads the cache from the source.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_loader_cache_load(cache: *mut CSongCache) {
+    if cache.is_null() {
+        panic!("Cache is null");
+    }
+    let cache = unsafe { cache.as_mut().unwrap() };
+
+    cache
+        .inner
+        .reload_cache()
+        .expect("Failed to reload cache");
+}
+
+/// Saves the cache to the source.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_loader_cache_save(cache: *const CSongCache) {
+    if cache.is_null() {
+        panic!("Cache is null");
+    }
+    let cache = unsafe { cache.as_ref().unwrap() };
+
+    cache
+        .inner
+        .save_cache()
+        .expect("Failed to reload cache");
+}
+
+/// Frees the given song cache.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_loader_free_song_cache(cache: *mut CSongCache) {
+    if cache.is_null() {
+        return;
+    }
+    unsafe {
+        let _ = Box::from_raw(cache);
+    }
+}
+
+
 #[unsafe(no_mangle)]
 pub extern "C" fn song_loader_free_loaded_song(loaded_song: CLoadedSong) {
     let _ = LoadedSong::from(loaded_song);
