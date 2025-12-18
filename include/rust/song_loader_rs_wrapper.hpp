@@ -153,8 +153,20 @@ struct LoadedSongs {
 
   [[nodiscard]]
   LoadedSongs static from_directory(const char *path,
-                                       CSongCache *cache = nullptr) {
-    CLoadedSongs c_songs = song_loader_load_directory(path, cache);
+                                       CSongCache *cache = nullptr, void (*fn_callback)(CLoadedSong,
+                                                            uintptr_t,
+                                                            uintptr_t,
+                                                            OpaqueUserData) = nullptr, void* user_data = nullptr) {
+    CLoadedSongs c_songs = song_loader_load_directory(path, cache, OpaqueUserData{user_data}, fn_callback);
+    return LoadedSongs(c_songs);
+  }
+  [[nodiscard]]
+  LoadedSongs static from_directory_parallel(const char *path,
+                                       CSongCache *cache = nullptr, void (*fn_callback)(CLoadedSong,
+                                                            uintptr_t,
+                                                            uintptr_t,
+                                                            OpaqueUserData) = nullptr, void* user_data = nullptr) {
+    CLoadedSongs c_songs = song_loader_load_directory_parallel(path, cache, OpaqueUserData{user_data}, fn_callback);
     return LoadedSongs(c_songs);
   }
 
