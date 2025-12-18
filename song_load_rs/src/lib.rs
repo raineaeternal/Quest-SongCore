@@ -1,4 +1,4 @@
-use std::{ffi::CStr, path::Path};
+use std::{ffi::CStr, os::raw::c_void, path::Path};
 
 use crate::{cache::SongCache, song_load::LoadedSong};
 
@@ -11,6 +11,13 @@ pub mod beatmap;
 pub mod cache;
 pub mod models;
 pub mod song_load;
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct OpaqueUserData(*const c_void);
+
+unsafe impl Sync for OpaqueUserData {}
+unsafe impl Send for OpaqueUserData {}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn hello_from_rust() {
@@ -168,7 +175,8 @@ pub unsafe extern "C" fn song_loader_load_path(
 pub unsafe extern "C" fn song_loader_load_directory(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
-    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize)>,
+    user_data: OpaqueUserData,
+    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize, OpaqueUserData)>,
 ) -> CLoadedSongs {
     if path.is_null() {
         panic!("Path is null");
@@ -182,7 +190,7 @@ pub unsafe extern "C" fn song_loader_load_directory(
     let wrapped = fn_callback.map(|callback| {
         move |song: &LoadedSong, index, count| {
             let cloaded_song = CLoadedSong::from(song.clone());
-            callback(cloaded_song, index, count);
+            callback(cloaded_song, index, count, user_data);
             // from to avoid
             let _ = LoadedSong::from(cloaded_song);
         }
@@ -207,7 +215,8 @@ pub unsafe extern "C" fn song_loader_load_directory(
 pub unsafe extern "C" fn song_loader_load_directory_parallel(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
-    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize)>,
+    user_data: OpaqueUserData,
+    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize, OpaqueUserData)>,
 ) -> CLoadedSongs {
     if path.is_null() {
         panic!("Path is null");
@@ -221,7 +230,7 @@ pub unsafe extern "C" fn song_loader_load_directory_parallel(
     let wrapped = fn_callback.map(|callback| {
         move |song: &LoadedSong, index, count| {
             let cloaded_song = CLoadedSong::from(song.clone());
-            callback(cloaded_song, index, count);
+            callback(cloaded_song, index, count, user_data);
             // from to avoid
             let _ = LoadedSong::from(cloaded_song);
         }
