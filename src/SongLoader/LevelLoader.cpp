@@ -5,12 +5,8 @@
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "UnityEngine/Color.hpp"
-#include "Utils/WavRiff.hpp"
 #include "logging.hpp"
-#include "Utils/Hashing.hpp"
 #include "Utils/File.hpp"
-#include "Utils/OggVorbis.hpp"
-#include "Utils/WavRiff.hpp"
 #include "Utils/Cache.hpp"
 #include "Utils/Errors.hpp"
 
@@ -32,6 +28,7 @@
 #include "BeatmapLevelSaveDataVersion4/AudioSaveData.hpp"
 #include "Newtonsoft/Json/JsonConvert.hpp"
 #include "utf8.h"
+#include <chrono>
 #include <cmath>
 #include <exception>
 #include <filesystem>
@@ -168,8 +165,10 @@ namespace SongCore::SongLoader {
             #endif
         }
 
-        auto hashOpt = Utils::GetCustomLevelHash(levelPath, saveData);
-        hashOut = *hashOpt;
+        auto songData = Utils::GetCachedInfo(levelPath);
+        if (songData.has_value()) {
+            hashOut = songData->get_hash();
+        }
 
         std::string levelId = fmt::format("{}{}{}", RuntimeSongLoader::CUSTOM_LEVEL_PREFIX_ID, hashOut, wip ? " WIP" : "");
 
@@ -271,8 +270,10 @@ namespace SongCore::SongLoader {
             #endif
         }
 
-        auto hashOpt = Utils::GetCustomLevelHash(levelPath, saveData);
-        hashOut = *hashOpt;
+        auto songData = Utils::GetCachedInfo(levelPath);
+        if (songData.has_value()) {
+            hashOut = songData->get_hash();
+        }
 
         std::string levelId = fmt::format("{}{}{}", RuntimeSongLoader::CUSTOM_LEVEL_PREFIX_ID, hashOut, wip ? " WIP" : "");
 
@@ -676,73 +677,24 @@ namespace SongCore::SongLoader {
     float LevelLoader::GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveDataV2* saveData) {
         // check the cached info
         auto cachedInfoOpt = Utils::GetCachedInfo(levelPath);
-        if (cachedInfoOpt.has_value() && cachedInfoOpt->songDuration.has_value()) {
-            return cachedInfoOpt->songDuration.value();
-        } else {
-            // try to get the info from the ogg file
-            std::string songFilePath = levelPath / static_cast<std::string>(saveData->songFilename);
-            if (std::filesystem::exists(songFilePath)) {
-                float songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
-                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
-                    // update cache with new duration
-                    auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-                    info.songDuration = songDuration;
-                    Utils::SetCachedInfo(levelPath, info);
-                    return songDuration;
-                }
-                songDuration = Utils::GetLengthFromWavRiff(songFilePath);
-                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
-                    // update cache with new duration
-                    auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-                    info.songDuration = songDuration;
-                    Utils::SetCachedInfo(levelPath, info);
-                    return songDuration;
-                }
-            }
-
-            // if the file didn't exist or we didn't get a valid length from the ogg, we go and get it from the map
-            float songDuration = GetLengthFromMap(levelPath, saveData);
-            auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-            info.songDuration = songDuration;
-            Utils::SetCachedInfo(levelPath, info);
-            return songDuration;
+        if (!cachedInfoOpt.has_value()) {
+            return GetLengthFromMap(levelPath, saveData);
         }
+
+        // as seconds
+        // TODO:?
+        return std::chrono::duration_cast<std::chrono::seconds>(cachedInfoOpt->get_duration()).count();
     }
 
     float LevelLoader::GetLengthForLevel(std::filesystem::path const& levelPath, CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData) {
         // check the cached info
-        auto cachedInfoOpt = Utils::GetCachedInfo(levelPath);
-        if (cachedInfoOpt.has_value() && cachedInfoOpt->songDuration.has_value()) {
-            return cachedInfoOpt->songDuration.value();
-        } else {
-            // try to get the info from the ogg file
-            std::string songFilePath = levelPath / static_cast<std::string>(saveData->audio.songFilename);
-            if (std::filesystem::exists(songFilePath)) {
-                float songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
-                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
-                    // update cache with new duration
-                    auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-                    info.songDuration = songDuration;
-                    Utils::SetCachedInfo(levelPath, info);
-                    return songDuration;
-                }
-                songDuration = Utils::GetLengthFromWavRiff(songFilePath);
-                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
-                    // update cache with new duration
-                    auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-                    info.songDuration = songDuration;
-                    Utils::SetCachedInfo(levelPath, info);
-                    return songDuration;
-                }
-            }
 
-            // if the file didn't exist or we didn't get a valid length from the ogg, we go and get it from the map
-            float songDuration = GetLengthFromMap(levelPath, saveData);
-            auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-            info.songDuration = songDuration;
-            Utils::SetCachedInfo(levelPath, info);
-            return songDuration;
+        auto cachedInfoOpt = Utils::GetCachedInfo(levelPath);
+        if (!cachedInfoOpt.has_value()) {
+            return GetLengthFromMap(levelPath, saveData);
         }
+        // as seconds
+        return std::chrono::duration_cast<std::chrono::seconds>(cachedInfoOpt->get_duration()).count();
     }
 
     float LevelLoader::GetLengthFromMap(std::filesystem::path const& levelPath, CustomJSONData::CustomLevelInfoSaveDataV2* saveData) {
