@@ -53,12 +53,7 @@ struct LoadedSong {
            song.duration_nanos == other.song.duration_nanos;
   }
 
-  [[nodiscard]]
-  static LoadedSong from_path(const char *path,
-                                 CSongCache *cache = nullptr) {
-    CLoadedSong c_song = song_loader_load_path(path, cache);
-    return LoadedSong(c_song);
-  }
+
 
   [[nodiscard]]
   std::string_view get_path() const {
@@ -152,24 +147,6 @@ struct LoadedSongs {
     return true;
   }
 
-  [[nodiscard]]
-  LoadedSongs static from_directory(const char *path,
-                                       CSongCache *cache = nullptr, void (*fn_callback)(CLoadedSong,
-                                                            uintptr_t,
-                                                            uintptr_t,
-                                                            OpaqueUserData) = nullptr, void* user_data = nullptr) {
-    CLoadedSongs c_songs = song_loader_load_directory(path, cache, OpaqueUserData{user_data}, fn_callback);
-    return LoadedSongs(c_songs);
-  }
-  [[nodiscard]]
-  LoadedSongs static from_directory_parallel(const char *path,
-                                       CSongCache *cache = nullptr, void (*fn_callback)(CLoadedSong,
-                                                            uintptr_t,
-                                                            uintptr_t,
-                                                            OpaqueUserData) = nullptr, void* user_data = nullptr) {
-    CLoadedSongs c_songs = song_loader_load_directory_parallel(path, cache, OpaqueUserData{user_data}, fn_callback);
-    return LoadedSongs(c_songs);
-  }
 
   [[nodiscard]]
   std::span<const LoadedSong> as_span() const {
@@ -233,6 +210,40 @@ struct SongCache {
   void save() const {
     song_loader_save_song_cache(cache);
   }
+
+  void reset_song(std::filesystem::path const& path) {
+    song_loader_cache_reset_song(path.c_str(), cache);
+  }
+
+  void clear() {
+    song_loader_clear_song_cache(cache);
+  }
+
+  [[nodiscard]]
+  LoadedSong load_song(std::filesystem::path const& path) {
+    CLoadedSong c_song = song_loader_load_path(path.c_str(), cache);
+    return LoadedSong(c_song);
+  }
+
+  [[nodiscard]]
+  LoadedSongs from_directory(std::filesystem::path const& path,
+                                       void (*fn_callback)(CLoadedSong,
+                                                            uintptr_t,
+                                                            uintptr_t,
+                                                            OpaqueUserData) = nullptr, void* user_data = nullptr) {
+    CLoadedSongs c_songs = song_loader_load_directory(path.c_str(), cache, OpaqueUserData{user_data}, fn_callback);
+    return LoadedSongs(c_songs);
+  }
+  [[nodiscard]]
+  LoadedSongs from_directory_parallel(std::filesystem::path const& path,
+                                       CSongCache *cache, void (*fn_callback)(CLoadedSong,
+                                                            uintptr_t,
+                                                            uintptr_t,
+                                                            OpaqueUserData) = nullptr, void* user_data = nullptr) {
+    CLoadedSongs c_songs = song_loader_load_directory_parallel(path.c_str(), cache, OpaqueUserData{user_data}, fn_callback);
+    return LoadedSongs(c_songs);
+  }
+
 
   [[nodiscard]]
   operator CSongCache *() const {

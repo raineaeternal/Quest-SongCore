@@ -291,6 +291,44 @@ pub unsafe extern "C" fn song_loader_cache_save(cache: *const CSongCache) {
         .expect("Failed to reload cache");
 }
 
+/// Resets the cached data for the given song path.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_loader_cache_reset_song(
+    cache: *mut CSongCache,
+    song_path: *const std::os::raw::c_char,
+) {
+    if cache.is_null() {
+        panic!("Cache is null");
+    }
+    let cache = unsafe { cache.as_mut().unwrap() };
+    if song_path.is_null() {
+        panic!("Song path is null");
+    }
+    let song_path = unsafe { CStr::from_ptr(song_path) }
+        .to_str()
+        .map(Path::new)
+        .expect("Failed to convert song path to str");
+    cache
+        .inner
+        .reset_song_cache(song_path)
+        .expect("Failed to reset song cache");
+}
+
+/// Clears the entire song cache.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_loader_cache_clear(cache: *mut CSongCache) {
+    if cache.is_null() {
+        panic!("Cache is null");
+    }
+    let cache = unsafe { cache.as_mut().unwrap() };
+
+    cache
+        .inner
+        .clear_cache()
+        .expect("Failed to clear cache");
+
+}
+
 /// Frees the given song cache.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_free_song_cache(cache: *mut CSongCache) {
