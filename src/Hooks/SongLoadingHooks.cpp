@@ -195,19 +195,25 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
 
 // get the level data async
 // TODO: rip out this level data loading from the SongLoader/LevelLoader.cpp and implement it async here to improve level loading speed and not do redundant things here
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
-    if (levelID.starts_with(u"custom_level_")) {
+MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelLoader::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelLoader* self, BeatmapLevel* beatmapLevel, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
+    if (beatmapLevel->levelID.starts_with(u"custom_level_")) {
+        IBeatmapLevelData* beatmapLevelData;
+        if(self->_loadedBeatmapLevelDataCache->TryGetFromCache(beatmapLevel->levelID, byref(beatmapLevelData))) {
+            return Task_1<LoadBeatmapLevelDataResult>::FromResult(LoadBeatmapLevelDataResult::Success(beatmapLevelData));
+        }
+
         return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
             auto errorType = System::Nullable_1(true, LoadBeatmapLevelDataResult_ErrorType::BeatmapLevelNotFoundInRepository);
             static auto Error = LoadBeatmapLevelDataResult(errorType, nullptr);
-            auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+            auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(beatmapLevel->levelID));
             if (!level || token.IsCancellationRequested) return Error;
             auto data = level->beatmapLevelData;
             if (!data) return Error;
+            self->_loadedBeatmapLevelDataCache->Add(level->levelID, data);
             return LoadBeatmapLevelDataResult::Success(data);
         }, std::forward<SongCore::CancellationToken>(token));
     }
-    return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, beatmapLevelDataVersion, token);
+    return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, beatmapLevel, beatmapLevelDataVersion, token);
 }
 
 // get the level data async
