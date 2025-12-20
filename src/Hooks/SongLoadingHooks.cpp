@@ -62,27 +62,10 @@ using namespace System::Collections::Generic;
 // If the garbage collector is enabled then the game resets the audio configuration, which invalidates the custom level AudioClip
 // reimplement without the audio configuration change and instead reset audio configuration
 // on LevelScenesTransitionSetupDataSO::BeforeScenesWillBeActivatedAsync
-custom_types::Helpers::Coroutine TransitionCoroutineOverride(
-    System::Collections::IEnumerator*(*orig)(GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback),
-    GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback
-) {
-    canTriggerGarbageCollector = false;
-    co_yield orig(self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, afterMinDurationCallback, extraBindingsCallback, finishCallback);
-
-    if (GameScenesManager::ShouldUnloadUnusedAssets(scenesToDismiss)) {
-        co_yield reinterpret_cast<System::Collections::IEnumerator*>(UnityEngine::Resources::UnloadUnusedAssets());
-    }
-    System::GC::Collect();
-    
-    co_return;
-}
-
-MAKE_AUTO_HOOK_MATCH(GameScenesManager_ScenesTransitionCoroutine, &GameScenesManager::ScenesTransitionCoroutine, System::Collections::IEnumerator*, GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback)
+MAKE_AUTO_HOOK_MATCH(GameScenesManager_ScenesTransitionCoroutine, &GameScenesManager::ScenesTransitionCoroutine, System::Collections::IEnumerator*, GameScenesManager* self, ScenesTransitionSetupDataSO* newScenesTransitionSetupData, System::Collections::Generic::IReadOnlyList_1<StringW>* scenesToPresent, GameScenesManager::ScenePresentType presentType, IReadOnlyList_1<StringW>* scenesToDismiss, GameScenesManager::SceneDismissType dismissType, float_t minDuration,  bool canTriggerGarbageCollector, bool resetAudio, System::Action* afterMinDurationCallback, System::Action_1<Zenject::DiContainer*>* extraBindingsCallback, System::Action_1<Zenject::DiContainer *>* finishCallback)
 {
-    if(canTriggerGarbageCollector)
-        return custom_types::Helpers::new_coro(TransitionCoroutineOverride(GameScenesManager_ScenesTransitionCoroutine, self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, afterMinDurationCallback, extraBindingsCallback, finishCallback));
-
-    return GameScenesManager_ScenesTransitionCoroutine(self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, afterMinDurationCallback, extraBindingsCallback, finishCallback);
+    resetAudio = false;
+    return GameScenesManager_ScenesTransitionCoroutine(self, newScenesTransitionSetupData, scenesToPresent, presentType, scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector, resetAudio, afterMinDurationCallback, extraBindingsCallback, finishCallback);
 }
 // Reset AudioSettings
 // This is to ensure audio is intact between scenes, and custom audio gets loaded after audio settings is reset.
