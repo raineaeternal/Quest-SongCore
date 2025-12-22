@@ -20,9 +20,6 @@ namespace SongCore::Utils {
     // will not load until reload is called
     static SongCache _songCache = SongCache::file_cache(_cachePath);
 
-    SongCache& GetSongCache() {
-        return _songCache;
-    }
 
     void RemoveCachedInfo(std::filesystem::path const& levelPath) {
         std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
@@ -57,6 +54,10 @@ namespace SongCore::Utils {
             return std::nullopt;
         }
 
+        std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
+        return _songCache.from_directory_parallel(directoryPath);
+    }
+    std::optional<LoadedSongs> LoadDirectories(std::span<std::filesystem::path const> directoryPath) {
         std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
         return _songCache.from_directory_parallel(directoryPath);
     }

@@ -195,22 +195,31 @@ namespace SongCore::SongLoader {
             std::back_inserter(dirs)
         );
 
-        auto loadedSongs = Utils::GetSongCache().from_directory_parallel(dirs);
+        auto loadedSongs = Utils::LoadDirectories(dirs);
+        if (!loadedSongs.has_value()) {
+            WARNING("Failed to load songs from directories!");
+            _areSongsLoaded = true;
+            InvokeSongsLoaded(_allLoadedLevels);
+            return;
+        }
+
+        // save
+        Utils::SaveSongInfoCache();
         // we got the Rust LoadedSongs, now load them into beat saber
 
 
         // load songs on multiple threads
         std::mutex levelsItrMutex;
-        auto levelsItr = loadedSongs.as_span().begin();
-        auto levelsEnd = loadedSongs.as_span().end();
+        auto levelsItr = loadedSongs->as_span().begin();
+        auto levelsEnd = loadedSongs->as_span().end();
 
         using namespace std::chrono;
         auto loadStartTime = high_resolution_clock::now();
 
-        auto workerThreadCount = std::clamp<size_t>(loadedSongs.as_span().size(), 1, MAX_THREAD_COUNT);
+        auto workerThreadCount = std::clamp<size_t>(loadedSongs->as_span().size(), 1, MAX_THREAD_COUNT);
         std::vector<std::future<void>> songLoadFutures;
         songLoadFutures.reserve(workerThreadCount);
-        _totalSongs = loadedSongs.as_span().size();
+        _totalSongs = loadedSongs->as_span().size();
 
         INFO("Now going to load {} levels on {} threads", (int)_totalSongs, workerThreadCount);
         for (int i = 0; i < workerThreadCount; i++) {
@@ -232,14 +241,13 @@ namespace SongCore::SongLoader {
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
         auto time = high_resolution_clock::now() - loadStartTime;
         if (auto ms = duration_cast<milliseconds>(time).count(); ms > 0) {
-            INFO("Loaded {} (actual: {}) songs in {}ms", loadedSongs.size(), actualCount, ms);
+            INFO("Loaded {} (actual: {}) songs in {}ms", loadedSongs->size(), actualCount, ms);
         } else {
             auto µs = (float)duration_cast<nanoseconds>(time).count() / 1000.0f;
-            INFO("Loaded {} (actual: {}) songs in {}us", loadedSongs.size(), actualCount, µs);
+            INFO("Loaded {} (actual: {}) songs in {}us", loadedSongs->size(), actualCount, µs);
         }
 
-        // save cache to file after all songs are loaded
-        Utils::SaveSongInfoCache();
+
 
         // anonymous function to get the values from a songdict into a vector
         static auto GetValues = [](SongDict* dict){
