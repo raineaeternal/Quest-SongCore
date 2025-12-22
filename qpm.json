@@ -33,15 +33,17 @@
         "pwsh ./scripts/restart-game.ps1"
       ]
     },
-    "qmodIncludeDirs": [],
-    "qmodIncludeFiles": [],
     "ndk": "^27.3.13750724",
-    "qmodOutput": null
+    "qmodIncludeDirs": [
+      "./build"
+    ],
+    "qmodIncludeFiles": [],
+    "qmodOutput": "SongCore"
   },
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^6.4.2",
+      "versionRange": "^7.3.0",
       "additionalData": {}
     },
     {
@@ -51,26 +53,26 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^4008.0.0",
+      "versionRange": "^4200.0.0",
       "additionalData": {}
     },
     {
       "id": "bsml",
-      "versionRange": "^0.4.53",
+      "versionRange": "^0.5.0",
       "additionalData": {
         "private": true
       }
     },
     {
       "id": "lapiz",
-      "versionRange": "^0.2.21",
+      "versionRange": "^0.3.0",
       "additionalData": {
         "private": true
       }
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.18.3",
+      "versionRange": "^0.19.0",
       "additionalData": {}
     },
     {
@@ -93,6 +95,11 @@
       "additionalData": {
         "private": true
       }
+    },
+    {
+      "id": "flamingo",
+      "versionRange": "^1.1.2",
+      "additionalData": {}
     }
   ]
 }
