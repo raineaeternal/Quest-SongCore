@@ -27,6 +27,10 @@
 #include "Zenject/IInitializable.hpp"
 #include "System/IDisposable.hpp"
 
+namespace SongCore {
+    struct LoadedSong;
+}
+
 namespace SongCore::SongLoader {
     using SongDict = ::System::Collections::Concurrent::ConcurrentDictionary_2<StringW, CustomBeatmapLevel*>;
 }
@@ -210,7 +214,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         void RefreshSongs_internal(bool fullRefresh);
 
         /// @brief worker thread for loading songs from a set
-        void RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd);
+        void RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::span<SongCore::LoadedSong const>::iterator* levelsItr, std::span<SongCore::LoadedSong const>::iterator* levelsEnd);
 
         /// @brief internal method for deleting a song, ran through il2cpp async
         void DeleteSong_internal(std::filesystem::path levelPath);

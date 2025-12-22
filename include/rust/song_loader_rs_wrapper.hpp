@@ -156,6 +156,11 @@ struct LoadedSongs {
   }
 
   [[nodiscard]]
+  std::size_t size() const {
+    return songs.count;
+  }
+
+  [[nodiscard]]
   std::span<const LoadedSong> operator->() const {
     return as_span();
   }
@@ -252,7 +257,7 @@ struct SongCache {
 
 
   [[nodiscard]]
-  LoadedSongs from_directory(std::span<const std::filesystem::path> paths,
+  LoadedSongs from_directory_parallel(std::span<const std::filesystem::path> paths,
                                        void (*fn_callback)(CLoadedSong,
                                                             uintptr_t,
                                                             uintptr_t,

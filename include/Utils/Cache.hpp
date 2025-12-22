@@ -9,6 +9,10 @@
 
 namespace SongCore::Utils {
 
+    /// @brief gets the global song cache instance
+    /// @return reference to the song cache
+    SongCache& GetSongCache();
+
     /// @brief gets the cached info for the level
     /// @return optional song info entry, if the info isn't able to provided this returns nullopt (i.e. no song found at path)
     std::optional<LoadedSong> GetCachedInfo(std::filesystem::path const& levelPath);
