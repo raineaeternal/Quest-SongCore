@@ -1,6 +1,7 @@
 #include "song_load_rs.h"
 #include <filesystem>
 #include <span>
+#include <vector>
 
 namespace SongCore {
 /// A loaded song returned from Rust.
@@ -246,6 +247,31 @@ struct SongCache {
                                                             uintptr_t,
                                                             OpaqueUserData) = nullptr, void* user_data = nullptr) {
     CLoadedSongs c_songs = song_loader_load_directory(path.c_str(), cache, OpaqueUserData{user_data}, fn_callback);
+    return LoadedSongs(c_songs);
+  }
+
+
+  [[nodiscard]]
+  LoadedSongs from_directory(std::span<const std::filesystem::path> paths,
+                                       void (*fn_callback)(CLoadedSong,
+                                                            uintptr_t,
+                                                            uintptr_t,
+                                                            OpaqueUserData) = nullptr, void* user_data = nullptr) {
+    // Build an array of C strings from the filesystem::path span so we can pass
+    // a const char** to the C API without casting away qualifiers.
+    std::vector<const char*> c_paths;
+    c_paths.reserve(paths.size());
+    for (auto const& p : paths) {
+      c_paths.push_back(p.c_str());
+    }
+
+    CLoadedSongs c_songs = song_loader_load_directories_parallel(
+        c_paths.data(),
+        paths.size(),
+        cache,
+        OpaqueUserData{user_data},
+        fn_callback
+    );
     return LoadedSongs(c_songs);
   }
 

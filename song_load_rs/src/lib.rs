@@ -236,12 +236,65 @@ pub unsafe extern "C" fn song_loader_load_directory_parallel(
         }
     });
 
-    let songs = song_load::load_song_directory_parallel(path, cache, wrapped.as_ref())
+    let songs = song_load::load_song_directory_parallel(&[path], cache, wrapped.as_ref())
         .expect("Failed to load song directory in parallel");
 
     let c_loaded_songs: CLoadedSongs = songs.into();
     c_loaded_songs
 }
+
+// TODO: Cancellable parallel version
+/// Loads all songs from the given directory in parallel.
+///
+/// # Parameters
+/// - `path`: A pointer to a null-terminated C string representing the path to the directory of songs
+/// - `cache`: A pointer to a `CSongCache` instance for caching (can be null to ignore cache).
+/// # Safety
+/// The `path` pointer must be a valid null-terminated C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_loader_load_directories_parallel(
+    paths: *const *const std::os::raw::c_char,
+    path_count: usize,
+    cache: *mut CSongCache,
+    user_data: OpaqueUserData,
+    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize, OpaqueUserData)>,
+) -> CLoadedSongs {
+    if paths.is_null() {
+        panic!("Path is null");
+    }
+    let paths = unsafe { std::slice::from_raw_parts(paths, path_count) };
+
+    let paths = paths
+        .iter()
+        .map(|&p| {
+            if p.is_null() {
+                panic!("One of the paths is null");
+            }
+            unsafe { CStr::from_ptr(p) }
+                .to_str()
+                .map(Path::new)
+                .expect("Failed to convert path to str")
+        })
+        .collect::<Vec<&Path>>();
+
+
+    let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
+    let wrapped = fn_callback.map(|callback| {
+        move |song: &LoadedSong, index, count| {
+            let cloaded_song = CLoadedSong::from(song.clone());
+            callback(cloaded_song, index, count, user_data);
+            // from to avoid
+            let _ = LoadedSong::from(cloaded_song);
+        }
+    });
+
+    let songs = song_load::load_song_directory_parallel(&paths, cache, wrapped.as_ref())
+        .expect("Failed to load song directory in parallel");
+
+    let c_loaded_songs: CLoadedSongs = songs.into();
+    c_loaded_songs
+}
+
 
 /// Creates a new file based song cache and returns a pointer to it.
 #[unsafe(no_mangle)]
