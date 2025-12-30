@@ -14,8 +14,10 @@ use crate::{
     audio_load,
     beatmap::Beatmap,
     cache::{CacheError, SongCache},
-    hash::compute_custom_level_hash_from_beatmap,
+    hash::compute_custom_level_hash_from_beatmap, models::v2::StandardLevelInfoSaveDataV2,
 };
+
+pub const CUSTOM_LEVEL_PREFIX_ID: &str = "custom_level_";
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct LoadedSong {
@@ -49,6 +51,9 @@ pub enum LoadSongError {
     #[error("I/O error: {0}")]
     IoError(#[from] std::io::Error),
 }
+
+
+
 
 pub fn load_song_from_path(
     path: PathBuf,

@@ -5,7 +5,7 @@ use std::path::Path;
 
 use thiserror::Error;
 
-use crate::song_load::LoadedSong;
+use crate::song_loader::LoadedSong;
 
 #[derive(Debug, Error)]
 pub enum CacheError {

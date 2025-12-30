@@ -39,6 +39,7 @@ default = ["paper2-logging"]
 [features]
 default = []
 paper2-logging = ["dep:paper2_tracing"]
+throw_on_missing_data = []
 
 [build-dependencies]
 bindgen = "0.72"

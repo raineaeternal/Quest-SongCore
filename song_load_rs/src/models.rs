@@ -1,4 +1,9 @@
 use serde::Deserialize;
+pub mod common;
+pub mod v2;
+pub mod v4;
+
+pub mod beatmap;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct DifficultyBeatmap {

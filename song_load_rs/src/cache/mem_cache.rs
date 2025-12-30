@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
     cache::{CacheError, SongCache},
-    song_load::LoadedSong,
+    song_loader::LoadedSong,
 };
 
 #[derive(Debug, Default)]

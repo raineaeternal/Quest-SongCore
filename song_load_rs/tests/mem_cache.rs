@@ -11,7 +11,7 @@ fn mem_cache_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
 
     // Prepare a sample LoadedSong
     let path = PathBuf::from("/tmp/test_song");
-    let song = song_load_rs::song_load::LoadedSong {
+    let song = song_load_rs::song_loader::LoadedSong {
         path: path.clone(),
         hash: "deadbeef".to_string(),
         song_length: None,
@@ -37,12 +37,12 @@ fn mem_cache_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
     assert!(got.is_none(), "song was not removed by reset_song_cache");
 
     // Cache multiple songs then clear
-    let s1 = song_load_rs::song_load::LoadedSong {
+    let s1 = song_load_rs::song_loader::LoadedSong {
         path: PathBuf::from("/tmp/a"),
         hash: "a".into(),
         song_length: None,
     };
-    let s2 = song_load_rs::song_load::LoadedSong {
+    let s2 = song_load_rs::song_loader::LoadedSong {
         path: PathBuf::from("/tmp/b"),
         hash: "b".into(),
         song_length: None,

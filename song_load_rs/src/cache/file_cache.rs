@@ -11,7 +11,7 @@ pub struct FileCache {
     pub mem_cache: MemCache,
 }
 
-type CacheData = std::collections::HashMap<PathBuf, crate::song_load::LoadedSong>;
+type CacheData = std::collections::HashMap<PathBuf, crate::song_loader::LoadedSong>;
 
 impl FileCache {
     pub fn new(path: PathBuf) -> Self {
@@ -56,14 +56,14 @@ impl SongCache for FileCache {
 
     fn cache_song(
         &mut self,
-        loaded_song_data: crate::song_load::LoadedSong,
+        loaded_song_data: crate::song_loader::LoadedSong,
     ) -> Result<(), crate::cache::CacheError> {
         self.mem_cache.cache_song(loaded_song_data)
     }
 
     fn cache_songs(
         &mut self,
-        loaded_songs: Vec<crate::song_load::LoadedSong>,
+        loaded_songs: Vec<crate::song_loader::LoadedSong>,
     ) -> Result<(), super::CacheError> {
         self.mem_cache.cache_songs(loaded_songs)
     }
@@ -71,7 +71,7 @@ impl SongCache for FileCache {
     fn get_cached_song(
         &self,
         song_path: &Path,
-    ) -> Result<Option<crate::song_load::LoadedSong>, crate::cache::CacheError> {
+    ) -> Result<Option<crate::song_loader::LoadedSong>, crate::cache::CacheError> {
         self.mem_cache.get_cached_song(song_path)
     }
 

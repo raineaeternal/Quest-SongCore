@@ -2,7 +2,7 @@ use std::{ffi::CStr, path::Path};
 
 use crate::{
     ffi::{OpaqueUserData, cache::CSongCache},
-    song_load::{
+    song_loader::{
         LoadedSong, LoadedSongs, load_song_directory, load_song_directory_parallel,
         load_song_from_path,
     },
