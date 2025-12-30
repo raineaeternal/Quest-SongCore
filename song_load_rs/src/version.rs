@@ -7,7 +7,7 @@ use std::{
 use regex::Regex;
 use semver::{BuildMetadata, Prerelease, Version};
 
-const NO_VERSION: Version = Version {
+pub const NO_VERSION: Version = Version {
     major: 0,
     minor: 0,
     patch: 0,
