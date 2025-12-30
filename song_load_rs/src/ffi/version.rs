@@ -6,7 +6,7 @@ use crate::version;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-struct CVersion {
+pub struct CVersion {
     pub major: u64,
     pub minor: u64,
     pub patch: u64,
@@ -34,6 +34,11 @@ impl From<CVersion> for Version {
     }
 }
 
+/// Gets the version from a file at the given path.
+/// # Parameters
+/// - `c_path`: A pointer to a null-terminated C string representing the file path.
+/// # Safety
+/// The `c_path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_get_version_from_path(
     c_path: *const std::os::raw::c_char,
@@ -45,17 +50,16 @@ pub unsafe extern "C" fn song_loader_get_version_from_path(
         .to_str()
         .expect("Failed to convert path to str");
 
-    let version = version::version_from_file_path(Path::new(path))
-        .unwrap_or(version::NO_VERSION);
+    let version = version::version_from_file_path(Path::new(path)).unwrap_or(version::NO_VERSION);
 
     CVersion::from(version)
 }
-
 
 /// Gets the version from a given version string.
 /// # Parameters
 /// - `c_version_str`: A pointer to a null-terminated C string representing the version string.
 /// # Safety
+/// The `c_version_str` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_get_version_from_string(
     c_version_str: *const std::os::raw::c_char,
@@ -67,8 +71,7 @@ pub unsafe extern "C" fn song_loader_get_version_from_string(
         .to_str()
         .expect("Failed to convert version string to str");
 
-    let version = version::get_version(version_str)
-        .unwrap_or(version::NO_VERSION);
+    let version = version::get_version(version_str).unwrap_or(version::NO_VERSION);
 
     CVersion::from(version)
 }

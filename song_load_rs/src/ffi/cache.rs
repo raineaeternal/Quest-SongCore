@@ -1,11 +1,20 @@
 use std::{ffi::CStr, path::Path};
 
-use crate::ffi::song_load::CSongCache;
+use crate::cache::SongCache;
 
+/// Represents a song cache trait for use in FFI.
+#[repr(C)]
+pub struct CSongCache {
+    pub inner: Box<dyn SongCache>,
+}
 
 /// Creates a new file based song cache and returns a pointer to it.
+/// # Safety
+/// The caller is responsible for freeing the returned pointer using `song_loader_free_song_cache`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_file_cache_new(path: *const std::os::raw::c_char) -> *mut CSongCache {
+pub unsafe extern "C" fn song_loader_file_cache_new(
+    path: *const std::os::raw::c_char,
+) -> *mut CSongCache {
     if path.is_null() {
         panic!("Path is null");
     }
@@ -24,6 +33,8 @@ pub unsafe extern "C" fn song_loader_file_cache_new(path: *const std::os::raw::c
 }
 
 /// Reloads the cache from the source.
+/// # Safety
+/// The `cache` pointer must be a valid pointer to a `CSongCache`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_cache_load(cache: *mut CSongCache) {
     if cache.is_null() {
@@ -31,13 +42,12 @@ pub unsafe extern "C" fn song_loader_cache_load(cache: *mut CSongCache) {
     }
     let cache = unsafe { cache.as_mut().unwrap() };
 
-    cache
-        .inner
-        .reload_cache()
-        .expect("Failed to reload cache");
+    cache.inner.reload_cache().expect("Failed to reload cache");
 }
 
 /// Saves the cache to the source.
+/// # Safety
+/// The `cache` pointer must be a valid pointer to a `CSongCache`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_cache_save(cache: *const CSongCache) {
     if cache.is_null() {
@@ -45,13 +55,13 @@ pub unsafe extern "C" fn song_loader_cache_save(cache: *const CSongCache) {
     }
     let cache = unsafe { cache.as_ref().unwrap() };
 
-    cache
-        .inner
-        .save_cache()
-        .expect("Failed to reload cache");
+    cache.inner.save_cache().expect("Failed to reload cache");
 }
 
 /// Resets the cached data for the given song path.
+/// # Safety
+/// The `cache` pointer must be a valid pointer to a `CSongCache`.
+/// The `song_path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_cache_reset_song(
     cache: *mut CSongCache,
@@ -75,6 +85,8 @@ pub unsafe extern "C" fn song_loader_cache_reset_song(
 }
 
 /// Clears the entire song cache.
+/// # Safety
+/// The `cache` pointer must be a valid pointer to a `CSongCache`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_cache_clear(cache: *mut CSongCache) {
     if cache.is_null() {
@@ -82,16 +94,18 @@ pub unsafe extern "C" fn song_loader_cache_clear(cache: *mut CSongCache) {
     }
     let cache = unsafe { cache.as_mut().unwrap() };
 
-    cache
-        .inner
-        .clear_cache()
-        .expect("Failed to clear cache");
-
+    cache.inner.clear_cache().expect("Failed to clear cache");
 }
 
 /// Checks if the cache contains a cached song for the given path.
+/// # Safety
+/// The `cache` pointer must be a valid pointer to a `CSongCache`.
+/// The `song_path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_cache_contains_cache(cache: *const CSongCache, song_path: *const std::os::raw::c_char) -> bool {
+pub unsafe extern "C" fn song_loader_cache_contains_cache(
+    cache: *const CSongCache,
+    song_path: *const std::os::raw::c_char,
+) -> bool {
     if cache.is_null() {
         panic!("Cache is null");
     }
@@ -113,6 +127,8 @@ pub unsafe extern "C" fn song_loader_cache_contains_cache(cache: *const CSongCac
 }
 
 /// Frees the given song cache.
+/// # Safety
+/// The `cache` pointer must be a valid pointer to a `CSongCache`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_loader_free_song_cache(cache: *mut CSongCache) {
     if cache.is_null() {

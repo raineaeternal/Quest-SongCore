@@ -1,6 +1,12 @@
 use std::{ffi::CStr, path::Path};
 
-use crate::{cache::SongCache, ffi::OpaqueUserData, song_load::{LoadedSong, LoadedSongs, load_song_directory, load_song_directory_parallel, load_song_from_path}};
+use crate::{
+    ffi::{OpaqueUserData, cache::CSongCache},
+    song_load::{
+        LoadedSong, LoadedSongs, load_song_directory, load_song_directory_parallel,
+        load_song_from_path,
+    },
+};
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -98,12 +104,6 @@ impl From<CLoadedSongs> for LoadedSongs {
 
         LoadedSongs { songs }
     }
-}
-
-/// Represents a song cache trait for use in FFI.
-#[repr(C)]
-pub struct CSongCache {
-    pub inner: Box<dyn SongCache>,
 }
 
 /// Loads a song from the given path (file or directory).

@@ -1,5 +1,5 @@
-pub mod mem_cache;
 pub mod file_cache;
+pub mod mem_cache;
 
 use std::path::Path;
 

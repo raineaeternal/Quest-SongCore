@@ -1,13 +1,8 @@
-use std::{ffi::CStr, os::raw::c_void, path::Path};
-
-use semver::Version;
-
-use crate::{LoadedSong, cache::SongCache, song_load::{LoadedSongs, load_song_directory, load_song_directory_parallel, load_song_from_path}};
+use std::os::raw::c_void;
 
 pub mod cache;
 pub mod song_load;
 pub mod version;
-
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -24,5 +19,3 @@ pub extern "C" fn hello_from_rust() {
 
     tracing::info!("Hello from Rust!");
 }
-
-

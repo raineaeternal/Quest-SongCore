@@ -1,4 +1,7 @@
-use std::{io::Read, path::{Path, PathBuf}};
+use std::{
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 use crate::cache::{SongCache, mem_cache::MemCache};
 
@@ -40,7 +43,6 @@ impl FileCache {
 
         Ok(())
     }
-    
 }
 
 impl SongCache for FileCache {
@@ -52,23 +54,34 @@ impl SongCache for FileCache {
         self.mem_cache.reset_song_cache(song_path)
     }
 
-    fn cache_song(&mut self, loaded_song_data: crate::song_load::LoadedSong) -> Result<(), crate::cache::CacheError> {
+    fn cache_song(
+        &mut self,
+        loaded_song_data: crate::song_load::LoadedSong,
+    ) -> Result<(), crate::cache::CacheError> {
         self.mem_cache.cache_song(loaded_song_data)
     }
 
-    fn cache_songs(&mut self, loaded_songs: Vec<crate::song_load::LoadedSong>) -> Result<(), super::CacheError> {
+    fn cache_songs(
+        &mut self,
+        loaded_songs: Vec<crate::song_load::LoadedSong>,
+    ) -> Result<(), super::CacheError> {
         self.mem_cache.cache_songs(loaded_songs)
     }
 
-    fn get_cached_song(&self, song_path: &Path) -> Result<Option<crate::song_load::LoadedSong>, crate::cache::CacheError> {
+    fn get_cached_song(
+        &self,
+        song_path: &Path,
+    ) -> Result<Option<crate::song_load::LoadedSong>, crate::cache::CacheError> {
         self.mem_cache.get_cached_song(song_path)
     }
 
     fn reload_cache(&mut self) -> Result<(), crate::cache::CacheError> {
-        self.load_from_file().map_err(crate::cache::CacheError::IoError)
+        self.load_from_file()
+            .map_err(crate::cache::CacheError::IoError)
     }
 
     fn save_cache(&self) -> Result<(), super::CacheError> {
-        self.save_to_file().map_err(crate::cache::CacheError::IoError)
+        self.save_to_file()
+            .map_err(crate::cache::CacheError::IoError)
     }
 }

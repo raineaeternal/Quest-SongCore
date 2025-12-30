@@ -1,5 +1,8 @@
 use std::{
-    fs::DirEntry, path::{Path, PathBuf}, sync::atomic::AtomicUsize, time::Duration
+    fs::DirEntry,
+    path::{Path, PathBuf},
+    sync::atomic::AtomicUsize,
+    time::Duration,
 };
 
 use rayon::iter::{ParallelBridge, ParallelIterator};
@@ -161,9 +164,15 @@ where
     }
 
     // Compute hashes in parallel but do not touch the mutable cache from the parallel closure.
-    let read_dir_entries: Vec<_> = paths.iter().map(|path| std::fs::read_dir(path)).collect::<Result<Vec<_>,_>>()?;
-    let read_dir_entries: Vec<DirEntry> = read_dir_entries.into_iter().flat_map(|r| r.filter_map(|e| e.ok())).collect();
-    
+    let read_dir_entries: Vec<_> = paths
+        .iter()
+        .map(std::fs::read_dir)
+        .collect::<Result<Vec<_>, _>>()?;
+    let read_dir_entries: Vec<DirEntry> = read_dir_entries
+        .into_iter()
+        .flat_map(|r| r.filter_map(|e| e.ok()))
+        .collect();
+
     let count = read_dir_entries.len();
 
     let worked = AtomicUsize::new(0);
