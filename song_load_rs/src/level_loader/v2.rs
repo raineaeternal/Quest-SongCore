@@ -2,7 +2,19 @@ use std::{collections::HashMap, path::Path};
 
 use tracing::warn;
 
-use crate::{level_loader::{BeatmapCharacteristicSO, IBeatmapLevelData}, models::{beatmap::BeatmapBasicData, v2::{self, StandardLevelInfoSaveDataV2}}};
+use crate::{
+    cache::SongCache,
+    level_loader::{self, CustomBeatmapLevel, IBeatmapLevelData, StandardLevelInfoSaveData, get_preview_media_data},
+    models::{
+        beatmap::{
+            BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, BeatmapColorScheme,
+            EnvironmentName,
+        },
+        v2::{self, StandardLevelInfoSaveDataV2},
+    },
+};
+
+use crate::song_loader::{self, CUSTOM_LEVEL_PREFIX_ID};
 
 // V2 | V3
 /// Rough Rust translation of the original GetBeatmapLevelAndBasicData.
@@ -12,58 +24,30 @@ pub fn get_beatmap_level_and_basic_data_v2(
     level_path: &Path,
     level_id: &str,
     save_data: &v2::StandardLevelInfoSaveDataV2,
-    environment_names: &[String],
-    color_schemes: &[Option<String>],
+    environment_names: &[EnvironmentName],
+    color_schemes: &[Option<BeatmapColorScheme>],
 ) -> (
     IBeatmapLevelData,
-    HashMap<(BeatmapCharacteristicSO, BeatmapDifficulty), BeatmapBasicData>,
+    HashMap<(BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData>,
 ) {
     let mut file_difficulty_beatmaps: HashMap<
-        (BeatmapCharacteristicSO, BeatmapDifficulty),
+        (BeatmapCharacteristic, BeatmapDifficulty),
         String,
     > = HashMap::new();
     let mut basic_data_dict: HashMap<
-        (BeatmapCharacteristicSO, BeatmapDifficulty),
+        (BeatmapCharacteristic, BeatmapDifficulty),
         BeatmapBasicData,
     > = HashMap::new();
 
     for beatmap_set in save_data.difficulty_beatmap_sets.iter().flatten() {
         // placeholder: resolve characteristic by serialized name
-        let characteristic = match beatmap_characteristics::get_by_serialized_name(
-            &beatmap_set.beatmap_characteristic_name,
-        ) {
-            Some(c) => c,
-            None => {
-                warn!(
-                    "Got null characteristic for characteristic name {}, skipping...",
-                    beatmap_set.beatmap_characteristic_name
-                );
-                continue;
-            }
-        };
+        let characteristic = BeatmapCharacteristic(beatmap_set.beatmap_characteristic_name);
 
-        for difficulty_beatmap in beatmap_set.difficulty_beatmaps.iter().flatten() {
+        for difficulty_beatmap in beatmap_set.difficulty_beatmaps.iter() {
             // parse difficulty string into BeatmapDifficulty (placeholder parse)
-            let difficulty = match crate::beatmap_difficulty::from_serialized_name(
-                &difficulty_beatmap.difficulty,
-            ) {
-                Some(d) => d,
-                None => {
-                    warn!(
-                        "Failed to parse a diff string: {}, skipping...",
-                        difficulty_beatmap.difficulty
-                    );
-                    continue;
-                }
-            };
+            let difficulty = BeatmapDifficulty(difficulty_beatmap.difficulty);
+            let beatmap_filename = &difficulty_beatmap.beatmap_filename;
 
-            let beatmap_filename = match &difficulty_beatmap.beatmap_filename {
-                Some(s) => s,
-                None => {
-                    warn!("Beatmap entry missing filename, skipping...");
-                    continue;
-                }
-            };
             let beatmap_path = level_path.join(beatmap_filename);
             if !beatmap_path.exists() {
                 warn!(
@@ -90,7 +74,7 @@ pub fn get_beatmap_level_and_basic_data_v2(
             let save_data_had_env_names =
                 !save_data.environment_names.unwrap_or_default().is_empty();
 
-            let mut env_name_index = if save_data_had_env_names {
+            let mut env_name_index: usize = if save_data_had_env_names {
                 difficulty_beatmap.environment_name_idx
             } else if crate::beatmap_characteristics::contains_rotation_events(&characteristic) {
                 1
@@ -100,9 +84,9 @@ pub fn get_beatmap_level_and_basic_data_v2(
             // clamp to valid range
             env_name_index = env_name_index.clamp(0, environment_names.len().saturating_sub(1));
 
-            let color_scheme = difficulty_beatmap
-                .beatmap_color_scheme_idx
-                .and_then(|idx| color_schemes.get(idx as usize).cloned())
+            let color_scheme = color_schemes
+                .get(difficulty_beatmap.beatmap_color_scheme_idx)
+                .cloned()
                 .flatten();
 
             // Build BeatmapBasicData -- here we fill with a default placeholder.
@@ -112,7 +96,7 @@ pub fn get_beatmap_level_and_basic_data_v2(
                 BeatmapBasicData::new(
                     difficulty_beatmap.note_jump_movement_speed,
                     difficulty_beatmap.note_jump_start_beat_offset,
-                    environment_names.get(env_name_index_usize).cloned(),
+                    environment_names.get(env_name_index).cloned(),
                     color_scheme,
                 ),
             );
@@ -180,16 +164,136 @@ pub fn basic_verify_map_v2(level_path: &Path, save_data: &StandardLevelInfoSaveD
     }
 
     for set in save_data.difficulty_beatmap_sets.iter().flatten() {
-        for diff in set.difficulty_beatmaps.iter().flatten() {
-            if diff.beatmap_filename.is_none()
-                || !level_path
-                    .join(&diff.beatmap_filename.as_ref().unwrap())
-                    .exists()
-            {
+        for diff in set.difficulty_beatmaps.iter() {
+            if !level_path.join(&diff.beatmap_filename).exists() {
                 return false;
             }
         }
     }
 
     true
+}
+
+/// Convert a v2 info JSON string into the internal Custom (here represented as the v2 struct itself)
+pub fn load_custom_save_data_v2(json_str: &str) -> Option<v2::StandardLevelInfoSaveDataV2> {
+    match serde_json::from_str::<v2::StandardLevelInfoSaveDataV2>(json_str) {
+        Ok(s) => Some(s),
+        Err(e) => {
+            warn!("Failed to parse V2 save data: {}", e);
+            None
+        }
+    }
+}
+
+/// Rust translation of `LevelLoader::LoadCustomBeatmapLevel` (V2)
+/// Returns `None` on error or missing data.
+pub fn load_custom_beatmap_level_v2(
+    level_path: &Path,
+    wip: bool,
+    save_data: Option<v2::StandardLevelInfoSaveDataV2>,
+    song_cache: &mut impl SongCache,
+) -> Option<(CustomBeatmapLevel, String)> {
+    let save = match save_data {
+        Some(s) => s,
+        None => {
+            warn!("saveData was null for level @ {}", level_path.display());
+            if cfg!(feature = "throw_on_missing_data") {
+                panic!("saveData was null for level @ {}", level_path.display());
+            }
+            return None;
+        }
+    };
+
+    if !basic_verify_map_v2(level_path, &save) {
+        warn!("Map {} was missing files!", level_path.display());
+        if cfg!(feature = "throw_on_missing_data") {
+            panic!("Map {} was missing files!", level_path.display());
+        }
+        return None;
+    }
+
+    let song_data = song_loader::load_song_from_path(level_path.to_path_buf(), Some(song_cache)).ok()?;
+
+    let level_id = format!("{CUSTOM_LEVEL_PREFIX_ID}{}{}", song_data.hash, if wip { " WIP" } else { "" });
+
+    let song_name = save.song_name.unwrap_or_default();
+    let song_sub_name = save.song_sub_name.unwrap_or_default();
+    let song_author_name = save.song_author_name.unwrap_or_default();
+    let level_author_name = save.level_author_name.unwrap_or_default();
+
+    let bpm = save.beats_per_minute;
+    let song_time_offset = save.song_time_offset.unwrap_or_default();
+    let preview_start_time = save.preview_start_time;
+    let preview_duration = save.preview_duration;
+
+    // Build environment names list
+    let environment_infos: Vec<EnvironmentName> = save
+        .environment_names
+        .clone()
+        .unwrap_or_default()
+        .into_iter()
+        .map(EnvironmentName)
+        .collect();
+
+    let environment_list: Vec<EnvironmentName> = if environment_infos.is_empty() {
+        let env = save.environment_name.clone().map(EnvironmentName).unwrap_or_else(|| EnvironmentName(String::new()));
+        let all_dirs = save.all_directions_environment_name.clone().map(EnvironmentName).unwrap_or_else(|| EnvironmentName(String::new()));
+        vec![env, all_dirs]
+    } else {
+        environment_infos
+    };
+
+    // color schemes
+    let color_schemes: Vec<Option<BeatmapColorScheme>> = save
+        .color_schemes
+        .as_ref()
+        .map(|v| v.iter().map(|c| c.0.clone().map(BeatmapColorScheme)).collect())
+        .unwrap_or_default();
+
+    let song_duration = None; // length resolution handled by song cache / loader
+
+    let all_mappers = vec![level_author_name.clone()];
+    let all_lighters: Vec<String> = Vec::new();
+
+    // prepare preview media data paths
+    let cover_path = save.cover_image_filename.as_ref().map(|p| p.as_path()).unwrap_or(level_path);
+    let song_file_path = save.song_filename.as_ref().map(|p| p.as_path()).unwrap_or(level_path);
+
+    let preview_media_data = get_preview_media_data(level_path, cover_path, song_file_path);
+
+    let (beatmap_level_data, beatmap_basic_data) = get_beatmap_level_and_basic_data_v2(
+        level_path,
+        &level_id,
+        &save,
+        &environment_list,
+        &color_schemes,
+    );
+
+    if beatmap_basic_data.is_empty() {
+        return None;
+    }
+
+    let result = CustomBeatmapLevel::new(
+        level_path.to_string_lossy().to_string(),
+        StandardLevelInfoSaveData::V2(save),
+        beatmap_level_data,
+        false,
+        level_id.clone(),
+        song_name,
+        song_sub_name,
+        song_author_name,
+        all_mappers,
+        all_lighters,
+        Some(bpm.unwrap_or(120.0)),
+        -6.0_f32,
+        song_time_offset,
+        preview_start_time,
+        preview_duration,
+        song_duration,
+        crate::models::beatmap::PlayerSensitivityFlag::Safe,
+        preview_media_data,
+        beatmap_basic_data,
+    );
+
+    Some((result, song_data.hash))
 }

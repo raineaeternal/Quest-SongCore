@@ -1,3 +1,20 @@
+use std::{collections::HashMap, path::Path};
+
+use tracing::warn;
+
+use crate::{
+    cache::SongCache,
+    level_loader::{CustomBeatmapLevel, StandardLevelInfoSaveData, get_preview_media_data},
+    models::{
+        beatmap::{
+            BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, BeatmapColorScheme,
+            EnvironmentName, IBeatmapLevelData, PlayerSensitivityFlag,
+        },
+        v4::BeatmapLevelSaveDataV4,
+    },
+    song_loader::{self, CUSTOM_LEVEL_PREFIX_ID},
+};
+
 pub fn basic_verify_map_v4(level_path: &Path, save_data: &BeatmapLevelSaveDataV4) -> bool {
     // audio must be present
     let audio = &save_data.audio;
@@ -91,7 +108,7 @@ pub fn load_custom_beatmap_level_v4(
         &save.audio.song_filename,
     );
     let (beatmap_level_data, beatmap_basic_data) =
-        get_beatmap_level_and_basic_data(level_path, &level_id, save);
+        get_beatmap_level_and_basic_data_v4(level_path, &level_id, &save);
 
     if beatmap_basic_data.count() == 0 {
         return None;
@@ -131,52 +148,57 @@ pub fn load_custom_beatmap_level_v4(
         preview_duration,
         song_duration,
         PlayerSensitivityFlag::Safe,
-        preview_media_data.into_ipreview_media_data(),
+        preview_media_data,
         beatmap_basic_data,
     );
 
-    Some(result)
+    Some((result, song_data.hash))
 }
 
 /// V4 version of GetBeatmapLevelAndBasicData
 pub fn get_beatmap_level_and_basic_data_v4(
     level_path: &Path,
     level_id: &str,
-    save_data: &v4::BeatmapLevelSaveDataV4,
+    save_data: &BeatmapLevelSaveDataV4,
 ) -> (
     IBeatmapLevelData,
-    HashMap<(BeatmapCharacteristicSO, BeatmapDifficulty), BeatmapBasicData>,
+    HashMap<(BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData>,
 ) {
     let mut file_difficulty_beatmaps: HashMap<(_, _), String> = HashMap::new();
     let mut basic_data_dict: HashMap<(_, _), BeatmapBasicData> = HashMap::new();
 
     // Build environment list from provided names or default to empty list
-    let environment_names: Vec<String> = save_data
+    let environment_names: Vec<EnvironmentName> = save_data
         .environment_names
         .clone()
         .unwrap_or_default()
         .into_iter()
+        .map(EnvironmentName)
         .collect();
 
     // build simple color scheme placeholders (we keep raw strings for now)
-    let color_schemes: Vec<Option<String>> = save_data
+    let color_schemes: Vec<Option<BeatmapColorScheme>> = save_data
         .color_schemes
         .as_ref()
-        .map(|v| v.iter().map(|c| c.color_scheme_name.clone()).collect())
+        .map(|v| {
+            v.iter()
+                .map(|c| c.color_scheme_name.clone().map(BeatmapColorScheme))
+                .collect()
+        })
         .unwrap_or_default();
 
     if let Some(diffs) = &save_data.difficulty_beatmaps {
         for diff in diffs {
             let characteristic = diff
                 .characteristic
-                .as_ref()
-                .map(|s| BeatmapCharacteristicSO {})
-                .unwrap_or_else(|| BeatmapCharacteristicSO {});
+                .clone()
+                .map(|s| BeatmapCharacteristic(s))
+                .unwrap_or_else(|| BeatmapCharacteristic);
 
             let difficulty = diff
                 .difficulty
-                .as_ref()
-                .map(|_| BeatmapDifficulty {})
+                .clone()
+                .map(|s| BeatmapDifficulty(s))
                 .unwrap_or_else(|| BeatmapDifficulty {});
 
             let beatmap_path = diff
@@ -219,26 +241,34 @@ pub fn get_beatmap_level_and_basic_data_v4(
             let mut lighters: Vec<String> = Vec::new();
             if let Some(authors) = &diff.beatmap_authors {
                 if let Some(ms) = &authors.mappers {
-                    for m in ms.iter().flatten() {
+                    for m in ms.iter() {
                         mappers.push(m.clone());
                     }
                 }
                 if let Some(ls) = &authors.lighters {
-                    for l in ls.iter().flatten() {
+                    for l in ls.iter() {
                         lighters.push(l.clone());
                     }
                 }
             }
 
             let env_idx = diff.environment_name_idx.unwrap_or(0) as usize;
-            let env_name = environment_names.get(env_idx).cloned().unwrap_or_default();
+            let env_name = environment_names.get(env_idx).cloned();
 
             let color_scheme = diff
                 .beatmap_color_scheme_idx
                 .and_then(|idx| color_schemes.get(idx as usize).cloned().flatten());
 
             // placeholder BeatmapBasicData construction
-            basic_data_dict.insert(key, BeatmapBasicData::default());
+            basic_data_dict.insert(
+                key,
+                BeatmapBasicData::new(
+                    diff.note_jump_movement_speed,
+                    diff.note_jump_start_beat_offset,
+                    env_name,
+                    color_scheme,
+                ),
+            );
         }
     }
 
@@ -247,7 +277,7 @@ pub fn get_beatmap_level_and_basic_data_v4(
 }
 
 /// Reads info.dat and deserializes as v4 BeatmapLevelSaveDataV4
-pub fn get_save_data_from_v4(path: &Path) -> Option<v4::BeatmapLevelSaveDataV4> {
+pub fn get_save_data_from_v4(path: &Path) -> Option<BeatmapLevelSaveDataV4> {
     if path.as_os_str().is_empty() {
         warn!("Provided path was empty!");
         return None;
@@ -266,7 +296,7 @@ pub fn get_save_data_from_v4(path: &Path) -> Option<v4::BeatmapLevelSaveDataV4> 
     };
 
     match std::fs::read_to_string(&info_path) {
-        Ok(text) => match serde_json::from_str::<v4::BeatmapLevelSaveDataV4>(&text) {
+        Ok(text) => match serde_json::from_str::<BeatmapLevelSaveDataV4>(&text) {
             Ok(data) => Some(data),
             Err(e) => {
                 warn!("Cannot parse info.dat {}: {}", info_path.display(), e);
@@ -284,20 +314,9 @@ pub fn get_save_data_from_v4(path: &Path) -> Option<v4::BeatmapLevelSaveDataV4> 
     }
 }
 
-/// Convert a v2 info JSON string into the internal Custom (here represented as the v2 struct itself)
-pub fn load_custom_save_data_v2(json_str: &str) -> Option<v2::StandardLevelInfoSaveDataV2> {
-    match serde_json::from_str::<v2::StandardLevelInfoSaveDataV2>(json_str) {
-        Ok(s) => Some(s),
-        Err(e) => {
-            warn!("Failed to parse V2 save data: {}", e);
-            None
-        }
-    }
-}
-
 /// Convert a v4 info JSON string into the internal V4 struct
-pub fn load_custom_save_data_v4(json_str: &str) -> Option<v4::BeatmapLevelSaveDataV4> {
-    match serde_json::from_str::<v4::BeatmapLevelSaveDataV4>(json_str) {
+pub fn load_custom_save_data_v4(json_str: &str) -> Option<BeatmapLevelSaveDataV4> {
+    match serde_json::from_str::<BeatmapLevelSaveDataV4>(json_str) {
         Ok(s) => Some(s),
         Err(e) => {
             warn!("Failed to parse V4 save data: {}", e);

@@ -6,13 +6,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DifficultyBeatmapV2 {
     #[serde(rename = "_difficulty")]
-    pub difficulty: Option<String>,
+    pub difficulty: String,
 
     #[serde(rename = "_difficultyRank")]
-    pub difficulty_rank: Option<i32>,
+    pub difficulty_rank: u32,
 
     #[serde(rename = "_beatmapFilename")]
-    pub beatmap_filename: Option<String>,
+    pub beatmap_filename: String,
 
     #[serde(rename = "_noteJumpMovementSpeed")]
     pub note_jump_movement_speed: Option<f32>,
@@ -21,20 +21,20 @@ pub struct DifficultyBeatmapV2 {
     pub note_jump_start_beat_offset: Option<f32>,
 
     #[serde(rename = "_beatmapColorSchemeIdx")]
-    pub beatmap_color_scheme_idx: Option<i32>,
+    pub beatmap_color_scheme_idx: usize,
 
     #[serde(rename = "_environmentNameIdx")]
-    pub environment_name_idx: Option<i32>,
+    pub environment_name_idx: usize,
 }
 
 /// Represents a characteristic -> beatmaps grouping (matches `_beatmapCharacteristicName` and `_difficultyBeatmaps`)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DifficultyBeatmapSetV2 {
     #[serde(rename = "_beatmapCharacteristicName")]
-    pub beatmap_characteristic_name: Option<String>,
+    pub beatmap_characteristic_name: String,
 
     #[serde(rename = "_difficultyBeatmaps")]
-    pub difficulty_beatmaps: Option<Vec<DifficultyBeatmapV2>>,
+    pub difficulty_beatmaps: Vec<DifficultyBeatmapV2>,
 }
 
 /// Placeholder for beatmap level color scheme save data; structure unknown here so keep it flexible
