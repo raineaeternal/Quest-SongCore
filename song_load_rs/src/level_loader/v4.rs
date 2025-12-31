@@ -1,0 +1,307 @@
+pub fn basic_verify_map_v4(level_path: &Path, save_data: &BeatmapLevelSaveDataV4) -> bool {
+    // audio must be present
+    let audio = &save_data.audio;
+    let song_file = &audio.song_filename;
+    let cover_file = &save_data.cover_image_filename;
+    let audio_file = &audio.audio_data_filename;
+
+    if !level_path.join(song_file).exists() {
+        return false;
+    }
+    if let Some(cover_file) = cover_file
+        && !level_path.join(cover_file).exists()
+    {
+        return false;
+    }
+    if let Some(audio_file) = audio_file
+        && !level_path.join(audio_file).exists()
+    {
+        return false;
+    }
+
+    for diff in save_data.difficulty_beatmaps.iter().flatten() {
+        let diff_file = &diff.beatmap_data_filename;
+        let light_file = &diff.lightshow_data_filename;
+        if let Some(diff_file) = diff_file
+            && !level_path.join(diff_file).exists()
+        {
+            return false;
+        }
+        if let Some(light_file) = light_file
+            && !level_path.join(light_file).exists()
+        {
+            return false;
+        }
+    }
+
+    true
+}
+
+/// Rust translation of `LevelLoader::LoadCustomBeatmapLevel` (V4)
+/// Returns `None` on error or missing data.
+pub fn load_custom_beatmap_level_v4(
+    level_path: &Path,
+    wip: bool,
+    save_data: Option<BeatmapLevelSaveDataV4>,
+    song_cache: &mut impl SongCache,
+) -> Option<(CustomBeatmapLevel, String)> {
+    let save = match save_data {
+        Some(s) => s,
+        None => {
+            warn!("saveData was null for level @ {}", level_path.display());
+            if cfg!(feature = "throw_on_missing_data") {
+                panic!("saveData was null for level @ {}", level_path.display());
+            }
+            return None;
+        }
+    };
+
+    if !basic_verify_map_v4(level_path, &save) {
+        warn!("Map {} was missing files!", level_path.display());
+        if cfg!(feature = "throw_on_missing_data") {
+            panic!("Map {} was missing files!", level_path.display());
+        }
+        return None;
+    }
+
+    let song_data =
+        song_loader::load_song_from_path(level_path.to_path_buf(), Some(song_cache)).ok()?;
+
+    let level_id = format!(
+        "{CUSTOM_LEVEL_PREFIX_ID}{}{}",
+        song_data.hash,
+        if wip { " WIP" } else { "" }
+    );
+
+    // destructure song tuple (name, subname, author)
+    let mut song_name = save.song.title.unwrap_or_default();
+    let mut song_sub_name = save.song.sub_title.unwrap_or_default();
+    let mut song_author_name = save.song.author.unwrap_or_default();
+
+    let bpm = save.audio.bpm;
+    let lufs = save.audio.lufs.unwrap_or(-6.0);
+    let preview_start_time = save.audio.preview_start_time;
+    let preview_duration = save.audio.preview_duration;
+
+    let song_duration = song_data.song_length;
+
+    let preview_media_data = get_preview_media_data(
+        level_path,
+        &save.cover_image_filename,
+        &save.audio.song_filename,
+    );
+    let (beatmap_level_data, beatmap_basic_data) =
+        get_beatmap_level_and_basic_data(level_path, &level_id, save);
+
+    if beatmap_basic_data.count() == 0 {
+        return None;
+    }
+
+    let mut all_mappers: Vec<String> = Vec::new();
+    let mut all_lighters: Vec<String> = Vec::new();
+
+    for diff in save.difficulty_beatmaps.iter().flatten() {
+        let Some(diff_authors) = &diff.beatmap_authors else {
+            continue;
+        };
+
+        for author in diff_authors.mappers.iter().flatten() {
+            all_mappers.push(author.clone());
+        }
+        for author in diff_authors.lighters.iter().flatten() {
+            all_lighters.push(author.clone());
+        }
+    }
+
+    let result = CustomBeatmapLevel::new(
+        level_path.to_string_lossy().to_string(),
+        StandardLevelInfoSaveData::V4(save),
+        beatmap_level_data,
+        false,
+        level_id,
+        song_name,
+        song_sub_name,
+        song_author_name,
+        all_mappers,
+        all_lighters,
+        bpm,
+        lufs,
+        0.0_f32,
+        preview_start_time,
+        preview_duration,
+        song_duration,
+        PlayerSensitivityFlag::Safe,
+        preview_media_data.into_ipreview_media_data(),
+        beatmap_basic_data,
+    );
+
+    Some(result)
+}
+
+/// V4 version of GetBeatmapLevelAndBasicData
+pub fn get_beatmap_level_and_basic_data_v4(
+    level_path: &Path,
+    level_id: &str,
+    save_data: &v4::BeatmapLevelSaveDataV4,
+) -> (
+    IBeatmapLevelData,
+    HashMap<(BeatmapCharacteristicSO, BeatmapDifficulty), BeatmapBasicData>,
+) {
+    let mut file_difficulty_beatmaps: HashMap<(_, _), String> = HashMap::new();
+    let mut basic_data_dict: HashMap<(_, _), BeatmapBasicData> = HashMap::new();
+
+    // Build environment list from provided names or default to empty list
+    let environment_names: Vec<String> = save_data
+        .environment_names
+        .clone()
+        .unwrap_or_default()
+        .into_iter()
+        .collect();
+
+    // build simple color scheme placeholders (we keep raw strings for now)
+    let color_schemes: Vec<Option<String>> = save_data
+        .color_schemes
+        .as_ref()
+        .map(|v| v.iter().map(|c| c.color_scheme_name.clone()).collect())
+        .unwrap_or_default();
+
+    if let Some(diffs) = &save_data.difficulty_beatmaps {
+        for diff in diffs {
+            let characteristic = diff
+                .characteristic
+                .as_ref()
+                .map(|s| BeatmapCharacteristicSO {})
+                .unwrap_or_else(|| BeatmapCharacteristicSO {});
+
+            let difficulty = diff
+                .difficulty
+                .as_ref()
+                .map(|_| BeatmapDifficulty {})
+                .unwrap_or_else(|| BeatmapDifficulty {});
+
+            let beatmap_path = diff
+                .beatmap_data_filename
+                .as_ref()
+                .map(|s| level_path.join(s))
+                .unwrap_or_else(|| level_path.to_path_buf());
+            if !beatmap_path.exists() {
+                warn!(
+                    "Diff file '{}' does not exist, skipping...",
+                    beatmap_path.display()
+                );
+                continue;
+            }
+
+            let lightshow_path = diff
+                .lightshow_data_filename
+                .as_ref()
+                .map(|s| level_path.join(s))
+                .unwrap_or_else(|| level_path.to_path_buf());
+            if !lightshow_path.exists() {
+                warn!(
+                    "Diff Lighting file '{}' does not exist, skipping...",
+                    lightshow_path.display()
+                );
+                continue;
+            }
+
+            let key = (characteristic.clone(), difficulty.clone());
+            if file_difficulty_beatmaps.contains_key(&key) {
+                warn!("Duplicate characteristic/difficulty, skipping...");
+                continue;
+            }
+
+            file_difficulty_beatmaps
+                .insert(key.clone(), beatmap_path.to_string_lossy().to_string());
+
+            // collect mappers/lighters
+            let mut mappers: Vec<String> = Vec::new();
+            let mut lighters: Vec<String> = Vec::new();
+            if let Some(authors) = &diff.beatmap_authors {
+                if let Some(ms) = &authors.mappers {
+                    for m in ms.iter().flatten() {
+                        mappers.push(m.clone());
+                    }
+                }
+                if let Some(ls) = &authors.lighters {
+                    for l in ls.iter().flatten() {
+                        lighters.push(l.clone());
+                    }
+                }
+            }
+
+            let env_idx = diff.environment_name_idx.unwrap_or(0) as usize;
+            let env_name = environment_names.get(env_idx).cloned().unwrap_or_default();
+
+            let color_scheme = diff
+                .beatmap_color_scheme_idx
+                .and_then(|idx| color_schemes.get(idx as usize).cloned().flatten());
+
+            // placeholder BeatmapBasicData construction
+            basic_data_dict.insert(key, BeatmapBasicData::default());
+        }
+    }
+
+    let beatmap_level_data = IBeatmapLevelData;
+    (beatmap_level_data, basic_data_dict)
+}
+
+/// Reads info.dat and deserializes as v4 BeatmapLevelSaveDataV4
+pub fn get_save_data_from_v4(path: &Path) -> Option<v4::BeatmapLevelSaveDataV4> {
+    if path.as_os_str().is_empty() {
+        warn!("Provided path was empty!");
+        return None;
+    }
+
+    let info_path = if path.join("info.dat").exists() {
+        path.join("info.dat")
+    } else if path.join("Info.dat").exists() {
+        path.join("Info.dat")
+    } else {
+        warn!(
+            "no info.dat found for song @ '{}', returning null!",
+            path.display()
+        );
+        return None;
+    };
+
+    match std::fs::read_to_string(&info_path) {
+        Ok(text) => match serde_json::from_str::<v4::BeatmapLevelSaveDataV4>(&text) {
+            Ok(data) => Some(data),
+            Err(e) => {
+                warn!("Cannot parse info.dat {}: {}", info_path.display(), e);
+                None
+            }
+        },
+        Err(e) => {
+            warn!(
+                "Cannot load file from path: {}! error: {}",
+                path.display(),
+                e
+            );
+            None
+        }
+    }
+}
+
+/// Convert a v2 info JSON string into the internal Custom (here represented as the v2 struct itself)
+pub fn load_custom_save_data_v2(json_str: &str) -> Option<v2::StandardLevelInfoSaveDataV2> {
+    match serde_json::from_str::<v2::StandardLevelInfoSaveDataV2>(json_str) {
+        Ok(s) => Some(s),
+        Err(e) => {
+            warn!("Failed to parse V2 save data: {}", e);
+            None
+        }
+    }
+}
+
+/// Convert a v4 info JSON string into the internal V4 struct
+pub fn load_custom_save_data_v4(json_str: &str) -> Option<v4::BeatmapLevelSaveDataV4> {
+    match serde_json::from_str::<v4::BeatmapLevelSaveDataV4>(json_str) {
+        Ok(s) => Some(s),
+        Err(e) => {
+            warn!("Failed to parse V4 save data: {}", e);
+            None
+        }
+    }
+}

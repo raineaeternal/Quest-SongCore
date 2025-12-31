@@ -52,9 +52,6 @@ pub enum LoadSongError {
     IoError(#[from] std::io::Error),
 }
 
-
-
-
 pub fn load_song_from_path(
     path: PathBuf,
     mut cache: Option<&mut dyn SongCache>,
