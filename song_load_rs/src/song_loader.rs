@@ -14,7 +14,7 @@ use crate::{
     audio_load,
     beatmap::Beatmap,
     cache::{CacheError, SongCache},
-    hash::compute_custom_level_hash_from_beatmap, models::v2::StandardLevelInfoSaveDataV2,
+    hash::compute_custom_level_hash_from_beatmap,
 };
 
 pub const CUSTOM_LEVEL_PREFIX_ID: &str = "custom_level_";

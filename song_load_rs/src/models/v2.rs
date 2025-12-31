@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::models::beatmap::BeatmapLevelColorSchemeSaveData;
+
 /// Represents a difficulty beatmap within a beatmap set (matches the C# `_difficulty*` fields)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DifficultyBeatmapV2 {
@@ -15,16 +17,16 @@ pub struct DifficultyBeatmapV2 {
     pub beatmap_filename: String,
 
     #[serde(rename = "_noteJumpMovementSpeed")]
-    pub note_jump_movement_speed: Option<f32>,
+    pub note_jump_movement_speed: f32,
 
     #[serde(rename = "_noteJumpStartBeatOffset")]
-    pub note_jump_start_beat_offset: Option<f32>,
+    pub note_jump_start_beat_offset: f32,
 
     #[serde(rename = "_beatmapColorSchemeIdx")]
-    pub beatmap_color_scheme_idx: usize,
+    pub beatmap_color_scheme_idx: Option<usize>,
 
     #[serde(rename = "_environmentNameIdx")]
-    pub environment_name_idx: usize,
+    pub environment_name_idx: Option<usize>,
 }
 
 /// Represents a characteristic -> beatmaps grouping (matches `_beatmapCharacteristicName` and `_difficultyBeatmaps`)
@@ -36,10 +38,6 @@ pub struct DifficultyBeatmapSetV2 {
     #[serde(rename = "_difficultyBeatmaps")]
     pub difficulty_beatmaps: Vec<DifficultyBeatmapV2>,
 }
-
-/// Placeholder for beatmap level color scheme save data; structure unknown here so keep it flexible
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BeatmapLevelColorSchemeSaveDataV2(serde_json::Value);
 
 /// Top-level StandardLevelInfoSaveData (version 2.x) matching the C# private field names
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,42 +58,41 @@ pub struct StandardLevelInfoSaveDataV2 {
     pub level_author_name: Option<String>,
 
     #[serde(rename = "_beatsPerMinute")]
-    pub beats_per_minute: Option<f32>,
+    pub beats_per_minute: f32,
 
     #[serde(rename = "_songTimeOffset")]
     pub song_time_offset: Option<f32>,
 
     #[serde(rename = "_shuffle")]
-    pub shuffle: Option<f32>,
+    pub shuffle: f32,
 
     #[serde(rename = "_shufflePeriod")]
-    pub shuffle_period: Option<f32>,
+    pub shuffle_period: f32,
 
     #[serde(rename = "_previewStartTime")]
-    pub preview_start_time: Option<f32>,
+    pub preview_start_time: f32,
 
     #[serde(rename = "_previewDuration")]
-    pub preview_duration: Option<f32>,
+    pub preview_duration: f32,
 
     #[serde(rename = "_songFilename")]
-    pub song_filename: Option<PathBuf>,
+    pub song_filename: PathBuf,
 
     #[serde(rename = "_coverImageFilename")]
     pub cover_image_filename: Option<PathBuf>,
 
     #[serde(rename = "_environmentName")]
-    pub environment_name: Option<String>,
+    pub environment_name: String,
 
     #[serde(rename = "_allDirectionsEnvironmentName")]
-    pub all_directions_environment_name: Option<String>,
+    pub all_directions_environment_name: String,
 
     #[serde(rename = "_environmentNames")]
-    pub environment_names: Option<Vec<String>>,
+    pub environment_names: Vec<String>,
 
     #[serde(rename = "_colorSchemes")]
-    pub color_schemes: Option<Vec<BeatmapLevelColorSchemeSaveDataV2>>,
+    pub color_schemes: Vec<BeatmapLevelColorSchemeSaveData>,
 
     #[serde(rename = "_difficultyBeatmapSets")]
-    pub difficulty_beatmap_sets: Option<Vec<DifficultyBeatmapSetV2>>,
+    pub difficulty_beatmap_sets: Vec<DifficultyBeatmapSetV2>,
 }
-

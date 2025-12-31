@@ -4,31 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::common::Color;
 
-#[derive(Debug, Clone)]
-pub enum PlayerSensitivityFlag {
-    Unknown,
-    Safe,
-    Themes,
-    Explicit,
-}
-
-#[derive(Debug, Clone)]
-pub struct IBeatmapLevelData;
-#[derive(Debug, Clone)]
-pub struct PreviewMediaData {
-    pub level_path: PathBuf,
-    pub cover_sprite: PathBuf,
-    pub preview_audio_clip: PathBuf,
-}
-/// Represents a beatmap characteristic (e.g., Standard, OneSaber, etc.)
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct BeatmapCharacteristic(pub String);
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct BeatmapDifficulty(pub String);
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct BeatmapColorScheme {
+pub struct BeatmapLevelColorSchemeSaveData {
     #[serde(rename = "colorScheme")]
     pub color_scheme: ColorScheme,
     #[serde(rename = "useOverride")]
@@ -67,25 +44,56 @@ pub struct EnvironmentName(pub String);
 
 #[derive(Debug, Clone)]
 pub struct BeatmapBasicData {
-    pub note_jump_movement_speed: Option<f32>,
-    pub note_jump_start_beat_offset: Option<f32>,
+    pub note_jump_movement_speed: f32,
+    pub note_jump_start_beat_offset: f32,
     pub environment: Option<EnvironmentName>,
-    pub color_scheme: Option<BeatmapColorScheme>,
+    pub color_scheme: Option<ColorScheme>,
+    pub notes_count: Option<u32>,
+    pub cuttable_objects_count: Option<u32>,
+    pub obstacles_count: Option<u32>,
+    pub bombs_count: Option<u32>,
+
+    pub mappers: Vec<String>,
+    pub lighters: Vec<String>,
 }
-impl BeatmapBasicData {
-    pub(crate) fn new(
-        note_jump_movement_speed: Option<f32>,
-        note_jump_start_beat_offset: Option<f32>,
-        environment: Option<EnvironmentName>,
-        color_scheme: Option<BeatmapColorScheme>,
-    ) -> Self {
-        Self {
-            note_jump_movement_speed,
-            note_jump_start_beat_offset,
-            environment,
-            color_scheme,
-        }
-    }
-}
+impl BeatmapBasicData {}
 #[derive(Debug, Clone)]
 pub struct BeatmapKey;
+
+#[derive(Debug, Clone)]
+pub enum PlayerSensitivityFlag {
+    Unknown,
+    Safe,
+    Themes,
+    Explicit,
+}
+
+#[derive(Debug, Clone)]
+pub struct PreviewMediaData {
+    pub level_path: PathBuf,
+    pub cover_sprite: Option<PathBuf>,
+    pub preview_audio_clip: PathBuf,
+}
+/// Represents a beatmap characteristic (e.g., Standard, OneSaber, etc.)
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BeatmapCharacteristic(pub String);
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BeatmapDifficulty(pub String);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FileSystemBeatmapLevelData {
+    pub audio_clip_path: PathBuf,
+    pub audio_data_path: Option<PathBuf>,
+    pub name: String,
+    pub difficulty_beatmaps: std::collections::HashMap<
+        (BeatmapCharacteristic, BeatmapDifficulty),
+        FileDifficultyBeatmap,
+    >,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FileDifficultyBeatmap {
+    pub beatmap_path: PathBuf,
+    pub lightshow_path: Option<PathBuf>,
+}

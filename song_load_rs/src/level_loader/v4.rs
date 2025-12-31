@@ -7,8 +7,9 @@ use crate::{
     level_loader::{CustomBeatmapLevel, StandardLevelInfoSaveData, get_preview_media_data},
     models::{
         beatmap::{
-            BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, BeatmapColorScheme,
-            EnvironmentName, IBeatmapLevelData, PlayerSensitivityFlag,
+            BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, ColorScheme,
+            EnvironmentName, FileDifficultyBeatmap, FileSystemBeatmapLevelData,
+            PlayerSensitivityFlag,
         },
         v4::BeatmapLevelSaveDataV4,
     },
@@ -39,14 +40,10 @@ pub fn basic_verify_map_v4(level_path: &Path, save_data: &BeatmapLevelSaveDataV4
     for diff in save_data.difficulty_beatmaps.iter().flatten() {
         let diff_file = &diff.beatmap_data_filename;
         let light_file = &diff.lightshow_data_filename;
-        if let Some(diff_file) = diff_file
-            && !level_path.join(diff_file).exists()
-        {
+        if !level_path.join(diff_file).exists() {
             return false;
         }
-        if let Some(light_file) = light_file
-            && !level_path.join(light_file).exists()
-        {
+        if !level_path.join(light_file).exists() {
             return false;
         }
     }
@@ -91,9 +88,9 @@ pub fn load_custom_beatmap_level_v4(
     );
 
     // destructure song tuple (name, subname, author)
-    let mut song_name = save.song.title.unwrap_or_default();
-    let mut song_sub_name = save.song.sub_title.unwrap_or_default();
-    let mut song_author_name = save.song.author.unwrap_or_default();
+    let song_name = save.song.title.clone().unwrap_or_default();
+    let song_sub_name = save.song.sub_title.clone().unwrap_or_default();
+    let song_author_name = save.song.author.clone().unwrap_or_default();
 
     let bpm = save.audio.bpm;
     let lufs = save.audio.lufs.unwrap_or(-6.0);
@@ -104,13 +101,13 @@ pub fn load_custom_beatmap_level_v4(
 
     let preview_media_data = get_preview_media_data(
         level_path,
-        &save.cover_image_filename,
+        save.cover_image_filename.as_deref(),
         &save.audio.song_filename,
     );
-    let (beatmap_level_data, beatmap_basic_data) =
+    let (beatmap_level_data, beatmap_basic_data_dict) =
         get_beatmap_level_and_basic_data_v4(level_path, &level_id, &save);
 
-    if beatmap_basic_data.count() == 0 {
+    if beatmap_basic_data_dict.is_empty() {
         return None;
     }
 
@@ -131,6 +128,7 @@ pub fn load_custom_beatmap_level_v4(
     }
 
     let result = CustomBeatmapLevel::new(
+        CustomBeatmapLevel::K_INVALID_VERSION,
         level_path.to_string_lossy().to_string(),
         StandardLevelInfoSaveData::V4(save),
         beatmap_level_data,
@@ -149,7 +147,7 @@ pub fn load_custom_beatmap_level_v4(
         song_duration,
         PlayerSensitivityFlag::Safe,
         preview_media_data,
-        beatmap_basic_data,
+        beatmap_basic_data_dict,
     );
 
     Some((result, song_data.hash))
@@ -161,11 +159,17 @@ pub fn get_beatmap_level_and_basic_data_v4(
     level_id: &str,
     save_data: &BeatmapLevelSaveDataV4,
 ) -> (
-    IBeatmapLevelData,
+    FileSystemBeatmapLevelData,
     HashMap<(BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData>,
 ) {
-    let mut file_difficulty_beatmaps: HashMap<(_, _), String> = HashMap::new();
-    let mut basic_data_dict: HashMap<(_, _), BeatmapBasicData> = HashMap::new();
+    // System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>
+    let mut file_difficulty_beatmaps: HashMap<
+        (BeatmapCharacteristic, BeatmapDifficulty),
+        FileDifficultyBeatmap,
+    > = HashMap::new();
+    // System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::BeatmapBasicData*>
+    let mut basic_data_dict: HashMap<(BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData> =
+        HashMap::new();
 
     // Build environment list from provided names or default to empty list
     let environment_names: Vec<EnvironmentName> = save_data
@@ -177,35 +181,15 @@ pub fn get_beatmap_level_and_basic_data_v4(
         .collect();
 
     // build simple color scheme placeholders (we keep raw strings for now)
-    let color_schemes: Vec<Option<BeatmapColorScheme>> = save_data
-        .color_schemes
-        .as_ref()
-        .map(|v| {
-            v.iter()
-                .map(|c| c.color_scheme_name.clone().map(BeatmapColorScheme))
-                .collect()
-        })
-        .unwrap_or_default();
+    let color_schemes = save_data.color_schemes.clone().unwrap_or_default();
 
     if let Some(diffs) = &save_data.difficulty_beatmaps {
         for diff in diffs {
-            let characteristic = diff
-                .characteristic
-                .clone()
-                .map(|s| BeatmapCharacteristic(s))
-                .unwrap_or_else(|| BeatmapCharacteristic);
+            let characteristic = BeatmapCharacteristic(diff.characteristic.clone());
 
-            let difficulty = diff
-                .difficulty
-                .clone()
-                .map(|s| BeatmapDifficulty(s))
-                .unwrap_or_else(|| BeatmapDifficulty {});
+            let difficulty = BeatmapDifficulty(diff.difficulty.clone());
 
-            let beatmap_path = diff
-                .beatmap_data_filename
-                .as_ref()
-                .map(|s| level_path.join(s))
-                .unwrap_or_else(|| level_path.to_path_buf());
+            let beatmap_path = level_path.join(diff.beatmap_data_filename.clone());
             if !beatmap_path.exists() {
                 warn!(
                     "Diff file '{}' does not exist, skipping...",
@@ -214,11 +198,7 @@ pub fn get_beatmap_level_and_basic_data_v4(
                 continue;
             }
 
-            let lightshow_path = diff
-                .lightshow_data_filename
-                .as_ref()
-                .map(|s| level_path.join(s))
-                .unwrap_or_else(|| level_path.to_path_buf());
+            let lightshow_path = level_path.join(diff.lightshow_data_filename.clone());
             if !lightshow_path.exists() {
                 warn!(
                     "Diff Lighting file '{}' does not exist, skipping...",
@@ -233,8 +213,13 @@ pub fn get_beatmap_level_and_basic_data_v4(
                 continue;
             }
 
-            file_difficulty_beatmaps
-                .insert(key.clone(), beatmap_path.to_string_lossy().to_string());
+            file_difficulty_beatmaps.insert(
+                key.clone(),
+                FileDifficultyBeatmap {
+                    beatmap_path,
+                    lightshow_path: Some(lightshow_path),
+                },
+            );
 
             // collect mappers/lighters
             let mut mappers: Vec<String> = Vec::new();
@@ -252,27 +237,36 @@ pub fn get_beatmap_level_and_basic_data_v4(
                 }
             }
 
-            let env_idx = diff.environment_name_idx.unwrap_or(0) as usize;
-            let env_name = environment_names.get(env_idx).cloned();
+            let env_name = environment_names.get(diff.environment_name_idx).cloned();
 
             let color_scheme = diff
                 .beatmap_color_scheme_idx
-                .and_then(|idx| color_schemes.get(idx as usize).cloned().flatten());
+                .and_then(|idx| color_schemes.get(idx).cloned());
 
-            // placeholder BeatmapBasicData construction
             basic_data_dict.insert(
                 key,
-                BeatmapBasicData::new(
-                    diff.note_jump_movement_speed,
-                    diff.note_jump_start_beat_offset,
-                    env_name,
-                    color_scheme,
-                ),
+                BeatmapBasicData {
+                    note_jump_movement_speed: diff.note_jump_movement_speed,
+                    note_jump_start_beat_offset: diff.note_jump_start_beat_offset,
+                    environment: env_name,
+                    color_scheme: color_scheme.map(ColorScheme::from),
+                    notes_count: None,
+                    cuttable_objects_count: None,
+                    obstacles_count: None,
+                    bombs_count: None,
+                    mappers,
+                    lighters,
+                },
             );
         }
     }
 
-    let beatmap_level_data = IBeatmapLevelData;
+    let beatmap_level_data = FileSystemBeatmapLevelData {
+        audio_clip_path: save_data.audio.song_filename.clone(),
+        audio_data_path: save_data.audio.audio_data_filename.clone(),
+        name: level_id.to_string(),
+        difficulty_beatmaps: file_difficulty_beatmaps,
+    };
     (beatmap_level_data, basic_data_dict)
 }
 

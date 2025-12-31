@@ -4,11 +4,12 @@ use tracing::warn;
 
 use crate::{
     cache::SongCache,
-    level_loader::{self, CustomBeatmapLevel, IBeatmapLevelData, StandardLevelInfoSaveData, get_preview_media_data},
+    level_loader::{CustomBeatmapLevel, StandardLevelInfoSaveData, get_preview_media_data},
     models::{
         beatmap::{
-            BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, BeatmapColorScheme,
-            EnvironmentName,
+            BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty,
+            BeatmapLevelColorSchemeSaveData, EnvironmentName, FileDifficultyBeatmap,
+            FileSystemBeatmapLevelData,
         },
         v2::{self, StandardLevelInfoSaveDataV2},
     },
@@ -25,27 +26,25 @@ pub fn get_beatmap_level_and_basic_data_v2(
     level_id: &str,
     save_data: &v2::StandardLevelInfoSaveDataV2,
     environment_names: &[EnvironmentName],
-    color_schemes: &[Option<BeatmapColorScheme>],
+    color_schemes: &[BeatmapLevelColorSchemeSaveData],
 ) -> (
-    IBeatmapLevelData,
+    FileSystemBeatmapLevelData,
     HashMap<(BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData>,
 ) {
     let mut file_difficulty_beatmaps: HashMap<
         (BeatmapCharacteristic, BeatmapDifficulty),
-        String,
+        FileDifficultyBeatmap,
     > = HashMap::new();
-    let mut basic_data_dict: HashMap<
-        (BeatmapCharacteristic, BeatmapDifficulty),
-        BeatmapBasicData,
-    > = HashMap::new();
+    let mut basic_data_dict: HashMap<(BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData> =
+        HashMap::new();
 
-    for beatmap_set in save_data.difficulty_beatmap_sets.iter().flatten() {
+    for beatmap_set in save_data.difficulty_beatmap_sets.iter() {
         // placeholder: resolve characteristic by serialized name
-        let characteristic = BeatmapCharacteristic(beatmap_set.beatmap_characteristic_name);
+        let characteristic = BeatmapCharacteristic(beatmap_set.beatmap_characteristic_name.clone());
 
         for difficulty_beatmap in beatmap_set.difficulty_beatmaps.iter() {
             // parse difficulty string into BeatmapDifficulty (placeholder parse)
-            let difficulty = BeatmapDifficulty(difficulty_beatmap.difficulty);
+            let difficulty = BeatmapDifficulty(difficulty_beatmap.difficulty.clone());
             let beatmap_filename = &difficulty_beatmap.beatmap_filename;
 
             let beatmap_path = level_path.join(beatmap_filename);
@@ -67,45 +66,58 @@ pub fn get_beatmap_level_and_basic_data_v2(
                 continue;
             }
 
-            file_difficulty_beatmaps
-                .insert(key.clone(), beatmap_path.to_string_lossy().to_string());
+            file_difficulty_beatmaps.insert(
+                key.clone(),
+                FileDifficultyBeatmap {
+                    beatmap_path,
+                    lightshow_path: None, // V2 does not have lightshow data
+                },
+            );
 
             // compute envNameIndex
-            let save_data_had_env_names =
-                !save_data.environment_names.unwrap_or_default().is_empty();
+            let _save_data_had_env_names = !save_data.environment_names.is_empty();
 
-            let mut env_name_index: usize = if save_data_had_env_names {
-                difficulty_beatmap.environment_name_idx
-            } else if crate::beatmap_characteristics::contains_rotation_events(&characteristic) {
-                1
-            } else {
-                0
-            };
-            // clamp to valid range
-            env_name_index = env_name_index.clamp(0, environment_names.len().saturating_sub(1));
+            let env_name_index = difficulty_beatmap
+                .environment_name_idx
+                // clamp to valid range;
+                .map(|i| i.clamp(0, environment_names.len().saturating_sub(1)));
 
-            let color_scheme = color_schemes
-                .get(difficulty_beatmap.beatmap_color_scheme_idx)
-                .cloned()
-                .flatten();
+            let color_scheme = difficulty_beatmap
+                .beatmap_color_scheme_idx
+                .and_then(|i| color_schemes.get(i))
+                .map(|c| &c.color_scheme)
+                .cloned();
+
+            let environment = env_name_index.map(|e| environment_names[e].clone());
 
             // Build BeatmapBasicData -- here we fill with a default placeholder.
             // In a full implementation map the concrete fields (njm, offset, env name, color scheme, etc).
             basic_data_dict.insert(
                 key,
-                BeatmapBasicData::new(
-                    difficulty_beatmap.note_jump_movement_speed,
-                    difficulty_beatmap.note_jump_start_beat_offset,
-                    environment_names.get(env_name_index).cloned(),
+                BeatmapBasicData {
+                    note_jump_movement_speed: difficulty_beatmap.note_jump_movement_speed,
+                    note_jump_start_beat_offset: difficulty_beatmap.note_jump_start_beat_offset,
+                    environment,
                     color_scheme,
-                ),
+                    notes_count: None,
+                    cuttable_objects_count: None,
+                    obstacles_count: None,
+                    bombs_count: None,
+                    mappers: vec![],
+                    lighters: vec![],
+                },
             );
         }
     }
 
     // Construct a placeholder IBeatmapLevelData representing the filesystem level data.
     // A full implementation would create a FileSystemBeatmapLevelData-like structure with the collected dict.
-    let beatmap_level_data = IBeatmapLevelData;
+    let beatmap_level_data = FileSystemBeatmapLevelData {
+        audio_clip_path: level_path.join(&save_data.song_filename),
+        audio_data_path: None,
+        name: level_id.to_string(),
+        difficulty_beatmaps: file_difficulty_beatmaps,
+    };
 
     (beatmap_level_data, basic_data_dict)
 }
@@ -152,9 +164,7 @@ pub fn basic_verify_map_v2(level_path: &Path, save_data: &StandardLevelInfoSaveD
     let song_file = &save_data.song_filename;
     let cover_file = &save_data.cover_image_filename;
 
-    if let Some(song_file) = song_file
-        && !level_path.join(song_file).exists()
-    {
+    if !level_path.join(song_file).exists() {
         return false;
     }
     if let Some(cover_file) = cover_file
@@ -163,7 +173,7 @@ pub fn basic_verify_map_v2(level_path: &Path, save_data: &StandardLevelInfoSaveD
         return false;
     }
 
-    for set in save_data.difficulty_beatmap_sets.iter().flatten() {
+    for set in save_data.difficulty_beatmap_sets.iter() {
         for diff in set.difficulty_beatmaps.iter() {
             if !level_path.join(&diff.beatmap_filename).exists() {
                 return false;
@@ -212,14 +222,19 @@ pub fn load_custom_beatmap_level_v2(
         return None;
     }
 
-    let song_data = song_loader::load_song_from_path(level_path.to_path_buf(), Some(song_cache)).ok()?;
+    let song_data =
+        song_loader::load_song_from_path(level_path.to_path_buf(), Some(song_cache)).ok()?;
 
-    let level_id = format!("{CUSTOM_LEVEL_PREFIX_ID}{}{}", song_data.hash, if wip { " WIP" } else { "" });
+    let level_id = format!(
+        "{CUSTOM_LEVEL_PREFIX_ID}{}{}",
+        song_data.hash,
+        if wip { " WIP" } else { "" }
+    );
 
-    let song_name = save.song_name.unwrap_or_default();
-    let song_sub_name = save.song_sub_name.unwrap_or_default();
-    let song_author_name = save.song_author_name.unwrap_or_default();
-    let level_author_name = save.level_author_name.unwrap_or_default();
+    let song_name = save.song_name.clone().unwrap_or_default();
+    let song_sub_name = save.song_sub_name.clone().unwrap_or_default();
+    let song_author_name = save.song_author_name.clone().unwrap_or_default();
+    let level_author_name = save.level_author_name.clone().unwrap_or_default();
 
     let bpm = save.beats_per_minute;
     let song_time_offset = save.song_time_offset.unwrap_or_default();
@@ -230,25 +245,20 @@ pub fn load_custom_beatmap_level_v2(
     let environment_infos: Vec<EnvironmentName> = save
         .environment_names
         .clone()
-        .unwrap_or_default()
         .into_iter()
         .map(EnvironmentName)
         .collect();
 
     let environment_list: Vec<EnvironmentName> = if environment_infos.is_empty() {
-        let env = save.environment_name.clone().map(EnvironmentName).unwrap_or_else(|| EnvironmentName(String::new()));
-        let all_dirs = save.all_directions_environment_name.clone().map(EnvironmentName).unwrap_or_else(|| EnvironmentName(String::new()));
+        let env = EnvironmentName(save.environment_name.clone());
+        let all_dirs = EnvironmentName(save.all_directions_environment_name.clone());
         vec![env, all_dirs]
     } else {
         environment_infos
     };
 
     // color schemes
-    let color_schemes: Vec<Option<BeatmapColorScheme>> = save
-        .color_schemes
-        .as_ref()
-        .map(|v| v.iter().map(|c| c.0.clone().map(BeatmapColorScheme)).collect())
-        .unwrap_or_default();
+    let color_schemes = &save.color_schemes;
 
     let song_duration = None; // length resolution handled by song cache / loader
 
@@ -256,8 +266,8 @@ pub fn load_custom_beatmap_level_v2(
     let all_lighters: Vec<String> = Vec::new();
 
     // prepare preview media data paths
-    let cover_path = save.cover_image_filename.as_ref().map(|p| p.as_path()).unwrap_or(level_path);
-    let song_file_path = save.song_filename.as_ref().map(|p| p.as_path()).unwrap_or(level_path);
+    let cover_path = save.cover_image_filename.as_deref();
+    let song_file_path = save.song_filename.as_path();
 
     let preview_media_data = get_preview_media_data(level_path, cover_path, song_file_path);
 
@@ -266,7 +276,7 @@ pub fn load_custom_beatmap_level_v2(
         &level_id,
         &save,
         &environment_list,
-        &color_schemes,
+        color_schemes,
     );
 
     if beatmap_basic_data.is_empty() {
@@ -274,6 +284,7 @@ pub fn load_custom_beatmap_level_v2(
     }
 
     let result = CustomBeatmapLevel::new(
+        CustomBeatmapLevel::K_INVALID_VERSION,
         level_path.to_string_lossy().to_string(),
         StandardLevelInfoSaveData::V2(save),
         beatmap_level_data,
@@ -284,7 +295,7 @@ pub fn load_custom_beatmap_level_v2(
         song_author_name,
         all_mappers,
         all_lighters,
-        Some(bpm.unwrap_or(120.0)),
+        bpm,
         -6.0_f32,
         song_time_offset,
         preview_start_time,

@@ -7,7 +7,7 @@ pub mod hash;
 
 pub mod beatmap;
 pub mod cache;
+pub mod level_loader;
 pub mod models;
 pub mod song_loader;
-pub mod level_loader;
 pub mod version;
