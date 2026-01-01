@@ -12,7 +12,7 @@ use crate::{beatmap::BeatmapSource, info_dat::InfoDat};
 
 /// Compute a SHA-1 from an ordered iterator of `(PathBuf, Bytes)` pairs.
 /// The order of the iterator is respected (no internal sorting).
-pub fn create_sha1_from_path_bytes<I>(prepend_bytes: &[u8], files: I) -> io::Result<String>
+fn create_sha1_from_path_bytes<I>(prepend_bytes: &[u8], files: I) -> io::Result<String>
 where
     I: IntoIterator<Item = (PathBuf, Bytes)>,
 {
@@ -26,7 +26,8 @@ where
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-pub fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
+/// Get the list of necessary files from the InfoDat for hashing.
+fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
     let mut necessary_files = Vec::new();
 
     if let Some(song_filename) = info.get_song_filename() {

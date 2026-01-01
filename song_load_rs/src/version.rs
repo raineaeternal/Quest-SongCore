@@ -23,6 +23,7 @@ pub fn get_version(data: &str) -> Option<Version> {
         return None;
     }
 
+    // Only examine the first 50 bytes for performance
     let truncated = &data[..data.len().min(50)];
     let re = Regex::new(r#""_?version"\s*:\s*"([0-9]+\.[0-9]+(?:\.[0-9]+)?)""#).unwrap();
 

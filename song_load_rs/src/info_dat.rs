@@ -2,6 +2,7 @@ use std::path::Path;
 
 use crate::models::info_dat::{v2::StandardLevelInfoSaveDataV2, v4::BeatmapLevelSaveDataV4};
 
+/// Represents the Info.dat data structure, supporting multiple versions.
 #[derive(Debug, Clone)]
 pub enum InfoDat {
     V2(StandardLevelInfoSaveDataV2),
@@ -9,6 +10,7 @@ pub enum InfoDat {
 }
 
 impl InfoDat {
+    /// Returns the song filename from the InfoDat, if available.
     pub fn get_song_filename(&self) -> Option<&Path> {
         match self {
             InfoDat::V2(data) => Some(&data.song_filename),
@@ -17,7 +19,6 @@ impl InfoDat {
     }
 
     /// Returns an iterator over all beatmap file paths referenced in the InfoDat.
-    ///
     pub fn get_beatmap_files(&self) -> Box<dyn Iterator<Item = &Path> + '_> {
         match self {
             InfoDat::V2(data) => Box::new(

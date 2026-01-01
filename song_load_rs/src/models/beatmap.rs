@@ -33,6 +33,7 @@ pub enum PlayerSensitivityFlag {
     Explicit,
 }
 
+/// Represents preview media data for a beatmap level.
 #[derive(Debug, Clone)]
 pub struct PreviewMediaData {
     pub level_path: PathBuf,
@@ -43,9 +44,11 @@ pub struct PreviewMediaData {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BeatmapCharacteristic(pub String);
 
+/// Represents a beatmap difficulty (e.g., Easy, Normal, Hard, etc.)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BeatmapDifficulty(pub String);
 
+/// Represents the data of a beatmap level stored in the file system.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FileSystemBeatmapLevelData {
     pub audio_clip_path: PathBuf,
@@ -57,6 +60,7 @@ pub struct FileSystemBeatmapLevelData {
     >,
 }
 
+/// Represents a specific difficulty beatmap file within a beatmap level.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FileDifficultyBeatmap {
     pub beatmap_path: PathBuf,

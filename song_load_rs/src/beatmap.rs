@@ -8,10 +8,7 @@ use std::{
 use bytes::Bytes;
 use zip::ZipArchive;
 
-use crate::{
-    info_dat::InfoDat,
-    version::{self, NO_VERSION},
-};
+use crate::{info_dat::InfoDat, version};
 
 /// Represents a beatmap, which can be either a zip archive or a directory.
 ///
@@ -91,11 +88,14 @@ impl BeatmapSource {
         Ok(BeatmapSource::Directory(path.to_path_buf()))
     }
 
+    /// Reads and returns the Info.dat or info.dat file bytes from the beatmap source.
     pub fn get_info_dat_bytes(&self) -> io::Result<Bytes> {
         self.get_file_bytes(Path::new("Info.dat"))
             .or_else(|_| self.get_file_bytes(Path::new("info.dat")))
     }
 
+    /// Parses and returns the Info.dat data from the beatmap source.
+    /// Automatically detects the version and deserializes into the appropriate struct.
     pub fn get_info_dat(&self) -> io::Result<InfoDat> {
         let info_bytes = self.get_info_dat_bytes()?;
         let info_vec = info_bytes.to_vec();
@@ -106,7 +106,7 @@ impl BeatmapSource {
         let version = version::get_version(&info_contents).unwrap_or(version::NO_VERSION);
 
         match version {
-            v if v == NO_VERSION || v.major == 2 => {
+            v if v == version::NO_VERSION || v.major == 2 => {
                 let info_dat: crate::models::info_dat::v2::StandardLevelInfoSaveDataV2 =
                     serde_json::from_str(&info_contents)
                         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;

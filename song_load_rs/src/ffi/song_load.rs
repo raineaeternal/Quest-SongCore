@@ -2,15 +2,12 @@ use std::{ffi::CStr, path::Path};
 
 use crate::{
     ffi::{OpaqueUserData, cache::CSongCache},
-    song_loader::{
-        LoadedSong, LoadedSongs, load_song_directory, load_song_directory_parallel,
-        load_song_from_path,
-    },
+    loader::song_data_loader::{SongCacheData, SongCacheDatas, load_song_directory, load_song_directory_parallel, load_song_from_path},
 };
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct CLoadedSong {
+pub struct CSongCacheData {
     pub path: *const std::os::raw::c_char,
     pub hash: *const std::os::raw::c_char,
     pub duration_secs: u64,
@@ -19,17 +16,17 @@ pub struct CLoadedSong {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct CLoadedSongs {
-    pub songs: *const CLoadedSong,
+pub struct CSongCacheDatas {
+    pub songs: *const CSongCacheData,
     pub count: usize,
 }
 
-impl From<LoadedSong> for CLoadedSong {
-    fn from(loaded_song: LoadedSong) -> Self {
+impl From<SongCacheData> for CSongCacheData {
+    fn from(loaded_song: SongCacheData) -> Self {
         let c_path = std::ffi::CString::new(loaded_song.path.to_str().unwrap()).unwrap();
         let c_hash = std::ffi::CString::new(loaded_song.hash).unwrap();
 
-        CLoadedSong {
+        CSongCacheData {
             path: c_path.into_raw(),
             hash: c_hash.into_raw(),
             duration_secs: loaded_song
@@ -44,12 +41,12 @@ impl From<LoadedSong> for CLoadedSong {
     }
 }
 
-impl From<LoadedSongs> for CLoadedSongs {
-    fn from(loaded_songs: LoadedSongs) -> Self {
-        let c_songs: Vec<CLoadedSong> = loaded_songs
+impl From<SongCacheDatas> for CSongCacheDatas {
+    fn from(loaded_songs: SongCacheDatas) -> Self {
+        let c_songs: Vec<CSongCacheData> = loaded_songs
             .songs
             .into_iter()
-            .map(CLoadedSong::from)
+            .map(CSongCacheData::from)
             .collect();
 
         let count = c_songs.len();
@@ -58,15 +55,15 @@ impl From<LoadedSongs> for CLoadedSongs {
         // Prevent the vector from being deallocated
         std::mem::forget(c_songs);
 
-        CLoadedSongs {
+        CSongCacheDatas {
             songs: songs_ptr,
             count,
         }
     }
 }
 
-impl From<CLoadedSong> for LoadedSong {
-    fn from(c_loaded_song: CLoadedSong) -> Self {
+impl From<CSongCacheData> for SongCacheData {
+    fn from(c_loaded_song: CSongCacheData) -> Self {
         let path_cstr = unsafe { CStr::from_ptr(c_loaded_song.path) };
         let hash_cstr = unsafe { CStr::from_ptr(c_loaded_song.hash) };
 
@@ -84,7 +81,7 @@ impl From<CLoadedSong> for LoadedSong {
             None
         };
 
-        LoadedSong {
+        SongCacheData {
             hash: hash_str,
             path: std::path::PathBuf::from(path_str),
             song_length: duration,
@@ -92,17 +89,17 @@ impl From<CLoadedSong> for LoadedSong {
     }
 }
 
-impl From<CLoadedSongs> for LoadedSongs {
-    fn from(c_loaded_songs: CLoadedSongs) -> Self {
+impl From<CSongCacheDatas> for SongCacheDatas {
+    fn from(c_loaded_songs: CSongCacheDatas) -> Self {
         let songs_slice =
             unsafe { std::slice::from_raw_parts(c_loaded_songs.songs, c_loaded_songs.count) };
 
-        let songs: Vec<LoadedSong> = songs_slice
+        let songs: Vec<SongCacheData> = songs_slice
             .iter()
-            .map(|c_song| LoadedSong::from(*c_song))
+            .map(|c_song| SongCacheData::from(*c_song))
             .collect();
 
-        LoadedSongs { songs }
+        SongCacheDatas { songs }
     }
 }
 
@@ -120,7 +117,7 @@ impl From<CLoadedSongs> for LoadedSongs {
 pub unsafe extern "C" fn song_loader_load_path(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
-) -> CLoadedSong {
+) -> CSongCacheData {
     if path.is_null() {
         panic!("Path is null");
     }
@@ -149,8 +146,8 @@ pub unsafe extern "C" fn song_loader_load_directory(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
     user_data: OpaqueUserData,
-    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize, OpaqueUserData)>,
-) -> CLoadedSongs {
+    fn_callback: Option<extern "C" fn(CSongCacheData, usize, usize, OpaqueUserData)>,
+) -> CSongCacheDatas {
     if path.is_null() {
         panic!("Path is null");
     }
@@ -161,18 +158,18 @@ pub unsafe extern "C" fn song_loader_load_directory(
 
     let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
     let wrapped = fn_callback.map(|callback| {
-        move |song: &LoadedSong, index, count| {
-            let cloaded_song = CLoadedSong::from(song.clone());
+        move |song: &SongCacheData, index, count| {
+            let cloaded_song = CSongCacheData::from(song.clone());
             callback(cloaded_song, index, count, user_data);
             // from to avoid
-            let _ = LoadedSong::from(cloaded_song);
+            let _ = SongCacheData::from(cloaded_song);
         }
     });
 
     let songs =
         load_song_directory(path, cache, wrapped.as_ref()).expect("Failed to load song directory");
 
-    let c_loaded_songs: CLoadedSongs = songs.into();
+    let c_loaded_songs: CSongCacheDatas = songs.into();
     c_loaded_songs
 }
 
@@ -189,8 +186,8 @@ pub unsafe extern "C" fn song_loader_load_directory_parallel(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
     user_data: OpaqueUserData,
-    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize, OpaqueUserData)>,
-) -> CLoadedSongs {
+    fn_callback: Option<extern "C" fn(CSongCacheData, usize, usize, OpaqueUserData)>,
+) -> CSongCacheDatas {
     if path.is_null() {
         panic!("Path is null");
     }
@@ -201,18 +198,18 @@ pub unsafe extern "C" fn song_loader_load_directory_parallel(
 
     let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
     let wrapped = fn_callback.map(|callback| {
-        move |song: &LoadedSong, index, count| {
-            let cloaded_song = CLoadedSong::from(song.clone());
+        move |song: &SongCacheData, index, count| {
+            let cloaded_song = CSongCacheData::from(song.clone());
             callback(cloaded_song, index, count, user_data);
             // from to avoid
-            let _ = LoadedSong::from(cloaded_song);
+            let _ = SongCacheData::from(cloaded_song);
         }
     });
 
     let songs = load_song_directory_parallel(&[path], cache, wrapped.as_ref())
         .expect("Failed to load song directory in parallel");
 
-    let c_loaded_songs: CLoadedSongs = songs.into();
+    let c_loaded_songs: CSongCacheDatas = songs.into();
     c_loaded_songs
 }
 
@@ -230,8 +227,8 @@ pub unsafe extern "C" fn song_loader_load_directories_parallel(
     path_count: usize,
     cache: *mut CSongCache,
     user_data: OpaqueUserData,
-    fn_callback: Option<extern "C" fn(CLoadedSong, usize, usize, OpaqueUserData)>,
-) -> CLoadedSongs {
+    fn_callback: Option<extern "C" fn(CSongCacheData, usize, usize, OpaqueUserData)>,
+) -> CSongCacheDatas {
     if paths.is_null() {
         panic!("Path is null");
     }
@@ -252,27 +249,27 @@ pub unsafe extern "C" fn song_loader_load_directories_parallel(
 
     let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
     let wrapped = fn_callback.map(|callback| {
-        move |song: &LoadedSong, index, count| {
-            let cloaded_song = CLoadedSong::from(song.clone());
+        move |song: &SongCacheData, index, count| {
+            let cloaded_song = CSongCacheData::from(song.clone());
             callback(cloaded_song, index, count, user_data);
             // from to avoid
-            let _ = LoadedSong::from(cloaded_song);
+            let _ = SongCacheData::from(cloaded_song);
         }
     });
 
     let songs = load_song_directory_parallel(&paths, cache, wrapped.as_ref())
         .expect("Failed to load song directory in parallel");
 
-    let c_loaded_songs: CLoadedSongs = songs.into();
+    let c_loaded_songs: CSongCacheDatas = songs.into();
     c_loaded_songs
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn song_loader_free_loaded_song(loaded_song: CLoadedSong) {
-    let _ = LoadedSong::from(loaded_song);
+pub extern "C" fn song_loader_free_loaded_song(loaded_song: CSongCacheData) {
+    let _ = SongCacheData::from(loaded_song);
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn song_loader_free_loaded_songs(loaded_songs: CLoadedSongs) {
-    let _ = LoadedSongs::from(loaded_songs);
+pub extern "C" fn song_loader_free_loaded_songs(loaded_songs: CSongCacheDatas) {
+    let _ = SongCacheDatas::from(loaded_songs);
 }

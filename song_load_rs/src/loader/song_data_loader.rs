@@ -11,16 +11,16 @@ use thiserror::Error;
 use tracing::warn;
 
 use crate::{
-    audio_load,
     beatmap::BeatmapSource,
     cache::{CacheError, SongCache},
-    hash::compute_custom_level_hash_from_beatmap,
+    hash::compute_custom_level_hash_from_beatmap, loader::audio_loader,
 };
 
 pub const CUSTOM_LEVEL_PREFIX_ID: &str = "custom_level_";
 
+/// A struct representing useful cached data for a loaded song.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct LoadedSong {
+pub struct SongCacheData {
     /// Path to the song
     pub path: PathBuf,
     /// SHA1 hash of the song's contents
@@ -30,8 +30,8 @@ pub struct LoadedSong {
 }
 
 #[derive(Clone)]
-pub struct LoadedSongs {
-    pub songs: Vec<LoadedSong>,
+pub struct SongCacheDatas {
+    pub songs: Vec<SongCacheData>,
 }
 
 #[derive(Debug, Error)]
@@ -52,10 +52,11 @@ pub enum LoadSongError {
     IoError(#[from] std::io::Error),
 }
 
+/// Loads a song from the given BeatmapSource, optionally using the provided cache.
 pub fn load_song_from_beatmap_source(
     beatmap: &BeatmapSource,
     mut cache: Option<&mut dyn SongCache>,
-) -> Result<LoadedSong, LoadSongError> {
+) -> Result<SongCacheData, LoadSongError> {
     let path = beatmap.get_real_path().to_path_buf();
 
     let cached_hash = cache
@@ -70,19 +71,19 @@ pub fn load_song_from_beatmap_source(
     }
 
     let hash = compute_custom_level_hash_from_beatmap(beatmap)?;
-    let song_length = audio_load::get_song_length(beatmap).map_err(|e| {
+    let song_length = audio_loader::get_song_length(beatmap).map_err(|e| {
         LoadSongError::ComputeHashError(format!("Failed to get song length: {}", e))
     })?;
 
     if let Some(c) = cache {
-        c.cache_song(LoadedSong {
+        c.cache_song(SongCacheData {
             hash: hash.clone(),
             path: path.clone(),
             song_length,
         })?;
     }
 
-    Ok(LoadedSong {
+    Ok(SongCacheData {
         hash,
         path,
         song_length,
@@ -92,7 +93,7 @@ pub fn load_song_from_beatmap_source(
 pub fn load_song_from_path(
     path: PathBuf,
     cache: Option<&mut dyn SongCache>,
-) -> Result<LoadedSong, LoadSongError> {
+) -> Result<SongCacheData, LoadSongError> {
     if !path.exists() {
         return Err(LoadSongError::PathDoesNotExist(path));
     }
@@ -109,9 +110,9 @@ pub fn load_song_directory<F>(
     path: &std::path::Path,
     cache: Option<&mut dyn SongCache>,
     callback: Option<F>,
-) -> Result<LoadedSongs, LoadSongError>
+) -> Result<SongCacheDatas, LoadSongError>
 where
-    F: Fn(&LoadedSong, usize, usize),
+    F: Fn(&SongCacheData, usize, usize),
 {
     if !path.exists() || !path.is_dir() {
         return Err(LoadSongError::PathDoesNotExist(path.to_path_buf()));
@@ -121,7 +122,7 @@ where
     let read_dir_entries: Vec<_> = std::fs::read_dir(path)?.collect();
     let count = read_dir_entries.len();
 
-    let loaded_songs: Vec<LoadedSong> = read_dir_entries
+    let loaded_songs: Vec<SongCacheData> = read_dir_entries
         .into_iter()
         .enumerate()
         .filter_map(|(i, entry)| {
@@ -149,7 +150,7 @@ where
         c.cache_songs(loaded_songs.clone())?;
     }
 
-    Ok(LoadedSongs {
+    Ok(SongCacheDatas {
         songs: loaded_songs,
     })
 }
@@ -162,9 +163,9 @@ pub fn load_song_directory_parallel<F>(
     paths: &[&Path],
     cache: Option<&mut dyn SongCache>,
     callback: Option<F>,
-) -> Result<LoadedSongs, LoadSongError>
+) -> Result<SongCacheDatas, LoadSongError>
 where
-    F: Fn(&LoadedSong, usize, usize) + Sync,
+    F: Fn(&SongCacheData, usize, usize) + Sync,
 {
     // validate paths
     for path in paths {
@@ -187,7 +188,7 @@ where
 
     let worked = AtomicUsize::new(0);
 
-    let loaded_songs: Vec<LoadedSong> = read_dir_entries
+    let loaded_songs: Vec<SongCacheData> = read_dir_entries
         .into_iter()
         .par_bridge()
         .filter_map(|entry| {
@@ -215,7 +216,7 @@ where
         c.cache_songs(loaded_songs.clone())?;
     }
 
-    Ok(LoadedSongs {
+    Ok(SongCacheDatas {
         songs: loaded_songs,
     })
 }

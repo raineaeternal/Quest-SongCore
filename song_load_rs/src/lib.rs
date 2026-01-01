@@ -1,15 +1,17 @@
 pub mod bindings;
 
 pub mod ffi;
-
-pub mod audio_load;
-pub mod hash;
-
-pub mod beatmap;
-pub mod cache;
-pub mod level_loader;
 pub mod models;
-pub mod song_loader;
+
+pub mod hash;
+pub mod cache;
+pub mod loader;
+
+/// Beatmap-related types and functions
+pub mod beatmap;
+/// Info.dat type
+pub mod info_dat;
+/// Version parsing
 pub mod version;
 
-pub mod info_dat;
+
