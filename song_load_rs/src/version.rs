@@ -15,6 +15,9 @@ pub const NO_VERSION: Version = Version {
     build: BuildMetadata::EMPTY,
 };
 
+/// Attempts to extract the version from the given data string.
+/// Looks for a JSON field named "version" or "_version" and parses its value.
+/// Returns None if no version field is found or if parsing fails.
 pub fn get_version(data: &str) -> Option<Version> {
     if data.is_empty() {
         return None;
@@ -30,6 +33,9 @@ pub fn get_version(data: &str) -> Option<Version> {
     Version::parse(ver_str).ok()
 }
 
+/// Attempts to read the version from a file at the given path.
+/// Reads the first up to 50 bytes of the file and looks for a version string.
+/// Returns None if the file does not exist or cannot be read.
 pub fn version_from_file_path(path: &Path) -> Option<Version> {
     if !path.exists() {
         return None;

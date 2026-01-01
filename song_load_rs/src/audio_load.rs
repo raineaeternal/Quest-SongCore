@@ -29,7 +29,7 @@ fn get_song_length_from(song: Bytes) -> Result<Option<Duration>, String> {
 }
 
 pub fn get_song_length(
-    beatmap: &beatmap::Beatmap,
+    beatmap: &beatmap::BeatmapSource,
 ) -> Result<Option<Duration>, Box<dyn std::error::Error>> {
     let info_dat = beatmap
         .get_info_dat()

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use song_load_rs::audio_load;
-use song_load_rs::beatmap::Beatmap;
+use song_load_rs::beatmap::BeatmapSource;
 use song_load_rs::cache::SongCache;
 use std::time::Duration;
 
@@ -103,8 +103,9 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     let mut cache = song_load_rs::cache::mem_cache::MemCache::default();
 
     // First load - should compute and populate cache
-    let loaded1 = song_load_rs::song_loader::load_song_from_path(zip_path.clone(), Some(&mut cache))
-        .map_err(|e| format!("first load failed: {}", e))?;
+    let loaded1 =
+        song_load_rs::song_loader::load_song_from_path(zip_path.clone(), Some(&mut cache))
+            .map_err(|e| format!("first load failed: {}", e))?;
 
     // Cache should now contain the entry
     let cached = cache.get_cached_song(&zip_path)?;
@@ -116,8 +117,9 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(cached.hash, loaded1.hash);
 
     // Second load should return the same data (and hit the cache)
-    let loaded2 = song_load_rs::song_loader::load_song_from_path(zip_path.clone(), Some(&mut cache))
-        .map_err(|e| format!("second load failed: {}", e))?;
+    let loaded2 =
+        song_load_rs::song_loader::load_song_from_path(zip_path.clone(), Some(&mut cache))
+            .map_err(|e| format!("second load failed: {}", e))?;
 
     assert_eq!(loaded1.hash, loaded2.hash);
 

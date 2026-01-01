@@ -8,7 +8,7 @@ use sha1::{Digest, Sha1};
 
 use std::path::PathBuf;
 
-use crate::beatmap::Beatmap;
+use crate::beatmap::BeatmapSource;
 use crate::models::InfoDat;
 
 /// Compute a SHA-1 from an ordered iterator of `(PathBuf, Bytes)` pairs.
@@ -92,7 +92,7 @@ fn compute_custom_level_hash_from_info_dat(
 }
 
 /// Compute the custom level hash from a `Beatmap` (zip or directory).
-pub fn compute_custom_level_hash_from_beatmap(beatmap: &Beatmap) -> io::Result<String> {
+pub fn compute_custom_level_hash_from_beatmap(beatmap: &BeatmapSource) -> io::Result<String> {
     // Read Info.dat/info.dat bytes via Beatmap helper
     let info_bytes = beatmap.get_info_dat_bytes()?;
     let info_vec = info_bytes.to_vec();

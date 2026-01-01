@@ -15,7 +15,7 @@ fn bench_hash_from_zip(c: &mut Criterion) {
         .join("f4c3 (Despacito - cookie).zip");
 
     let beatmap =
-        song_load_rs::beatmap::Beatmap::from_path(&zip_path).expect("load beatmap from zip");
+        song_load_rs::beatmap::BeatmapSource::from_path(&zip_path).expect("load beatmap from zip");
 
     c.bench_function("hash_from_zip", |b| {
         b.iter(|| {
@@ -31,7 +31,7 @@ fn bench_hash_from_dir(c: &mut Criterion) {
     let dir_path = manifest_dir.join("tests").join("f4c3 (Despacito - cookie)");
 
     let beatmap =
-        song_load_rs::beatmap::Beatmap::from_path(&dir_path).expect("load beatmap from dir");
+        song_load_rs::beatmap::BeatmapSource::from_path(&dir_path).expect("load beatmap from dir");
 
     c.bench_function("hash_from_dir", |b| {
         b.iter(|| {

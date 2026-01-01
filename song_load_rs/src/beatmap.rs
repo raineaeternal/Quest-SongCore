@@ -12,17 +12,17 @@ use crate::models::InfoDat;
 /// Represents a beatmap, which can be either a zip archive or a directory.
 ///
 /// TODO: Other sources?
-pub enum Beatmap {
+pub enum BeatmapSource {
     //TODO: Can we use ZipArchive<Cursor<Bytes>> directly?
     // I would rather not make every read op &mut
     Zip(RefCell<ZipArchive<std::io::Cursor<Bytes>>>),
     Directory(PathBuf),
 }
 
-impl Beatmap {
+impl BeatmapSource {
     pub fn get_file_bytes(&self, file_path: &Path) -> io::Result<Bytes> {
         match self {
-            Beatmap::Zip(zip_file) => {
+            BeatmapSource::Zip(zip_file) => {
                 let mut zip_file_ref = zip_file.borrow_mut();
 
                 let mut file = zip_file_ref
@@ -32,7 +32,7 @@ impl Beatmap {
                 file.read_to_end(&mut buffer)?;
                 Ok(Bytes::from(buffer))
             }
-            Beatmap::Directory(dir_path) => {
+            BeatmapSource::Directory(dir_path) => {
                 let full_path = dir_path.join(file_path);
                 let bytes = std::fs::read(full_path)?;
                 Ok(Bytes::from(bytes))
@@ -43,7 +43,7 @@ impl Beatmap {
     /// Creates a Beatmap from the given path, which can be either a zip file or a directory.
     /// Returns an error if the path does not exist or is not accessible.
     ///
-    pub fn from_path(path: &Path) -> io::Result<Beatmap> {
+    pub fn from_path(path: &Path) -> io::Result<BeatmapSource> {
         if !path.exists() {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -56,9 +56,9 @@ impl Beatmap {
             let cursor = std::io::Cursor::new(bytes::Bytes::from(zip_bytes));
             let archive = zip::ZipArchive::new(cursor)?;
 
-            return Ok(Beatmap::Zip(archive.into()));
+            return Ok(BeatmapSource::Zip(archive.into()));
         }
-        Ok(Beatmap::Directory(path.to_path_buf()))
+        Ok(BeatmapSource::Directory(path.to_path_buf()))
     }
 
     pub fn get_info_dat_bytes(&self) -> io::Result<Bytes> {

@@ -12,7 +12,7 @@ use tracing::warn;
 
 use crate::{
     audio_load,
-    beatmap::Beatmap,
+    beatmap::BeatmapSource,
     cache::{CacheError, SongCache},
     hash::compute_custom_level_hash_from_beatmap,
 };
@@ -71,7 +71,7 @@ pub fn load_song_from_path(
         return Ok(cached);
     }
 
-    let beatmap = Beatmap::from_path(&path)?;
+    let beatmap = BeatmapSource::from_path(&path)?;
 
     let hash = compute_custom_level_hash_from_beatmap(&beatmap)?;
     let song_length = audio_load::get_song_length(&beatmap).map_err(|e| {
