@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::time::Duration;
 
 // Verify that `get_song_length` returns a present, reasonable duration for
 // both zip and directory beatmap sources. We avoid asserting exact seconds
@@ -12,7 +11,7 @@ fn despacito_zip_length() -> Result<(), Box<dyn std::error::Error>> {
         .join("tests")
         .join("f4c3 (Despacito - cookie).zip");
 
-    let beatmap = song_load_rs::beatmap::BeatmapSource::from_path(&zip_path)?;
+    let beatmap = song_load_rs::beatmap::BeatmapSource::from_path(zip_path)?;
     let len = song_load_rs::audio_load::get_song_length(&beatmap)?;
 
     assert!(len.is_some(), "expected Some(duration) for zip");
@@ -37,7 +36,7 @@ fn despacito_dir_length() -> Result<(), Box<dyn std::error::Error>> {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let dir = manifest_dir.join("tests").join("f4c3 (Despacito - cookie)");
 
-    let beatmap = song_load_rs::beatmap::BeatmapSource::from_path(&dir)?;
+    let beatmap = song_load_rs::beatmap::BeatmapSource::from_path(dir)?;
     let len = song_load_rs::audio_load::get_song_length(&beatmap)?;
 
     assert!(len.is_some(), "expected Some(duration) for dir");

@@ -1,43 +1,8 @@
 use std::path::PathBuf;
 
-use serde::{Deserialize, Serialize};
+use bytes::Bytes;
 
-use crate::models::common::Color;
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct BeatmapLevelColorSchemeSaveData {
-    #[serde(rename = "colorScheme")]
-    pub color_scheme: ColorScheme,
-    #[serde(rename = "useOverride")]
-    pub use_override: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct ColorScheme {
-    #[serde(rename = "colorSchemeId")]
-    pub color_scheme_id: String,
-
-    #[serde(rename = "saberAColor")]
-    pub saber_a_color: Color,
-
-    #[serde(rename = "saberBColor")]
-    pub saber_b_color: Color,
-
-    #[serde(rename = "environmentColor0")]
-    pub environment_color0: Color,
-
-    #[serde(rename = "environmentColor1")]
-    pub environment_color1: Color,
-
-    #[serde(rename = "obstaclesColor")]
-    pub obstacles_color: Color,
-
-    #[serde(rename = "environmentColor0Boost")]
-    pub environment_color0_boost: Color,
-
-    #[serde(rename = "environmentColor1Boost")]
-    pub environment_color1_boost: Color,
-}
+use crate::models::info_dat::ColorScheme;
 
 #[derive(Debug, Clone)]
 pub struct EnvironmentName(pub String);
@@ -71,8 +36,8 @@ pub enum PlayerSensitivityFlag {
 #[derive(Debug, Clone)]
 pub struct PreviewMediaData {
     pub level_path: PathBuf,
-    pub cover_sprite: Option<PathBuf>,
-    pub preview_audio_clip: PathBuf,
+    pub cover_sprite: Option<Bytes>,
+    pub preview_audio_clip: Option<Bytes>,
 }
 /// Represents a beatmap characteristic (e.g., Standard, OneSaber, etc.)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

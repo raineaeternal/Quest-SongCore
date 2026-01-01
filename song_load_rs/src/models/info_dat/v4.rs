@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::{beatmap::ColorScheme, common::Color};
+use crate::models::{common::Color, info_dat::ColorScheme};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SongDataV4 {
@@ -161,10 +161,10 @@ pub struct DifficultyBeatmapV4 {
     pub note_jump_start_beat_offset: f32,
 
     #[serde(rename = "lightshowDataFilename")]
-    pub lightshow_data_filename: String,
+    pub lightshow_data_filename: PathBuf,
 
     #[serde(rename = "beatmapDataFilename")]
-    pub beatmap_data_filename: String,
+    pub beatmap_data_filename: PathBuf,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -191,5 +191,5 @@ pub struct BeatmapLevelSaveDataV4 {
     pub color_schemes: Option<Vec<ColorSchemeV4>>,
 
     #[serde(rename = "difficultyBeatmaps")]
-    pub difficulty_beatmaps: Option<Vec<DifficultyBeatmapV4>>,
+    pub difficulty_beatmaps: Vec<DifficultyBeatmapV4>,
 }

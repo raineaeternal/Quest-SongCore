@@ -8,8 +8,7 @@ use sha1::{Digest, Sha1};
 
 use std::path::PathBuf;
 
-use crate::beatmap::BeatmapSource;
-use crate::models::InfoDat;
+use crate::{beatmap::BeatmapSource, info_dat::InfoDat};
 
 /// Compute a SHA-1 from an ordered iterator of `(PathBuf, Bytes)` pairs.
 /// The order of the iterator is respected (no internal sorting).
@@ -30,17 +29,15 @@ where
 pub fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
     let mut necessary_files = Vec::new();
 
-    if let Some(song_filename) = &info.song_filename {
-        necessary_files.push(song_filename.clone().into());
+    if let Some(song_filename) = info.get_song_filename() {
+        necessary_files.push(song_filename.into());
     }
 
-    if let Some(beatmap_sets) = &info.difficulty_beatmap_sets {
-        for set in beatmap_sets {
-            for beatmap in &set.difficulty_beatmaps {
-                necessary_files.push(beatmap.beatmap_filename.clone().into());
-            }
-        }
-    }
+    necessary_files.extend(
+        info.get_beatmap_files()
+            .map(|p| p.to_path_buf())
+            .collect::<Vec<_>>(),
+    );
 
     necessary_files
 }
@@ -60,46 +57,26 @@ fn compute_custom_level_hash_from_info_dat(
 ) -> io::Result<String> {
     let prepend_bytes = info_bytes;
 
-    // Build a fast lookup from basename -> (PathBuf, Bytes) to avoid repeated scans.
-    let mut lookup: std::collections::HashMap<String, (PathBuf, Bytes)> = files
-        .iter()
-        .filter_map(|(p, b)| {
-            p.file_name()
-                .and_then(|s| s.to_str())
-                .map(|name| (name.to_string(), (p.clone(), b.clone())))
-        })
-        .collect();
+    // Collect beatmap files in the order from the InfoDat, skipping missing entries.
+    let mut path_bytes: Vec<(PathBuf, Bytes)> = Vec::new();
+    for p in info.get_beatmap_files() {
+        let pb = p.to_path_buf();
+        let Some(b) = files.get(&pb) else { continue };
 
-    // Create an iterator over filenames in the required order: only beatmaps in sets->beatmaps order.
-    // Tests expect the "beatmaps-only" variant (no `_songFilename`/audio file included).
-    let beatmap_filenames = info
-        .difficulty_beatmap_sets
-        .clone()
-        .unwrap_or_default()
-        .into_iter()
-        .flat_map(|set| {
-            set.difficulty_beatmaps
-                .into_iter()
-                .map(|b| b.beatmap_filename)
-        });
+        path_bytes.push((pb, b.clone()));
+    }
 
-    let filenames_iter = beatmap_filenames;
-
-    // Map filenames to (PathBuf, Bytes) using the lookup; skip missing entries.
-    let path_bytes_iter = filenames_iter.filter_map(move |name| lookup.remove(&name));
-
-    create_sha1_from_path_bytes(prepend_bytes, path_bytes_iter)
+    create_sha1_from_path_bytes(prepend_bytes, path_bytes)
 }
 
 /// Compute the custom level hash from a `Beatmap` (zip or directory).
 pub fn compute_custom_level_hash_from_beatmap(beatmap: &BeatmapSource) -> io::Result<String> {
     // Read Info.dat/info.dat bytes via Beatmap helper
     let info_bytes = beatmap.get_info_dat_bytes()?;
+    let info_dat: InfoDat = beatmap.get_info_dat()?;
     let info_vec = info_bytes.to_vec();
 
     let info_contents = String::from_utf8(info_vec.clone())
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-    let info_dat: InfoDat = serde_json::from_str(&info_contents)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
     let necessary_files: Vec<PathBuf> = necessary_files_from_info_dat(&info_dat);

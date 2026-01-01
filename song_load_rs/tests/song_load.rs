@@ -1,9 +1,6 @@
 use std::path::PathBuf;
 
-use song_load_rs::audio_load;
-use song_load_rs::beatmap::BeatmapSource;
 use song_load_rs::cache::SongCache;
-use std::time::Duration;
 
 // Smoke tests for the public `song_load` APIs that exercise loading from
 // a zip file and a directory under the repository `tests/` folder.

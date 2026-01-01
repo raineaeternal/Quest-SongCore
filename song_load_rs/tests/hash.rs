@@ -14,9 +14,9 @@ fn despacito_zip_hash() -> Result<(), Box<dyn std::error::Error>> {
 
     let zip_bytes = fs::read(&zip_path)?;
     let cursor = std::io::Cursor::new(bytes::Bytes::from(zip_bytes));
-    let mut archive = zip::ZipArchive::new(cursor)?;
+    let archive = zip::ZipArchive::new(cursor)?;
 
-    let beatmap = BeatmapSource::Zip(archive.into());
+    let beatmap = BeatmapSource::Zip(zip_path, archive.into());
 
     let hash = song_load_rs::hash::compute_custom_level_hash_from_beatmap(&beatmap)?;
     assert_eq!(hash, "4ed18607aee125f57cce73b45fc3934bbc899860");
@@ -30,7 +30,7 @@ fn despacito_dir_hash() -> Result<(), Box<dyn std::error::Error>> {
     let dir = manifest_dir.join("tests").join("f4c3 (Despacito - cookie)");
     // Use the public API that computes hash from a directory path.
 
-    let beatmap = BeatmapSource::from_path(&dir)?;
+    let beatmap = BeatmapSource::from_path(dir)?;
     let hash = song_load_rs::hash::compute_custom_level_hash_from_beatmap(&beatmap)?;
     assert_eq!(hash, "4ed18607aee125f57cce73b45fc3934bbc899860");
 

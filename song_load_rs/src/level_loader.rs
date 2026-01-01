@@ -1,12 +1,12 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use std::collections::HashMap;
-
+use crate::beatmap::BeatmapSource;
+use crate::cache::SongCache;
+use crate::info_dat::InfoDat;
 use crate::models::beatmap::{
     BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, FileSystemBeatmapLevelData,
     PlayerSensitivityFlag, PreviewMediaData,
 };
-use crate::models::{v2::StandardLevelInfoSaveDataV2, v4::BeatmapLevelSaveDataV4};
 
 pub mod v2;
 pub mod v4;
@@ -32,9 +32,9 @@ pub struct CustomBeatmapLevel {
     pub beatmap_basic_datas:
         std::collections::HashMap<(BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData>,
 
-    custom_level_data: StandardLevelInfoSaveData,
-    beatmap_level_data: FileSystemBeatmapLevelData,
-    custom_level_path: String,
+    pub custom_level_data: InfoDat,
+    pub beatmap_level_data: FileSystemBeatmapLevelData,
+    pub custom_level_path: PathBuf,
     //     CustomJSONData::CustomLevelInfoSaveDataV2* _customLevelSaveDataV2;
     // CustomJSONData::CustomBeatmapLevelSaveDataV4* _customBeatmapLevelSaveDataV4;
     // GlobalNamespace::IBeatmapLevelData* _beatmapLevelData;
@@ -44,72 +44,41 @@ pub struct CustomBeatmapLevel {
 impl CustomBeatmapLevel {
     // -1
     const K_INVALID_VERSION: u32 = u32::MAX;
-
-    fn new(
-        version: u32,
-        custom_level_path: String,
-        save: StandardLevelInfoSaveData,
-        beatmap_level_data: FileSystemBeatmapLevelData,
-        has_precalculated_data: bool,
-        level_id: String,
-        song_name: String,
-        song_sub_name: String,
-        song_author_name: String,
-        all_mappers: Vec<String>,
-        all_lighters: Vec<String>,
-        bpm: f32,
-        lufs: f32,
-        song_time_offset: f32,
-        preview_start_time: f32,
-        preview_duration: f32,
-        song_duration: Option<std::time::Duration>,
-        content_rating: PlayerSensitivityFlag,
-        into_ipreview_media_data: PreviewMediaData,
-        beatmap_basic_data: HashMap<(BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData>,
-    ) -> Self {
-        Self {
-            version,
-            has_precalculated_data,
-            level_id,
-            song_name,
-            song_sub_name,
-            song_author_name,
-            all_mappers,
-            all_lighters,
-            beats_per_minute: bpm,
-            integrated_lufs: lufs,
-            song_time_offset,
-            preview_start_time,
-            preview_duration,
-            song_duration: song_duration.map(|d| d.as_secs_f32()).unwrap_or_default(),
-            content_rating,
-            preview_media_data: into_ipreview_media_data,
-            beatmap_basic_datas: beatmap_basic_data,
-            custom_level_data: save,
-            beatmap_level_data,
-            custom_level_path,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum StandardLevelInfoSaveData {
-    V2(StandardLevelInfoSaveDataV2),
-    V4(BeatmapLevelSaveDataV4),
 }
 
 pub fn get_preview_media_data(
-    level_path: &Path,
+    beatmap: &BeatmapSource,
     cover_image_filename: Option<&Path>,
     song_filename: &Path,
 ) -> PreviewMediaData {
     // Adjust the constructor call below to match your PreviewMediaData API.
     // This mirrors: FileSystemPreviewMediaData::New_ctor(_spriteAsyncLoader, _clipLoader, levelPath.string(), coverImageFilename, songFilename)
-    let cover_sprite =
-        cover_image_filename.map(|cover| level_path.join(cover.file_name().unwrap()));
+    let cover_sprite = cover_image_filename
+        .and_then(|cover| beatmap.get_file_bytes(cover.file_name().unwrap()).ok());
     PreviewMediaData {
-        level_path: level_path.to_path_buf(),
+        level_path: beatmap.get_real_path().to_path_buf(),
         cover_sprite,
-        preview_audio_clip: level_path.join(song_filename.file_name().unwrap()),
+        preview_audio_clip: beatmap
+            .get_file_bytes(song_filename.file_name().unwrap())
+            .ok(),
+    }
+}
+
+pub fn load_level_from_path(
+    beatmap: &BeatmapSource,
+    wip: bool,
+    song_cache: &mut impl SongCache,
+) -> Result<CustomBeatmapLevel, Box<dyn std::error::Error>> {
+    let info_dat = beatmap.get_info_dat()?;
+
+    match info_dat {
+        InfoDat::V2(save_data_v2) => {
+            v2::load_custom_beatmap_level_v2(beatmap, wip, save_data_v2, song_cache)
+                .ok_or_else(|| "Failed to load V2 beatmap level".into())
+        }
+        InfoDat::V4(save_data_v4) => {
+            v4::load_custom_beatmap_level_v4(beatmap, wip, save_data_v4, song_cache)
+                .ok_or_else(|| "Failed to load V4 beatmap level".into())
+        }
     }
 }

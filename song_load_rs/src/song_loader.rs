@@ -52,13 +52,11 @@ pub enum LoadSongError {
     IoError(#[from] std::io::Error),
 }
 
-pub fn load_song_from_path(
-    path: PathBuf,
+pub fn load_song_from_beatmap_source(
+    beatmap: &BeatmapSource,
     mut cache: Option<&mut dyn SongCache>,
 ) -> Result<LoadedSong, LoadSongError> {
-    if !path.exists() {
-        return Err(LoadSongError::PathDoesNotExist(path));
-    }
+    let path = beatmap.get_real_path().to_path_buf();
 
     let cached_hash = cache
         .as_mut()
@@ -71,10 +69,8 @@ pub fn load_song_from_path(
         return Ok(cached);
     }
 
-    let beatmap = BeatmapSource::from_path(&path)?;
-
-    let hash = compute_custom_level_hash_from_beatmap(&beatmap)?;
-    let song_length = audio_load::get_song_length(&beatmap).map_err(|e| {
+    let hash = compute_custom_level_hash_from_beatmap(beatmap)?;
+    let song_length = audio_load::get_song_length(beatmap).map_err(|e| {
         LoadSongError::ComputeHashError(format!("Failed to get song length: {}", e))
     })?;
 
@@ -91,6 +87,18 @@ pub fn load_song_from_path(
         path,
         song_length,
     })
+}
+
+pub fn load_song_from_path(
+    path: PathBuf,
+    cache: Option<&mut dyn SongCache>,
+) -> Result<LoadedSong, LoadSongError> {
+    if !path.exists() {
+        return Err(LoadSongError::PathDoesNotExist(path));
+    }
+    let beatmap = BeatmapSource::from_path(path)?;
+
+    load_song_from_beatmap_source(&beatmap, cache)
 }
 
 /// Loads all songs from the given directory.

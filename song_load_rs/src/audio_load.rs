@@ -35,7 +35,7 @@ pub fn get_song_length(
         .get_info_dat()
         .map_err(|e| format!("Failed to get Info.dat: {}", e))?;
 
-    let Some(song_filename) = &info_dat.song_filename else {
+    let Some(song_filename) = &info_dat.get_song_filename() else {
         return Ok(None);
     };
 

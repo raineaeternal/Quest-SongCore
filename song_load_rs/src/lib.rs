@@ -11,3 +11,5 @@ pub mod level_loader;
 pub mod models;
 pub mod song_loader;
 pub mod version;
+
+pub mod info_dat;

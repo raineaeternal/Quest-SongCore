@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::beatmap::BeatmapLevelColorSchemeSaveData;
+use crate::models::info_dat::BeatmapLevelColorSchemeSaveData;
 
 /// Represents a difficulty beatmap within a beatmap set (matches the C# `_difficulty*` fields)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -14,7 +14,7 @@ pub struct DifficultyBeatmapV2 {
     pub difficulty_rank: u32,
 
     #[serde(rename = "_beatmapFilename")]
-    pub beatmap_filename: String,
+    pub beatmap_filename: PathBuf,
 
     #[serde(rename = "_noteJumpMovementSpeed")]
     pub note_jump_movement_speed: f32,
@@ -85,12 +85,12 @@ pub struct StandardLevelInfoSaveDataV2 {
     pub environment_name: String,
 
     #[serde(rename = "_allDirectionsEnvironmentName")]
-    pub all_directions_environment_name: String,
+    pub all_directions_environment_name: Option<String>,
 
-    #[serde(rename = "_environmentNames")]
+    #[serde(rename = "_environmentNames", default)]
     pub environment_names: Vec<String>,
 
-    #[serde(rename = "_colorSchemes")]
+    #[serde(rename = "_colorSchemes", default)]
     pub color_schemes: Vec<BeatmapLevelColorSchemeSaveData>,
 
     #[serde(rename = "_difficultyBeatmapSets")]

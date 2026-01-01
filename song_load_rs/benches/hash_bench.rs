@@ -1,5 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use song_load_rs::models::InfoDat;
+use song_load_rs::models::info_dat::v2::StandardLevelInfoSaveDataV2;
 use std::path::PathBuf;
 
 // Benchmarks for hashing functions in `song_load_rs::hash`.
@@ -15,7 +15,7 @@ fn bench_hash_from_zip(c: &mut Criterion) {
         .join("f4c3 (Despacito - cookie).zip");
 
     let beatmap =
-        song_load_rs::beatmap::BeatmapSource::from_path(&zip_path).expect("load beatmap from zip");
+        song_load_rs::beatmap::BeatmapSource::from_path(zip_path).expect("load beatmap from zip");
 
     c.bench_function("hash_from_zip", |b| {
         b.iter(|| {
@@ -31,7 +31,7 @@ fn bench_hash_from_dir(c: &mut Criterion) {
     let dir_path = manifest_dir.join("tests").join("f4c3 (Despacito - cookie)");
 
     let beatmap =
-        song_load_rs::beatmap::BeatmapSource::from_path(&dir_path).expect("load beatmap from dir");
+        song_load_rs::beatmap::BeatmapSource::from_path(dir_path).expect("load beatmap from dir");
 
     c.bench_function("hash_from_dir", |b| {
         b.iter(|| {
@@ -50,7 +50,9 @@ fn bench_create_sha1_in_memory(c: &mut Criterion) {
     let info_path = dir_path.join("Info.dat");
     let info_bytes = std::fs::read(&info_path).expect("read Info.dat");
     let info_contents = String::from_utf8(info_bytes.clone()).expect("info utf8");
-    let info_dat: InfoDat = serde_json::from_str(&info_contents).expect("parse info dat");
+    let info_dat: StandardLevelInfoSaveDataV2 =
+        serde_json::from_str(&info_contents).expect("parse info dat");
+    let info_dat = song_load_rs::info_dat::InfoDat::V2(info_dat);
 
     let files_vec: Vec<(std::path::PathBuf, bytes::Bytes)> =
         song_load_rs::hash::necessary_files_from_info_dat(&info_dat)

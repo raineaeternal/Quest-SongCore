@@ -3,47 +3,47 @@ use std::{collections::HashMap, path::Path};
 use tracing::warn;
 
 use crate::{
+    beatmap::BeatmapSource,
     cache::SongCache,
-    level_loader::{CustomBeatmapLevel, StandardLevelInfoSaveData, get_preview_media_data},
+    level_loader::{CustomBeatmapLevel, InfoDat, get_preview_media_data},
     models::{
         beatmap::{
-            BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, ColorScheme,
-            EnvironmentName, FileDifficultyBeatmap, FileSystemBeatmapLevelData,
-            PlayerSensitivityFlag,
+            BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, EnvironmentName,
+            FileDifficultyBeatmap, FileSystemBeatmapLevelData, PlayerSensitivityFlag,
         },
-        v4::BeatmapLevelSaveDataV4,
+        info_dat::{ColorScheme, v4::BeatmapLevelSaveDataV4},
     },
     song_loader::{self, CUSTOM_LEVEL_PREFIX_ID},
 };
 
-pub fn basic_verify_map_v4(level_path: &Path, save_data: &BeatmapLevelSaveDataV4) -> bool {
+pub fn basic_verify_map_v4(beatmap: &BeatmapSource, save_data: &BeatmapLevelSaveDataV4) -> bool {
     // audio must be present
     let audio = &save_data.audio;
     let song_file = &audio.song_filename;
     let cover_file = &save_data.cover_image_filename;
     let audio_file = &audio.audio_data_filename;
 
-    if !level_path.join(song_file).exists() {
+    if !beatmap.has_file(song_file) {
         return false;
     }
     if let Some(cover_file) = cover_file
-        && !level_path.join(cover_file).exists()
+        && !beatmap.has_file(cover_file)
     {
         return false;
     }
     if let Some(audio_file) = audio_file
-        && !level_path.join(audio_file).exists()
+        && !beatmap.has_file(audio_file)
     {
         return false;
     }
 
-    for diff in save_data.difficulty_beatmaps.iter().flatten() {
+    for diff in save_data.difficulty_beatmaps.iter() {
         let diff_file = &diff.beatmap_data_filename;
         let light_file = &diff.lightshow_data_filename;
-        if !level_path.join(diff_file).exists() {
+        if !beatmap.has_file(diff_file) {
             return false;
         }
-        if !level_path.join(light_file).exists() {
+        if !beatmap.has_file(light_file) {
             return false;
         }
     }
@@ -54,32 +54,20 @@ pub fn basic_verify_map_v4(level_path: &Path, save_data: &BeatmapLevelSaveDataV4
 /// Rust translation of `LevelLoader::LoadCustomBeatmapLevel` (V4)
 /// Returns `None` on error or missing data.
 pub fn load_custom_beatmap_level_v4(
-    level_path: &Path,
+    beatmap: &BeatmapSource,
     wip: bool,
-    save_data: Option<BeatmapLevelSaveDataV4>,
+    save: BeatmapLevelSaveDataV4,
     song_cache: &mut impl SongCache,
-) -> Option<(CustomBeatmapLevel, String)> {
-    let save = match save_data {
-        Some(s) => s,
-        None => {
-            warn!("saveData was null for level @ {}", level_path.display());
-            if cfg!(feature = "throw_on_missing_data") {
-                panic!("saveData was null for level @ {}", level_path.display());
-            }
-            return None;
-        }
-    };
-
-    if !basic_verify_map_v4(level_path, &save) {
-        warn!("Map {} was missing files!", level_path.display());
+) -> Option<CustomBeatmapLevel> {
+    if !basic_verify_map_v4(beatmap, &save) {
+        warn!("Map {} was missing files!", beatmap);
         if cfg!(feature = "throw_on_missing_data") {
-            panic!("Map {} was missing files!", level_path.display());
+            panic!("Map {} was missing files!", beatmap);
         }
         return None;
     }
 
-    let song_data =
-        song_loader::load_song_from_path(level_path.to_path_buf(), Some(song_cache)).ok()?;
+    let song_data = song_loader::load_song_from_beatmap_source(beatmap, Some(song_cache)).ok()?;
 
     let level_id = format!(
         "{CUSTOM_LEVEL_PREFIX_ID}{}{}",
@@ -100,12 +88,12 @@ pub fn load_custom_beatmap_level_v4(
     let song_duration = song_data.song_length;
 
     let preview_media_data = get_preview_media_data(
-        level_path,
+        beatmap,
         save.cover_image_filename.as_deref(),
         &save.audio.song_filename,
     );
     let (beatmap_level_data, beatmap_basic_data_dict) =
-        get_beatmap_level_and_basic_data_v4(level_path, &level_id, &save);
+        get_beatmap_level_and_basic_data_v4(beatmap, &level_id, &save);
 
     if beatmap_basic_data_dict.is_empty() {
         return None;
@@ -114,7 +102,7 @@ pub fn load_custom_beatmap_level_v4(
     let mut all_mappers: Vec<String> = Vec::new();
     let mut all_lighters: Vec<String> = Vec::new();
 
-    for diff in save.difficulty_beatmaps.iter().flatten() {
+    for diff in save.difficulty_beatmaps.iter() {
         let Some(diff_authors) = &diff.beatmap_authors else {
             continue;
         };
@@ -127,35 +115,38 @@ pub fn load_custom_beatmap_level_v4(
         }
     }
 
-    let result = CustomBeatmapLevel::new(
-        CustomBeatmapLevel::K_INVALID_VERSION,
-        level_path.to_string_lossy().to_string(),
-        StandardLevelInfoSaveData::V4(save),
-        beatmap_level_data,
-        false,
+    let result = CustomBeatmapLevel {
+        version: CustomBeatmapLevel::K_INVALID_VERSION,
+        has_precalculated_data: false,
         level_id,
         song_name,
         song_sub_name,
         song_author_name,
         all_mappers,
         all_lighters,
-        bpm,
-        lufs,
-        0.0_f32,
+        beats_per_minute: bpm,
+        integrated_lufs: lufs,
+        song_time_offset: 0.0_f32,
         preview_start_time,
         preview_duration,
-        song_duration,
-        PlayerSensitivityFlag::Safe,
+        song_duration: song_duration
+            .or(song_data.song_length)
+            .unwrap_or_default()
+            .as_secs_f32(),
+        content_rating: PlayerSensitivityFlag::Safe,
         preview_media_data,
-        beatmap_basic_data_dict,
-    );
+        beatmap_basic_datas: beatmap_basic_data_dict,
+        custom_level_data: InfoDat::V4(save),
+        beatmap_level_data,
+        custom_level_path: beatmap.get_real_path().to_path_buf(),
+    };
 
-    Some((result, song_data.hash))
+    Some(result)
 }
 
 /// V4 version of GetBeatmapLevelAndBasicData
 pub fn get_beatmap_level_and_basic_data_v4(
-    level_path: &Path,
+    beatmap: &BeatmapSource,
     level_id: &str,
     save_data: &BeatmapLevelSaveDataV4,
 ) -> (
@@ -183,82 +174,80 @@ pub fn get_beatmap_level_and_basic_data_v4(
     // build simple color scheme placeholders (we keep raw strings for now)
     let color_schemes = save_data.color_schemes.clone().unwrap_or_default();
 
-    if let Some(diffs) = &save_data.difficulty_beatmaps {
-        for diff in diffs {
-            let characteristic = BeatmapCharacteristic(diff.characteristic.clone());
+    for diff in &save_data.difficulty_beatmaps {
+        let characteristic = BeatmapCharacteristic(diff.characteristic.clone());
 
-            let difficulty = BeatmapDifficulty(diff.difficulty.clone());
+        let difficulty = BeatmapDifficulty(diff.difficulty.clone());
 
-            let beatmap_path = level_path.join(diff.beatmap_data_filename.clone());
-            if !beatmap_path.exists() {
-                warn!(
-                    "Diff file '{}' does not exist, skipping...",
-                    beatmap_path.display()
-                );
-                continue;
-            }
-
-            let lightshow_path = level_path.join(diff.lightshow_data_filename.clone());
-            if !lightshow_path.exists() {
-                warn!(
-                    "Diff Lighting file '{}' does not exist, skipping...",
-                    lightshow_path.display()
-                );
-                continue;
-            }
-
-            let key = (characteristic.clone(), difficulty.clone());
-            if file_difficulty_beatmaps.contains_key(&key) {
-                warn!("Duplicate characteristic/difficulty, skipping...");
-                continue;
-            }
-
-            file_difficulty_beatmaps.insert(
-                key.clone(),
-                FileDifficultyBeatmap {
-                    beatmap_path,
-                    lightshow_path: Some(lightshow_path),
-                },
+        let beatmap_path = diff.beatmap_data_filename.clone();
+        if !beatmap.has_file(&beatmap_path) {
+            warn!(
+                "Diff file '{}' does not exist, skipping...",
+                beatmap_path.display()
             );
-
-            // collect mappers/lighters
-            let mut mappers: Vec<String> = Vec::new();
-            let mut lighters: Vec<String> = Vec::new();
-            if let Some(authors) = &diff.beatmap_authors {
-                if let Some(ms) = &authors.mappers {
-                    for m in ms.iter() {
-                        mappers.push(m.clone());
-                    }
-                }
-                if let Some(ls) = &authors.lighters {
-                    for l in ls.iter() {
-                        lighters.push(l.clone());
-                    }
-                }
-            }
-
-            let env_name = environment_names.get(diff.environment_name_idx).cloned();
-
-            let color_scheme = diff
-                .beatmap_color_scheme_idx
-                .and_then(|idx| color_schemes.get(idx).cloned());
-
-            basic_data_dict.insert(
-                key,
-                BeatmapBasicData {
-                    note_jump_movement_speed: diff.note_jump_movement_speed,
-                    note_jump_start_beat_offset: diff.note_jump_start_beat_offset,
-                    environment: env_name,
-                    color_scheme: color_scheme.map(ColorScheme::from),
-                    notes_count: None,
-                    cuttable_objects_count: None,
-                    obstacles_count: None,
-                    bombs_count: None,
-                    mappers,
-                    lighters,
-                },
-            );
+            continue;
         }
+
+        let lightshow_path = diff.lightshow_data_filename.clone();
+        if !beatmap.has_file(&lightshow_path) {
+            warn!(
+                "Diff Lighting file '{}' does not exist, skipping...",
+                lightshow_path.display()
+            );
+            continue;
+        }
+
+        let key = (characteristic.clone(), difficulty.clone());
+        if file_difficulty_beatmaps.contains_key(&key) {
+            warn!("Duplicate characteristic/difficulty, skipping...");
+            continue;
+        }
+
+        file_difficulty_beatmaps.insert(
+            key.clone(),
+            FileDifficultyBeatmap {
+                beatmap_path,
+                lightshow_path: Some(lightshow_path),
+            },
+        );
+
+        // collect mappers/lighters
+        let mut mappers: Vec<String> = Vec::new();
+        let mut lighters: Vec<String> = Vec::new();
+        if let Some(authors) = &diff.beatmap_authors {
+            if let Some(ms) = &authors.mappers {
+                for m in ms.iter() {
+                    mappers.push(m.clone());
+                }
+            }
+            if let Some(ls) = &authors.lighters {
+                for l in ls.iter() {
+                    lighters.push(l.clone());
+                }
+            }
+        }
+
+        let env_name = environment_names.get(diff.environment_name_idx).cloned();
+
+        let color_scheme = diff
+            .beatmap_color_scheme_idx
+            .and_then(|idx| color_schemes.get(idx).cloned());
+
+        basic_data_dict.insert(
+            key,
+            BeatmapBasicData {
+                note_jump_movement_speed: diff.note_jump_movement_speed,
+                note_jump_start_beat_offset: diff.note_jump_start_beat_offset,
+                environment: env_name,
+                color_scheme: color_scheme.map(ColorScheme::from),
+                notes_count: None,
+                cuttable_objects_count: None,
+                obstacles_count: None,
+                bombs_count: None,
+                mappers,
+                lighters,
+            },
+        );
     }
 
     let beatmap_level_data = FileSystemBeatmapLevelData {
