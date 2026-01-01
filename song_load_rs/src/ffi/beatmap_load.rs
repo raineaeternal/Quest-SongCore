@@ -52,11 +52,9 @@ impl From<SongDatas> for CSongDatas {
             .map(CSongData::from)
             .collect();
 
-        let count = c_songs.len();
-        let songs_ptr = c_songs.as_ptr();
-
-        // Prevent the vector from being deallocated
-        std::mem::forget(c_songs);
+        let slice = c_songs.into_boxed_slice();
+        let songs_ptr = slice.as_ptr();
+        let count = slice.len();
 
         CSongDatas {
             songs: songs_ptr,
@@ -94,10 +92,17 @@ impl From<CSongData> for BeatmapData {
 
 impl From<CSongDatas> for SongDatas {
     fn from(c_loaded_songs: CSongDatas) -> Self {
-        let songs_slice =
-            unsafe { std::slice::from_raw_parts(c_loaded_songs.songs, c_loaded_songs.count) };
+        let songs_slice = unsafe {
+            std::slice::from_raw_parts_mut(
+                c_loaded_songs.songs as *mut CSongData,
+                c_loaded_songs.count,
+            )
+        };
 
-        let songs: Vec<BeatmapData> = songs_slice
+        let songs = unsafe { Box::from_raw(songs_slice) };
+
+        let songs: Vec<BeatmapData> = songs
+            .into_vec()
             .iter()
             .map(|c_song| BeatmapData::from(*c_song))
             .collect();
