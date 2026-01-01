@@ -13,7 +13,8 @@ use tracing::warn;
 use crate::{
     beatmap::BeatmapSource,
     cache::{CacheError, SongCache},
-    hash::compute_custom_level_hash_from_beatmap, loader::audio_loader,
+    hash::compute_custom_level_hash_from_beatmap,
+    loader::audio_loader,
 };
 
 pub const CUSTOM_LEVEL_PREFIX_ID: &str = "custom_level_";

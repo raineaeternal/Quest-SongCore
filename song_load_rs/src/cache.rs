@@ -7,8 +7,6 @@ use thiserror::Error;
 
 use crate::loader::song_data_loader::SongCacheData;
 
-
-
 #[derive(Debug, Error)]
 pub enum CacheError {
     #[error("General error: {0}")]

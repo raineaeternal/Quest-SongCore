@@ -1,7 +1,8 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
-    cache::{CacheError, SongCache}, loader::song_data_loader::SongCacheData,
+    cache::{CacheError, SongCache},
+    loader::song_data_loader::SongCacheData,
 };
 
 #[derive(Debug, Default)]

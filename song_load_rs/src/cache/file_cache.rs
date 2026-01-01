@@ -3,7 +3,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{cache::{SongCache, mem_cache::MemCache}, loader::song_data_loader::SongCacheData};
+use crate::{
+    cache::{SongCache, mem_cache::MemCache},
+    loader::song_data_loader::SongCacheData,
+};
 
 #[derive(Debug)]
 pub struct FileCache {
@@ -61,10 +64,7 @@ impl SongCache for FileCache {
         self.mem_cache.cache_song(loaded_song_data)
     }
 
-    fn cache_songs(
-        &mut self,
-        loaded_songs: Vec<SongCacheData>,
-    ) -> Result<(), super::CacheError> {
+    fn cache_songs(&mut self, loaded_songs: Vec<SongCacheData>) -> Result<(), super::CacheError> {
         self.mem_cache.cache_songs(loaded_songs)
     }
 
