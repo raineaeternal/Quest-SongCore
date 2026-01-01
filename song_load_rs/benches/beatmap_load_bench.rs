@@ -1,4 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
+use song_load_rs::loader::beatmap_loader;
 use std::path::PathBuf;
 
 fn bench_load_from_zip(c: &mut Criterion) {
@@ -9,7 +10,7 @@ fn bench_load_from_zip(c: &mut Criterion) {
 
     c.bench_function("load_from_zip", |b| {
         b.iter(|| {
-            let loaded = song_load_rs::song_loader::load_song_from_path(zip_path.clone(), None)
+            let loaded = beatmap_loader::load_beatmap_from_path(zip_path.clone(), None)
                 .expect("load from zip failed");
             // Keep the result in scope so it's not optimized away
             std::hint::black_box(loaded);
@@ -23,7 +24,7 @@ fn bench_load_from_dir(c: &mut Criterion) {
 
     c.bench_function("load_from_dir", |b| {
         b.iter(|| {
-            let loaded = song_load_rs::song_loader::load_song_from_path(dir_path.clone(), None)
+            let loaded = beatmap_loader::load_beatmap_from_path(dir_path.clone(), None)
                 .expect("load from dir failed");
             std::hint::black_box(loaded);
         })

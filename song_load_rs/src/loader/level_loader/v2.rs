@@ -5,7 +5,11 @@ use tracing::warn;
 use crate::{
     beatmap::BeatmapSource,
     cache::SongCache,
-    level_loader::{CustomBeatmapLevel, InfoDat, get_preview_media_data},
+    info_dat::InfoDat,
+    loader::{
+        beatmap_loader::{self, CUSTOM_LEVEL_PREFIX_ID},
+        level_loader::{CustomBeatmapLevel, get_preview_media_data},
+    },
     models::{
         beatmap::{
             BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, EnvironmentName,
@@ -14,8 +18,6 @@ use crate::{
         info_dat::{BeatmapLevelColorSchemeSaveData, v2::StandardLevelInfoSaveDataV2},
     },
 };
-
-use crate::song_loader::{self, CUSTOM_LEVEL_PREFIX_ID};
 
 // V2 | V3
 /// Rough Rust translation of the original GetBeatmapLevelAndBasicData.
@@ -213,7 +215,7 @@ pub fn load_custom_beatmap_level_v2(
         return None;
     }
 
-    let song_data = song_loader::load_song_from_beatmap_source(beatmap, Some(song_cache)).ok()?;
+    let song_data = beatmap_loader::load_beatmap(beatmap, Some(song_cache)).ok()?;
 
     let level_id = format!(
         "{CUSTOM_LEVEL_PREFIX_ID}{}{}",

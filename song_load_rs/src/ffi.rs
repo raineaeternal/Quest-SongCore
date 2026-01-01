@@ -1,7 +1,7 @@
 use std::os::raw::c_void;
 
+pub mod beatmap_load;
 pub mod cache;
-pub mod song_load;
 pub mod version;
 
 #[repr(C)]

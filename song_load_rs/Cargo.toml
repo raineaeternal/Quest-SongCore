@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [[bench]]
-name = "song_load_bench"
+name = "beatmap_load_bench"
 harness = false
 
 [[bench]]

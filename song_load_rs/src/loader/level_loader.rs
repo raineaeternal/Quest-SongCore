@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use crate::beatmap::BeatmapSource;
-use crate::cache::SongCache;
 use crate::info_dat::InfoDat;
 use crate::models::beatmap::{
     BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, FileSystemBeatmapLevelData,
@@ -61,24 +60,5 @@ pub fn get_preview_media_data(
         preview_audio_clip: beatmap
             .get_file_bytes(song_filename.file_name().unwrap())
             .ok(),
-    }
-}
-
-pub fn load_level_from_path(
-    beatmap: &BeatmapSource,
-    wip: bool,
-    song_cache: &mut impl SongCache,
-) -> Result<CustomBeatmapLevel, Box<dyn std::error::Error>> {
-    let info_dat = beatmap.get_info_dat()?;
-
-    match info_dat {
-        InfoDat::V2(save_data_v2) => {
-            v2::load_custom_beatmap_level_v2(beatmap, wip, save_data_v2, song_cache)
-                .ok_or_else(|| "Failed to load V2 beatmap level".into())
-        }
-        InfoDat::V4(save_data_v4) => {
-            v4::load_custom_beatmap_level_v4(beatmap, wip, save_data_v4, song_cache)
-                .ok_or_else(|| "Failed to load V4 beatmap level".into())
-        }
     }
 }

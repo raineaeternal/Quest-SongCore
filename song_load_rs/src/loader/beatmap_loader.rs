@@ -21,18 +21,18 @@ pub const CUSTOM_LEVEL_PREFIX_ID: &str = "custom_level_";
 
 /// A struct representing useful cached data for a loaded song.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct SongCacheData {
-    /// Path to the song
+pub struct BeatmapData {
+    /// Path to the beatmap
     pub path: PathBuf,
-    /// SHA1 hash of the song's contents
+    /// SHA1 hash of the beatmap
     pub hash: String,
     /// Optional length of the song if known
     pub song_length: Option<Duration>,
 }
 
 #[derive(Clone)]
-pub struct SongCacheDatas {
-    pub songs: Vec<SongCacheData>,
+pub struct SongDatas {
+    pub songs: Vec<BeatmapData>,
 }
 
 #[derive(Debug, Error)]
@@ -54,10 +54,10 @@ pub enum LoadSongError {
 }
 
 /// Loads a song from the given BeatmapSource, optionally using the provided cache.
-pub fn load_song_from_beatmap_source(
+pub fn load_beatmap(
     beatmap: &BeatmapSource,
     mut cache: Option<&mut dyn SongCache>,
-) -> Result<SongCacheData, LoadSongError> {
+) -> Result<BeatmapData, LoadSongError> {
     let path = beatmap.get_real_path().to_path_buf();
 
     let cached_hash = cache
@@ -77,43 +77,44 @@ pub fn load_song_from_beatmap_source(
     })?;
 
     if let Some(c) = cache {
-        c.cache_song(SongCacheData {
+        c.cache_song(BeatmapData {
             hash: hash.clone(),
             path: path.clone(),
             song_length,
         })?;
     }
 
-    Ok(SongCacheData {
+    Ok(BeatmapData {
         hash,
         path,
         song_length,
     })
 }
 
-pub fn load_song_from_path(
+/// Loads a song from the given file path, optionally using the provided cache.
+pub fn load_beatmap_from_path(
     path: PathBuf,
     cache: Option<&mut dyn SongCache>,
-) -> Result<SongCacheData, LoadSongError> {
+) -> Result<BeatmapData, LoadSongError> {
     if !path.exists() {
         return Err(LoadSongError::PathDoesNotExist(path));
     }
     let beatmap = BeatmapSource::from_path(path)?;
 
-    load_song_from_beatmap_source(&beatmap, cache)
+    load_beatmap(&beatmap, cache)
 }
 
 /// Loads all songs from the given directory.
 /// Returns an error if the path does not exist or is not a directory.
 ///
 /// Synchronous version.
-pub fn load_song_directory<F>(
+pub fn load_beatmap_directory<F>(
     path: &std::path::Path,
     cache: Option<&mut dyn SongCache>,
     callback: Option<F>,
-) -> Result<SongCacheDatas, LoadSongError>
+) -> Result<SongDatas, LoadSongError>
 where
-    F: Fn(&SongCacheData, usize, usize),
+    F: Fn(&BeatmapData, usize, usize),
 {
     if !path.exists() || !path.is_dir() {
         return Err(LoadSongError::PathDoesNotExist(path.to_path_buf()));
@@ -123,14 +124,14 @@ where
     let read_dir_entries: Vec<_> = std::fs::read_dir(path)?.collect();
     let count = read_dir_entries.len();
 
-    let loaded_songs: Vec<SongCacheData> = read_dir_entries
+    let loaded_songs: Vec<BeatmapData> = read_dir_entries
         .into_iter()
         .enumerate()
         .filter_map(|(i, entry)| {
             let entry = entry.ok()?;
             let path = entry.path();
             // we cache later in bulk
-            let song_data = match load_song_from_path(entry.path(), None) {
+            let song_data = match load_beatmap_from_path(entry.path(), None) {
                 Ok(data) => data,
                 Err(e) => {
                     warn!("Failed to load song from path {:?}: {}", path, e);
@@ -151,7 +152,7 @@ where
         c.cache_songs(loaded_songs.clone())?;
     }
 
-    Ok(SongCacheDatas {
+    Ok(SongDatas {
         songs: loaded_songs,
     })
 }
@@ -160,13 +161,13 @@ where
 /// Loads all songs from the given directory in parallel.
 /// Returns an error if the path does not exist or is not a directory.
 /// Parallel version.
-pub fn load_song_directory_parallel<F>(
+pub fn load_beatmap_directory_parallel<F>(
     paths: &[&Path],
     cache: Option<&mut dyn SongCache>,
     callback: Option<F>,
-) -> Result<SongCacheDatas, LoadSongError>
+) -> Result<SongDatas, LoadSongError>
 where
-    F: Fn(&SongCacheData, usize, usize) + Sync,
+    F: Fn(&BeatmapData, usize, usize) + Sync,
 {
     // validate paths
     for path in paths {
@@ -189,13 +190,13 @@ where
 
     let worked = AtomicUsize::new(0);
 
-    let loaded_songs: Vec<SongCacheData> = read_dir_entries
+    let loaded_songs: Vec<BeatmapData> = read_dir_entries
         .into_iter()
         .par_bridge()
         .filter_map(|entry| {
             let path = entry.path();
             // we cache later in bulk
-            let song_data = match load_song_from_path(entry.path(), None) {
+            let song_data = match load_beatmap_from_path(entry.path(), None) {
                 Ok(data) => data,
                 Err(e) => {
                     warn!("Failed to load song from path {:?}: {}", path, e);
@@ -217,7 +218,7 @@ where
         c.cache_songs(loaded_songs.clone())?;
     }
 
-    Ok(SongCacheDatas {
+    Ok(SongDatas {
         songs: loaded_songs,
     })
 }

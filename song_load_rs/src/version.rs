@@ -7,6 +7,7 @@ use std::{
 use regex::Regex;
 use semver::{BuildMetadata, Prerelease, Version};
 
+/// A constant representing no version (0.0.0).
 pub const NO_VERSION: Version = Version {
     major: 0,
     minor: 0,

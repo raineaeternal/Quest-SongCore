@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    error::Error,
     fmt::Display,
     io::{self, Read},
     path::{Path, PathBuf},
@@ -8,7 +9,12 @@ use std::{
 use bytes::Bytes;
 use zip::ZipArchive;
 
-use crate::{info_dat::InfoDat, version};
+use crate::{
+    cache::SongCache,
+    info_dat::InfoDat,
+    loader::level_loader::{self, CustomBeatmapLevel},
+    version,
+};
 
 /// Represents a beatmap, which can be either a zip archive or a directory.
 ///
@@ -122,6 +128,31 @@ impl BeatmapSource {
                 io::ErrorKind::InvalidData,
                 "Unsupported Info.dat version",
             )),
+        }
+    }
+
+    /// Loads the beatmap level from the beatmap source.
+    /// Uses the appropriate loader based on the Info.dat version.
+    ///
+    /// `wip` indicates whether to load WIP data.
+    /// `song_cache` is used to get cached song data, or build the cache if not present.
+    ///
+    pub fn load_level(
+        &self,
+        wip: bool,
+        song_cache: &mut impl SongCache,
+    ) -> Result<CustomBeatmapLevel, Box<dyn Error>> {
+        let info_dat = self.get_info_dat()?;
+
+        match info_dat {
+            InfoDat::V2(save_data_v2) => {
+                level_loader::v2::load_custom_beatmap_level_v2(self, wip, save_data_v2, song_cache)
+                    .ok_or_else(|| "Failed to load V2 beatmap level".into())
+            }
+            InfoDat::V4(save_data_v4) => {
+                level_loader::v4::load_custom_beatmap_level_v4(self, wip, save_data_v4, song_cache)
+                    .ok_or_else(|| "Failed to load V4 beatmap level".into())
+            }
         }
     }
 }
