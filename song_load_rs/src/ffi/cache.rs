@@ -10,9 +10,9 @@ pub struct CSongCache {
 
 /// Creates a new file based song cache and returns a pointer to it.
 /// # Safety
-/// The caller is responsible for freeing the returned pointer using `song_loader_free_song_cache`.
+/// The caller is responsible for freeing the returned pointer using `song_core_free_song_cache`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_file_cache_new(
+pub unsafe extern "C" fn song_core_file_cache_new(
     path: *const std::os::raw::c_char,
 ) -> *mut CSongCache {
     if path.is_null() {
@@ -36,7 +36,7 @@ pub unsafe extern "C" fn song_loader_file_cache_new(
 /// # Safety
 /// The `cache` pointer must be a valid pointer to a `CSongCache`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_cache_load(cache: *mut CSongCache) {
+pub unsafe extern "C" fn song_core_cache_load(cache: *mut CSongCache) {
     if cache.is_null() {
         panic!("Cache is null");
     }
@@ -49,7 +49,7 @@ pub unsafe extern "C" fn song_loader_cache_load(cache: *mut CSongCache) {
 /// # Safety
 /// The `cache` pointer must be a valid pointer to a `CSongCache`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_cache_save(cache: *const CSongCache) {
+pub unsafe extern "C" fn song_core_cache_save(cache: *const CSongCache) {
     if cache.is_null() {
         panic!("Cache is null");
     }
@@ -63,7 +63,7 @@ pub unsafe extern "C" fn song_loader_cache_save(cache: *const CSongCache) {
 /// The `cache` pointer must be a valid pointer to a `CSongCache`.
 /// The `song_path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_cache_reset_song(
+pub unsafe extern "C" fn song_core_cache_reset_song(
     cache: *mut CSongCache,
     song_path: *const std::os::raw::c_char,
 ) {
@@ -88,7 +88,7 @@ pub unsafe extern "C" fn song_loader_cache_reset_song(
 /// # Safety
 /// The `cache` pointer must be a valid pointer to a `CSongCache`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_cache_clear(cache: *mut CSongCache) {
+pub unsafe extern "C" fn song_core_cache_clear(cache: *mut CSongCache) {
     if cache.is_null() {
         panic!("Cache is null");
     }
@@ -102,7 +102,7 @@ pub unsafe extern "C" fn song_loader_cache_clear(cache: *mut CSongCache) {
 /// The `cache` pointer must be a valid pointer to a `CSongCache`.
 /// The `song_path` pointer must be a valid null-terminated C string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_cache_contains_cache(
+pub unsafe extern "C" fn song_core_cache_contains_cache(
     cache: *const CSongCache,
     song_path: *const std::os::raw::c_char,
 ) -> bool {
@@ -130,7 +130,7 @@ pub unsafe extern "C" fn song_loader_cache_contains_cache(
 /// # Safety
 /// The `cache` pointer must be a valid pointer to a `CSongCache`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_loader_free_song_cache(cache: *mut CSongCache) {
+pub unsafe extern "C" fn song_core_free_song_cache(cache: *mut CSongCache) {
     if cache.is_null() {
         return;
     }

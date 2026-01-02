@@ -7,7 +7,7 @@ use crate::{
     cache::SongCache,
     info_dat::InfoDat,
     loader::{
-        beatmap_loader::{self, CUSTOM_LEVEL_PREFIX_ID},
+        beatmap_file_loader::{self, CUSTOM_LEVEL_PREFIX_ID},
         level_loader::{CustomBeatmapLevel, get_preview_media_data},
     },
     models::{
@@ -56,12 +56,15 @@ pub fn basic_verify_map_v4(beatmap: &BeatmapSource, save_data: &BeatmapLevelSave
 
 /// Rust translation of `LevelLoader::LoadCustomBeatmapLevel` (V4)
 /// Returns `None` on error or missing data.
-pub fn load_custom_beatmap_level_v4(
+pub fn load_custom_beatmap_level_v4<C>(
     beatmap: &BeatmapSource,
     wip: bool,
     save: BeatmapLevelSaveDataV4,
-    song_cache: &mut impl SongCache,
-) -> Option<CustomBeatmapLevel> {
+    song_cache: &mut C,
+) -> Option<CustomBeatmapLevel>
+where
+    C: SongCache + ?Sized,
+{
     if !basic_verify_map_v4(beatmap, &save) {
         warn!("Map {} was missing files!", beatmap);
         if cfg!(feature = "throw_on_missing_data") {
@@ -70,7 +73,7 @@ pub fn load_custom_beatmap_level_v4(
         return None;
     }
 
-    let song_data = beatmap_loader::load_beatmap(beatmap, Some(song_cache)).ok()?;
+    let song_data = beatmap_file_loader::load_beatmap(beatmap, Some(song_cache)).ok()?;
 
     let level_id = format!(
         "{CUSTOM_LEVEL_PREFIX_ID}{}{}",

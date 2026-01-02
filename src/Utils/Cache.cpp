@@ -31,7 +31,7 @@ namespace SongCore::Utils {
         _songCache.clear();
     }
 
-    std::optional<LoadedSong> GetCachedInfo(std::filesystem::path const &levelPath) {
+    std::optional<BeatmapMetadata> GetCachedInfo(std::filesystem::path const &levelPath) {
         if (!std::filesystem::exists(levelPath)) {
             return std::nullopt;
         }
@@ -49,7 +49,7 @@ namespace SongCore::Utils {
       return _songCache.load_song(levelPath);
     }
 
-    std::optional<LoadedSongs> LoadDirectory(std::filesystem::path const& directoryPath) {
+    std::optional<BeatmapMetadataArray> LoadDirectory(std::filesystem::path const& directoryPath) {
         if (!std::filesystem::exists(directoryPath)) {
             return std::nullopt;
         }
@@ -57,7 +57,7 @@ namespace SongCore::Utils {
         std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
         return _songCache.from_directory_parallel(directoryPath);
     }
-    std::optional<LoadedSongs> LoadDirectories(std::span<std::filesystem::path const> directoryPath) {
+    std::optional<BeatmapMetadataArray> LoadDirectories(std::span<std::filesystem::path const> directoryPath) {
         std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
         return _songCache.from_directory_parallel(directoryPath);
     }

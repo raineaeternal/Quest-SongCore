@@ -97,7 +97,7 @@ fn convert_htmlstring_to_color(color_html_string: &str) -> Color {
         r: r_normalized,
         g: g_normalized,
         b: b_normalized,
-        a: None,
+        a: 1.0,
     }
 
     // Color::from_hex_string(&color_string).unwrap_or(Color::black())

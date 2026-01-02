@@ -2,12 +2,12 @@ use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
     cache::{CacheError, SongCache},
-    loader::beatmap_loader::BeatmapData,
+    loader::beatmap_file_loader::BeatmapMetadata,
 };
 
 #[derive(Debug, Default)]
 pub struct MemCache {
-    cache: HashMap<PathBuf, BeatmapData>,
+    cache: HashMap<PathBuf, BeatmapMetadata>,
 }
 
 impl MemCache {
@@ -21,11 +21,11 @@ impl MemCache {
             cache: HashMap::with_capacity(capacity),
         }
     }
-    pub fn from_cache(cache: HashMap<PathBuf, BeatmapData>) -> Self {
+    pub fn from_cache(cache: HashMap<PathBuf, BeatmapMetadata>) -> Self {
         Self { cache }
     }
 
-    pub fn get_cache(&self) -> &HashMap<PathBuf, BeatmapData> {
+    pub fn get_cache(&self) -> &HashMap<PathBuf, BeatmapMetadata> {
         &self.cache
     }
 }
@@ -41,7 +41,7 @@ impl SongCache for MemCache {
         Ok(())
     }
 
-    fn cache_song(&mut self, loaded_song_data: BeatmapData) -> Result<(), CacheError> {
+    fn cache_song(&mut self, loaded_song_data: BeatmapMetadata) -> Result<(), CacheError> {
         self.cache
             .insert(loaded_song_data.path.clone(), loaded_song_data);
         Ok(())
@@ -50,7 +50,7 @@ impl SongCache for MemCache {
     fn get_cached_song(
         &self,
         song_path: &std::path::Path,
-    ) -> Result<Option<BeatmapData>, CacheError> {
+    ) -> Result<Option<BeatmapMetadata>, CacheError> {
         Ok(self.cache.get(song_path).cloned())
     }
 }

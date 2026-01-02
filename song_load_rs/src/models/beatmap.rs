@@ -26,6 +26,7 @@ impl BeatmapBasicData {}
 pub struct BeatmapKey;
 
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub enum PlayerSensitivityFlag {
     Unknown,
     Safe,

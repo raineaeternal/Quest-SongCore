@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     cache::{SongCache, mem_cache::MemCache},
-    loader::beatmap_loader::BeatmapData,
+    loader::beatmap_file_loader::BeatmapMetadata,
 };
 
 #[derive(Debug)]
@@ -14,7 +14,7 @@ pub struct FileCache {
     pub mem_cache: MemCache,
 }
 
-type CacheData = std::collections::HashMap<PathBuf, BeatmapData>;
+type CacheData = std::collections::HashMap<PathBuf, BeatmapMetadata>;
 
 impl FileCache {
     pub fn new(path: PathBuf) -> Self {
@@ -59,19 +59,19 @@ impl SongCache for FileCache {
 
     fn cache_song(
         &mut self,
-        loaded_song_data: BeatmapData,
+        loaded_song_data: BeatmapMetadata,
     ) -> Result<(), crate::cache::CacheError> {
         self.mem_cache.cache_song(loaded_song_data)
     }
 
-    fn cache_songs(&mut self, loaded_songs: Vec<BeatmapData>) -> Result<(), super::CacheError> {
+    fn cache_songs(&mut self, loaded_songs: Vec<BeatmapMetadata>) -> Result<(), super::CacheError> {
         self.mem_cache.cache_songs(loaded_songs)
     }
 
     fn get_cached_song(
         &self,
         song_path: &Path,
-    ) -> Result<Option<BeatmapData>, crate::cache::CacheError> {
+    ) -> Result<Option<BeatmapMetadata>, crate::cache::CacheError> {
         self.mem_cache.get_cached_song(song_path)
     }
 

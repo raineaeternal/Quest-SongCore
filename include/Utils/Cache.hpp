@@ -11,10 +11,10 @@ namespace SongCore::Utils {
 
     /// @brief gets the cached info for the level
     /// @return optional song info entry, if the info isn't able to provided this returns nullopt (i.e. no song found at path)
-    std::optional<LoadedSong> GetCachedInfo(std::filesystem::path const& levelPath);
+    std::optional<BeatmapMetadata> GetCachedInfo(std::filesystem::path const& levelPath);
 
-    std::optional<LoadedSongs> LoadDirectory(std::filesystem::path const& directoryPath);
-    std::optional<LoadedSongs> LoadDirectories(std::span<std::filesystem::path const> directoryPath);
+    std::optional<BeatmapMetadataArray> LoadDirectory(std::filesystem::path const& directoryPath);
+    std::optional<BeatmapMetadataArray> LoadDirectories(std::span<std::filesystem::path const> directoryPath);
 
     /// @brief just removes cached info if it exists
     void RemoveCachedInfo(std::filesystem::path const& levelPath);

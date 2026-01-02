@@ -5,7 +5,7 @@ use std::path::Path;
 
 use thiserror::Error;
 
-use crate::loader::beatmap_loader::BeatmapData;
+use crate::loader::beatmap_file_loader::BeatmapMetadata;
 
 #[derive(Debug, Error)]
 pub enum CacheError {
@@ -23,9 +23,9 @@ pub trait SongCache: Send + Sync {
     fn reset_song_cache(&mut self, song_path: &Path) -> Result<(), CacheError>;
 
     /// Caches the loaded song data for the given song path.
-    fn cache_song(&mut self, loaded_song_data: BeatmapData) -> Result<(), CacheError>;
+    fn cache_song(&mut self, loaded_song_data: BeatmapMetadata) -> Result<(), CacheError>;
 
-    fn cache_songs(&mut self, loaded_songs: Vec<BeatmapData>) -> Result<(), CacheError> {
+    fn cache_songs(&mut self, loaded_songs: Vec<BeatmapMetadata>) -> Result<(), CacheError> {
         for song in loaded_songs {
             self.cache_song(song)?;
         }
@@ -33,7 +33,7 @@ pub trait SongCache: Send + Sync {
     }
 
     /// Retrieves the cached loaded song data for the given song path, if it exists.
-    fn get_cached_song(&self, song_path: &Path) -> Result<Option<BeatmapData>, CacheError>;
+    fn get_cached_song(&self, song_path: &Path) -> Result<Option<BeatmapMetadata>, CacheError>;
 
     fn reload_cache(&mut self) -> Result<(), CacheError> {
         Ok(())

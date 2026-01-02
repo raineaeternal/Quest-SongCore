@@ -137,11 +137,14 @@ impl BeatmapSource {
     /// `wip` indicates whether to load WIP data.
     /// `song_cache` is used to get cached song data, or build the cache if not present.
     ///
-    pub fn load_level(
+    pub fn load_level<C>(
         &self,
         wip: bool,
-        song_cache: &mut impl SongCache,
-    ) -> Result<CustomBeatmapLevel, Box<dyn Error>> {
+        song_cache: &mut C,
+    ) -> Result<CustomBeatmapLevel, Box<dyn Error>>
+    where
+        C: SongCache + ?Sized,
+    {
         let info_dat = self.get_info_dat()?;
 
         match info_dat {

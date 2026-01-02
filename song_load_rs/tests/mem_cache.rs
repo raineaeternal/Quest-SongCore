@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use song_load_rs::{cache::SongCache, loader::beatmap_loader::BeatmapData};
+use song_load_rs::{cache::SongCache, loader::beatmap_file_loader::BeatmapMetadata};
 
 // Integration tests for the in-memory song cache implementation `MemCache`.
 
@@ -11,7 +11,7 @@ fn mem_cache_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
 
     // Prepare a sample LoadedSong
     let path = PathBuf::from("/tmp/test_song");
-    let song = BeatmapData {
+    let song = BeatmapMetadata {
         path: path.clone(),
         hash: "deadbeef".to_string(),
         song_length: None,
@@ -37,12 +37,12 @@ fn mem_cache_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
     assert!(got.is_none(), "song was not removed by reset_song_cache");
 
     // Cache multiple songs then clear
-    let s1 = BeatmapData {
+    let s1 = BeatmapMetadata {
         path: PathBuf::from("/tmp/a"),
         hash: "a".into(),
         song_length: None,
     };
-    let s2 = BeatmapData {
+    let s2 = BeatmapMetadata {
         path: PathBuf::from("/tmp/b"),
         hash: "b".into(),
         song_length: None,

@@ -1,15 +1,9 @@
-use std::os::raw::c_void;
-
-pub mod beatmap_load;
+pub mod beatmap_metadata_load;
 pub mod cache;
 pub mod version;
+pub mod level_loader;
 
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct OpaqueUserData(*const c_void);
-
-unsafe impl Sync for OpaqueUserData {}
-unsafe impl Send for OpaqueUserData {}
+pub mod types;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn hello_from_rust() {
