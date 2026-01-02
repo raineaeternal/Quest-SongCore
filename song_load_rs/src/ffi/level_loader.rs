@@ -1,12 +1,16 @@
-use std::{ffi::CStr, os::raw::c_char, path::Path, path::PathBuf};
+use std::{
+    ffi::CStr,
+    os::raw::c_char,
+    path::{Path, PathBuf},
+};
 
 use crate::{
     beatmap::BeatmapSource,
     ffi::{
         cache::CSongCache,
-        types::{ManagedArray, ManagedCString},
+        types::{ManagedArray, ManagedCString, OpaqueUserData},
     },
-    loader::level_loader::CustomBeatmapLevel,
+    loader::level_loader::{self, CustomBeatmapLevel},
     models::{
         beatmap::{
             BeatmapBasicData, FileSystemBeatmapLevelData, PlayerSensitivityFlag, PreviewMediaData,
@@ -112,17 +116,15 @@ pub unsafe extern "C" fn song_core_load_level_path(
         .expect("Failed to create BeatmapSource from path");
 
     // Prepare cache reference: if `cache` is null, use a temporary in-memory cache.
-    let mut temp_cache = crate::cache::mem_cache::MemCache::new();
-    let cache_ref = unsafe {
-        cache
-            .as_mut()
-            .map(|c| c.inner.as_mut())
-            .unwrap_or(&mut temp_cache)
-    };
+    let cache_ref = unsafe { cache.as_ref().map(|c| c.inner.as_ref()) };
 
     let loaded = beatmap
         .load_level(wip, cache_ref)
         .expect("Failed to load beatmap level");
+
+    let Some(loaded) = loaded else {
+        return std::ptr::null_mut();
+    };
 
     Box::into_raw(Box::new(loaded))
 }
@@ -166,23 +168,83 @@ pub unsafe extern "C" fn song_core_load_level_from_directories(
         let dirs = dir_strings.iter().map(Path::new).collect::<Vec<&Path>>();
 
         // Prepare cache reference: if `cache` is null, use a temporary in-memory cache.
-        let mut temp_cache = crate::cache::mem_cache::MemCache::new();
-        let cache_ref = cache
-            .as_mut()
-            .map(|c| c.inner.as_mut())
-            .unwrap_or(&mut temp_cache);
 
-        let results = dirs
+        let cache_ref = cache.as_ref().map(|c| c.inner.as_ref());
+
+        let results = level_loader::load_level_from_directories(&dirs, wip, cache_ref);
+        let results = match results {
+            Ok(levels) => levels,
+            Err(e) => panic!("Failed to load levels from directories: {}", e),
+        };
+
+        let c_levels: Vec<CCustomBeatmapLevel> =
+            results.into_iter().map(CCustomBeatmapLevel::from).collect();
+
+        let boxed = Box::new(ManagedArray::from_vec(c_levels));
+
+        Box::into_raw(boxed)
+    }
+}
+
+/// Parallel version of `song_core_load_level_from_directories`.
+/// Loads custom beatmap levels from the given directories in parallel.
+/// Returns a pointer to a heap-allocated `ManagedArray<CCustomBeatmapLevel>`.
+/// Caller must free with `song_core_free_level_array`.
+/// # Parameters:
+/// - `dirs`: A pointer to an array of null-terminated C strings representing directories to search.
+/// - `dir_count`: The number of directories in the `dirs` array.
+/// - `cache`: A pointer to a `CSongCache` struct representing the song cache (can be null to ignore cache).
+/// - `wip`: A boolean indicating whether to load WIP levels.
+/// - `callback`: An optional callback function that is called with each loaded CCustomBeatmapLevel,
+///   along with its index and the total count.
+/// # Safety
+/// The `dirs` pointer must be a valid null-terminated C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_core_load_levels_from_directories_parallel(
+    dirs: *const *const c_char,
+    dir_count: usize,
+    cache: *mut CSongCache,
+    wip: bool,
+    user_data: OpaqueUserData,
+    callback: Option<extern "C" fn(&CCustomBeatmapLevel, usize, usize, OpaqueUserData)>,
+) -> *mut ManagedArray<CCustomBeatmapLevel> {
+    unsafe {
+        if dirs.is_null() {
+            panic!("Dirs pointer is null");
+        }
+
+        let dir_ptrs = std::slice::from_raw_parts(dirs, dir_count);
+        let dir_strings = dir_ptrs
             .iter()
-            .filter_map(|dir| {
-                let beatmap_path = dir;
-                if !beatmap_path.exists() {
-                    return None;
+            .map(|&dptr| {
+                if dptr.is_null() {
+                    panic!("Directory pointer is null");
                 }
-                let beatmap = BeatmapSource::from_path(beatmap_path.to_path_buf()).ok()?;
-                beatmap.load_level(wip, cache_ref).ok()
+                CStr::from_ptr(dptr)
+                    .to_str()
+                    .expect("Failed to convert dir to str")
             })
-            .collect::<Vec<CustomBeatmapLevel>>();
+            .collect::<Vec<&str>>();
+
+        let dirs = dir_strings.iter().map(Path::new).collect::<Vec<&Path>>();
+
+        // Prepare cache reference: if `cache` is null, use a temporary in-memory cache.
+
+        let cache_ref = cache.as_ref().map(|c| c.inner.as_ref());
+
+        let cb = callback.map(|cb| {
+            move |level: &CustomBeatmapLevel, index: usize, total: usize| {
+                let c_level = CCustomBeatmapLevel::from(level.clone());
+                cb(&c_level, index, total, user_data);
+            }
+        });
+
+        let results =
+            level_loader::load_level_from_directories_parallel(&dirs, wip, cache_ref, cb.as_ref());
+        let results = match results {
+            Ok(levels) => levels,
+            Err(e) => panic!("Failed to load levels from directories: {}", e),
+        };
 
         let c_levels: Vec<CCustomBeatmapLevel> =
             results.into_iter().map(CCustomBeatmapLevel::from).collect();

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, sync::RwLock};
 
 use tracing::warn;
 
@@ -7,8 +7,8 @@ use crate::{
     cache::SongCache,
     info_dat::InfoDat,
     loader::{
-        beatmap_file_loader::{self, CUSTOM_LEVEL_PREFIX_ID},
-        level_loader::{CustomBeatmapLevel, get_preview_media_data},
+        beatmap_metadata_loader::{self, CUSTOM_LEVEL_PREFIX_ID},
+        level_loader::{CustomBeatmapLevel, CustomLevelLoaderError, get_preview_media_data},
     },
     models::{
         beatmap::{
@@ -205,20 +205,17 @@ pub fn load_custom_beatmap_level_v2<C>(
     beatmap: &BeatmapSource,
     wip: bool,
     save: StandardLevelInfoSaveDataV2,
-    song_cache: &mut C,
-) -> Option<CustomBeatmapLevel>
+    song_cache: Option<&RwLock<C>>,
+) -> Result<Option<CustomBeatmapLevel>, CustomLevelLoaderError>
 where
     C: SongCache + ?Sized,
 {
     if !basic_verify_map_v2(beatmap, &save) {
         warn!("Map {} was missing files!", beatmap);
-        if cfg!(feature = "throw_on_missing_data") {
-            panic!("Map {} was missing files!", beatmap);
-        }
-        return None;
+        return Err(CustomLevelLoaderError::BeatmapVerificationFailed);
     }
 
-    let song_data = beatmap_file_loader::load_beatmap(beatmap, Some(song_cache)).ok()?;
+    let song_data = beatmap_metadata_loader::load_beatmap_metadata(beatmap, song_cache)?;
 
     let level_id = format!(
         "{CUSTOM_LEVEL_PREFIX_ID}{}{}",
@@ -280,7 +277,7 @@ where
     );
 
     if beatmap_basic_data.is_empty() {
-        return None;
+        return Ok(None);
     }
 
     let result = CustomBeatmapLevel {
@@ -306,5 +303,5 @@ where
         version: CustomBeatmapLevel::K_INVALID_VERSION,
     };
 
-    Some(result)
+    Ok(Some(result))
 }

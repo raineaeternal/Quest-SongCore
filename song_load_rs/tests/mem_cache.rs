@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use song_load_rs::{cache::SongCache, loader::beatmap_file_loader::BeatmapMetadata};
+use song_load_rs::{cache::SongCache, loader::beatmap_metadata_loader::BeatmapMetadata};
 
 // Integration tests for the in-memory song cache implementation `MemCache`.
 

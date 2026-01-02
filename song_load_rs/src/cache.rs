@@ -5,7 +5,7 @@ use std::path::Path;
 
 use thiserror::Error;
 
-use crate::loader::beatmap_file_loader::BeatmapMetadata;
+use crate::loader::beatmap_metadata_loader::BeatmapMetadata;
 
 #[derive(Debug, Error)]
 pub enum CacheError {

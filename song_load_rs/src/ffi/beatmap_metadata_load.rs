@@ -2,7 +2,7 @@ use std::{ffi::CStr, path::Path};
 
 use crate::{
     ffi::{cache::CSongCache, types::OpaqueUserData},
-    loader::beatmap_file_loader::{
+    loader::beatmap_metadata_loader::{
         BeatmapMetadata, BeatmapMetadataArray, load_beatmap_directory, load_beatmap_directory_parallel,
         load_beatmap_from_path,
     },
@@ -134,7 +134,8 @@ pub unsafe extern "C" fn song_core_load_path(
         .map(Path::new)
         .expect("Failed to convert path to str");
 
-    let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
+    let cache = unsafe { cache.as_ref().map(|c| c.inner.as_ref()) };
+    
 
     let song_load =
         load_beatmap_from_path(path.into(), cache).expect("Failed to load song from path");
@@ -165,7 +166,7 @@ pub unsafe extern "C" fn song_core_load_directory(
         .map(Path::new)
         .expect("Failed to convert path to str");
 
-    let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
+    let cache = unsafe { cache.as_ref().map(|c| c.inner.as_ref()) };
     let wrapped = fn_callback.map(|callback| {
         move |song: &BeatmapMetadata, index, count| {
             let cloaded_song = CBeatmapMetadata::from(song.clone());
@@ -205,7 +206,7 @@ pub unsafe extern "C" fn song_core_load_directory_parallel(
         .map(Path::new)
         .expect("Failed to convert path to str");
 
-    let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
+    let cache = unsafe { cache.as_ref().map(|c| c.inner.as_ref()) };
     let wrapped = fn_callback.map(|callback| {
         move |song: &BeatmapMetadata, index, count| {
             let cloaded_song = CBeatmapMetadata::from(song.clone());
@@ -256,7 +257,7 @@ pub unsafe extern "C" fn song_core_load_directories_parallel(
         })
         .collect();
 
-    let cache = unsafe { cache.as_mut().map(|c| c.inner.as_mut()) };
+    let cache = unsafe { cache.as_ref().map(|c| c.inner.as_ref()) };
     let wrapped = fn_callback.map(|callback| {
         move |song: &BeatmapMetadata, index, count| {
             let cloaded_song = CBeatmapMetadata::from(song.clone());

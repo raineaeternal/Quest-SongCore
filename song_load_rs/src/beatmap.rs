@@ -1,9 +1,8 @@
 use std::{
     cell::RefCell,
-    error::Error,
     fmt::Display,
     io::{self, Read},
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, sync::RwLock,
 };
 
 use bytes::Bytes;
@@ -12,7 +11,7 @@ use zip::ZipArchive;
 use crate::{
     cache::SongCache,
     info_dat::InfoDat,
-    loader::level_loader::{self, CustomBeatmapLevel},
+    loader::level_loader::{self, CustomBeatmapLevel, CustomLevelLoaderError},
     version,
 };
 
@@ -140,23 +139,12 @@ impl BeatmapSource {
     pub fn load_level<C>(
         &self,
         wip: bool,
-        song_cache: &mut C,
-    ) -> Result<CustomBeatmapLevel, Box<dyn Error>>
+        song_cache: Option<&RwLock<C>>,
+    ) -> Result<Option<CustomBeatmapLevel>, CustomLevelLoaderError>
     where
         C: SongCache + ?Sized,
     {
-        let info_dat = self.get_info_dat()?;
-
-        match info_dat {
-            InfoDat::V2(save_data_v2) => {
-                level_loader::v2::load_custom_beatmap_level_v2(self, wip, save_data_v2, song_cache)
-                    .ok_or_else(|| "Failed to load V2 beatmap level".into())
-            }
-            InfoDat::V4(save_data_v4) => {
-                level_loader::v4::load_custom_beatmap_level_v4(self, wip, save_data_v4, song_cache)
-                    .ok_or_else(|| "Failed to load V4 beatmap level".into())
-            }
-        }
+        level_loader::load_level_from_path(self, wip, song_cache)
     }
 }
 

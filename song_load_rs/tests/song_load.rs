@@ -1,8 +1,8 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::RwLock};
 
 use song_load_rs::{
     cache::{SongCache, mem_cache::MemCache},
-    loader::beatmap_file_loader::{self, BeatmapMetadata},
+    loader::beatmap_metadata_loader::{self, BeatmapMetadata},
 };
 
 // Smoke tests for the public `song_load` APIs that exercise loading from
@@ -19,12 +19,12 @@ fn load_song_from_zip_and_directory_match() -> Result<(), Box<dyn std::error::Er
 
     // Load from zip
     let song_from_zip =
-        beatmap_file_loader::load_beatmap_from_path::<MemCache>(zip_path.clone(), None)
+        beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(zip_path.clone(), None)
             .map_err(|e| format!("load from zip failed: {}", e))?;
 
     // Load from directory (the public API accepts both file and directory)
     let song_from_dir =
-        beatmap_file_loader::load_beatmap_from_path::<MemCache>(dir_path.clone(), None)
+        beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(dir_path.clone(), None)
             .map_err(|e| format!("load from dir failed: {}", e))?;
 
     // The hashes should match
@@ -62,7 +62,7 @@ fn load_song_directory_finds_songs() -> Result<(), Box<dyn std::error::Error>> {
     let tests_dir = manifest_dir.join("tests");
 
     // Use the directory-loading API which scans entries in the given folder
-    let loaded = beatmap_file_loader::load_beatmap_directory::<MemCache, _>(
+    let loaded = beatmap_metadata_loader::load_beatmap_directory::<MemCache, _>(
         &tests_dir,
         None,
         None::<fn(&BeatmapMetadata, usize, usize)>,
@@ -102,14 +102,15 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     let zip_path = tests_dir.join("f4c3 (Despacito - cookie).zip");
 
     // Create a MemCache and load with it
-    let mut cache = song_load_rs::cache::mem_cache::MemCache::default();
+    let cache = song_load_rs::cache::mem_cache::MemCache::default();
+    let cache = RwLock::new(cache);
 
     // First load - should compute and populate cache
-    let loaded1 = beatmap_file_loader::load_beatmap_from_path(zip_path.clone(), Some(&mut cache))
+    let loaded1 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache))
         .map_err(|e| format!("first load failed: {}", e))?;
 
     // Cache should now contain the entry
-    let cached = cache.get_cached_song(&zip_path)?;
+    let cached = cache.read().unwrap().get_cached_song(&zip_path)?;
     assert!(
         cached.is_some(),
         "expected cache to contain the loaded song"
@@ -118,22 +119,23 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(cached.hash, loaded1.hash);
 
     // Second load should return the same data (and hit the cache)
-    let loaded2 = beatmap_file_loader::load_beatmap_from_path(zip_path.clone(), Some(&mut cache))
+    let loaded2 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache))
         .map_err(|e| format!("second load failed: {}", e))?;
 
     assert_eq!(loaded1.hash, loaded2.hash);
 
     // Also test directory-loading populates cache entries for songs in the tests dir
-    let mut cache2 = song_load_rs::cache::mem_cache::MemCache::default();
-    let loaded_dir = beatmap_file_loader::load_beatmap_directory::<
+    let cache2 = song_load_rs::cache::mem_cache::MemCache::default();
+    let cache2 = RwLock::new(cache2);
+    let loaded_dir = beatmap_metadata_loader::load_beatmap_directory::<
         MemCache,
         fn(&BeatmapMetadata, usize, usize),
-    >(&tests_dir, Some(&mut cache2), None)
+    >(&tests_dir, Some(&cache2), None)
     .map_err(|e| format!("load directory with cache failed: {}", e))?;
 
     // Each loaded song should be cached
     for s in &loaded_dir.songs {
-        let got = cache2.get_cached_song(&s.path)?;
+        let got = cache2.read().unwrap().get_cached_song(&s.path)?;
         assert!(got.is_some(), "song {:?} was not cached", s.path);
     }
 

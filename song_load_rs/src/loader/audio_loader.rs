@@ -1,4 +1,4 @@
-use std::{path::Path, time::Duration};
+use std::{path::Path, time::Duration, io};
 
 use bytes::Bytes;
 use symphonia::{core::io::MediaSourceStream, default::get_probe};
@@ -30,10 +30,10 @@ fn get_song_length_from(song: Bytes) -> Result<Option<Duration>, String> {
 
 pub fn get_song_length(
     beatmap: &beatmap::BeatmapSource,
-) -> Result<Option<Duration>, Box<dyn std::error::Error>> {
+) -> Result<Option<Duration>, io::Error> {
     let info_dat = beatmap
         .get_info_dat()
-        .map_err(|e| format!("Failed to get Info.dat: {}", e))?;
+        .map_err(|e| io::Error::other(format!("Failed to get Info.dat: {}", e)))?;
 
     let Some(song_filename) = &info_dat.get_song_filename() else {
         return Ok(None);
@@ -41,6 +41,6 @@ pub fn get_song_length(
 
     let song_bytes = beatmap.get_file_bytes(Path::new(song_filename))?;
     let length = get_song_length_from(song_bytes)
-        .map_err(|e| format!("Failed to get song length: {}", e))?;
+        .map_err(|e| io::Error::other(format!("Failed to get song length: {}", e)))?;
     Ok(length)
 }

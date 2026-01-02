@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
     cache::{CacheError, SongCache},
-    loader::beatmap_file_loader::BeatmapMetadata,
+    loader::beatmap_metadata_loader::BeatmapMetadata,
 };
 
 #[derive(Debug, Default)]
