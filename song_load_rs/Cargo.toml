@@ -23,7 +23,7 @@ sha1 = "0.10"
 sha2 = "0.10"
 tracing = "0.1"
 tracing-subscriber = "0.3"
-zip = "6.0.0"
+zip = "7.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rayon = "1.11.0"
@@ -40,6 +40,8 @@ default = ["paper2-logging"]
 default = []
 paper2-logging = ["dep:paper2_tracing"]
 throw_on_missing_data = []
+# Allows loading full levels, including parsing beatmap data.
+level-loading = []
 
 [build-dependencies]
 bindgen = "0.72"
@@ -47,3 +49,8 @@ cbindgen = "0.29"
 
 [dev-dependencies]
 criterion = "0.8"
+
+[package.metadata.cbindgen.defines]
+# Map the Cargo feature `level-loading` to a C macro so cbindgen
+# will emit #ifdef guards in generated headers.
+'feature = "level-loading"' = "LEVEL_LOADING"

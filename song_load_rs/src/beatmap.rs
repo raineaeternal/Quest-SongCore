@@ -2,18 +2,13 @@ use std::{
     cell::RefCell,
     fmt::Display,
     io::{self, Read},
-    path::{Path, PathBuf}, sync::RwLock,
+    path::{Path, PathBuf},
 };
 
 use bytes::Bytes;
 use zip::ZipArchive;
 
-use crate::{
-    cache::SongCache,
-    info_dat::InfoDat,
-    loader::level_loader::{self, CustomBeatmapLevel, CustomLevelLoaderError},
-    version,
-};
+use crate::{info_dat::InfoDat, version};
 
 /// Represents a beatmap, which can be either a zip archive or a directory.
 ///
@@ -136,6 +131,7 @@ impl BeatmapSource {
     /// `wip` indicates whether to load WIP data.
     /// `song_cache` is used to get cached song data, or build the cache if not present.
     ///
+    #[cfg(feature = "level-loading")]
     pub fn load_level<C>(
         &self,
         wip: bool,

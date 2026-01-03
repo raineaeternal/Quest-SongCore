@@ -3,6 +3,9 @@ use std::{ffi::CStr, path::Path, sync::RwLock};
 use crate::cache::SongCache;
 
 /// Represents a song cache trait for use in FFI.
+/// 
+/// Unlike the Rust `SongCache` trait, this struct is guaranteed to be thread safe
+/// by wrapping the inner cache in an `RwLock`.
 #[repr(C)]
 pub struct CSongCache {
     pub inner: Box<RwLock<dyn SongCache>>,
