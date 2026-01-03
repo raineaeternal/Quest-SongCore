@@ -1,3 +1,5 @@
+#pragma once
+
 #include "song_load_rs.h"
 #include <filesystem>
 #include <span>
@@ -270,9 +272,9 @@ struct SongCache {
 
 // C++ wrappers for CustomBeatmapLevel returned from Rust
 struct CustomBeatmapLevelOwned {
-  CustomBeatmapLevel *level;
+  CCustomBeatmapLevel *level;
 
-  explicit CustomBeatmapLevelOwned(CustomBeatmapLevel *p) : level(p) {}
+  explicit CustomBeatmapLevelOwned(CCustomBeatmapLevel *p) : level(p) {}
 
   // non-copyable
   CustomBeatmapLevelOwned(const CustomBeatmapLevelOwned &) = delete;
@@ -306,16 +308,57 @@ struct CustomBeatmapLevelOwned {
   }
 
   [[nodiscard]]
-  CustomBeatmapLevel *get() const {
+  CCustomBeatmapLevel *get() const {
     return level;
+  }
+
+  [[nodiscard]]
+  uint32_t version() const {
+    return level->version;
+  }
+
+  [[nodiscard]]
+  std::string_view level_id() const {
+    return std::string_view(level->level_id._0);
+  }
+
+  [[nodiscard]]
+  std::string_view song_name() const {
+    return std::string_view(level->song_name._0);
+  }
+
+  [[nodiscard]]
+  std::vector<std::string> all_mappers() const {
+    std::vector<std::string> mappers;
+    for (size_t i = 0; i < level->all_mappers.length; ++i) {
+      mappers.emplace_back(level->all_mappers.data[i]._0);
+    }
+    return mappers;
+  }
+
+  [[nodiscard]]
+  float beats_per_minute() const {
+    return level->beats_per_minute;
+  }
+
+  [[nodiscard]]
+  float song_duration() const {
+    return level->song_duration;
+  }
+
+  [[nodiscard]]
+  std::filesystem::path custom_level_path() const {
+    return std::filesystem::path(level->custom_level_path._0);
   }
 
   static CustomBeatmapLevelOwned
   load_from_path(std::filesystem::path const &path, SongCache const &cache,
                  bool wip = false) {
-    CustomBeatmapLevel *p = song_core_load_level_path(path.c_str(), cache, wip);
+    CCustomBeatmapLevel *p = song_core_load_level_path(path.c_str(), cache, wip);
     return CustomBeatmapLevelOwned(p);
   }
+
+  
 };
 
 struct CustomBeatmapLevelArray {
@@ -360,11 +403,11 @@ struct CustomBeatmapLevelArray {
     return size() == 0;
   }
 
-  std::span<const CCustomBeatmapLevel> as_span() const {
+  std::span<const CustomBeatmapLevelOwned> as_span() const {
     if (!levels) {
-      return std::span<const CCustomBeatmapLevel>();
+      return std::span<const CustomBeatmapLevelOwned>();
     }
-    return std::span<const CCustomBeatmapLevel>(levels->data, levels->length);
+    return std::span<const CustomBeatmapLevelOwned>(reinterpret_cast<CustomBeatmapLevelOwned*>(levels->data), levels->length);
   }
 
   [[nodiscard]]

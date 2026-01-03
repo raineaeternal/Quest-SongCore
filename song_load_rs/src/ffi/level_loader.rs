@@ -100,7 +100,7 @@ pub unsafe extern "C" fn song_core_load_level_path(
     path: *const c_char,
     cache: *mut CSongCache,
     wip: bool,
-) -> *mut CustomBeatmapLevel {
+) -> *mut CCustomBeatmapLevel {
     if path.is_null() {
         panic!("Path is null");
     }
@@ -126,7 +126,7 @@ pub unsafe extern "C" fn song_core_load_level_path(
         return std::ptr::null_mut();
     };
 
-    Box::into_raw(Box::new(loaded))
+    Box::into_raw(Box::new(loaded.into()))
 }
 
 /// Attempts to load a `CustomBeatmapLevel` given a list of directories and a target `leaf` path/name.
@@ -261,7 +261,7 @@ pub unsafe extern "C" fn song_core_load_levels_from_directories_parallel(
 /// # Safety
 /// The `level` pointer must be a valid pointer returned by `song_core_load_level_path
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn song_core_free_level(level: *mut CustomBeatmapLevel) {
+pub unsafe extern "C" fn song_core_free_level(level: *mut CCustomBeatmapLevel) {
     if level.is_null() {
         return;
     }
