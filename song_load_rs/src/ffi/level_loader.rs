@@ -43,6 +43,7 @@ pub struct CCustomBeatmapLevel {
     // pub custom_level_data: InfoDat,
     pub beatmap_level_data: CFileSystemBeatmapLevelData,
     pub custom_level_path: ManagedCString,
+    pub hash: ManagedCString,
 }
 #[repr(C)]
 pub struct CBeatmapBasicDataTuple {
@@ -388,6 +389,7 @@ impl From<CustomBeatmapLevel> for CCustomBeatmapLevel {
             custom_level_path: ManagedCString::from(
                 level.custom_level_path.to_string_lossy().to_string(),
             ),
+            hash: ManagedCString::from(level.hash),
         }
     }
 }

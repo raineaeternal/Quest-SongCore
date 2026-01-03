@@ -301,6 +301,7 @@ where
         beatmap_level_data,
         custom_level_path: beatmap.get_real_path().to_path_buf(),
         version: CustomBeatmapLevel::K_INVALID_VERSION,
+        hash: song_data.hash,
     };
 
     Ok(Some(result))

@@ -14,7 +14,7 @@ namespace SongCore::Utils {
     std::optional<BeatmapMetadata> GetCachedInfo(std::filesystem::path const& levelPath);
 
     std::optional<BeatmapMetadataArray> LoadDirectory(std::filesystem::path const& directoryPath);
-    std::optional<BeatmapMetadataArray> LoadDirectories(std::span<std::filesystem::path const> directoryPath);
+    BeatmapMetadataArray LoadDirectories(std::span<std::filesystem::path const> directoryPath);
 
     /// @brief just removes cached info if it exists
     void RemoveCachedInfo(std::filesystem::path const& levelPath);

@@ -36,10 +36,7 @@ pub struct CustomBeatmapLevel {
     pub custom_level_data: InfoDat,
     pub beatmap_level_data: FileSystemBeatmapLevelData,
     pub custom_level_path: PathBuf,
-    //     CustomJSONData::CustomLevelInfoSaveDataV2* _customLevelSaveDataV2;
-    // CustomJSONData::CustomBeatmapLevelSaveDataV4* _customBeatmapLevelSaveDataV4;
-    // GlobalNamespace::IBeatmapLevelData* _beatmapLevelData;
-    // std::string _customLevelPath;
+    pub hash: String,
 }
 
 impl CustomBeatmapLevel {

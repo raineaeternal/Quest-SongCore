@@ -195,8 +195,9 @@ namespace SongCore::SongLoader {
             std::back_inserter(dirs)
         );
 
+        // eager load rust cache
         auto loadedSongs = Utils::LoadDirectories(dirs);
-        if (!loadedSongs.has_value()) {
+        if (!loadedSongs.as_span().empty()) {
             WARNING("Failed to load songs from directories!");
             _areSongsLoaded = true;
             InvokeSongsLoaded(_allLoadedLevels);
@@ -210,16 +211,17 @@ namespace SongCore::SongLoader {
 
         // load songs on multiple threads
         std::mutex levelsItrMutex;
-        auto levelsItr = loadedSongs->as_span().begin();
-        auto levelsEnd = loadedSongs->as_span().end();
+        auto levelsSpan = loadedSongs.as_span();
+        auto levelsItr = levelsSpan.begin();
+        auto levelsEnd = levelsSpan.end();
 
         using namespace std::chrono;
         auto loadStartTime = high_resolution_clock::now();
 
-        auto workerThreadCount = std::clamp<size_t>(loadedSongs->as_span().size(), 1, MAX_THREAD_COUNT);
+        auto workerThreadCount = std::clamp<size_t>(loadedSongs.as_span().size(), 1, MAX_THREAD_COUNT);
         std::vector<std::future<void>> songLoadFutures;
         songLoadFutures.reserve(workerThreadCount);
-        _totalSongs = loadedSongs->as_span().size();
+        _totalSongs = loadedSongs.as_span().size();
 
         INFO("Now going to load {} levels on {} threads", (int)_totalSongs, workerThreadCount);
         for (int i = 0; i < workerThreadCount; i++) {
@@ -241,10 +243,10 @@ namespace SongCore::SongLoader {
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
         auto time = high_resolution_clock::now() - loadStartTime;
         if (auto ms = duration_cast<milliseconds>(time).count(); ms > 0) {
-            INFO("Loaded {} (actual: {}) songs in {}ms", loadedSongs->size(), actualCount, ms);
+            INFO("Loaded {} (actual: {}) songs in {}ms", loadedSongs.size(), actualCount, ms);
         } else {
             auto µs = (float)duration_cast<nanoseconds>(time).count() / 1000.0f;
-            INFO("Loaded {} (actual: {}) songs in {}us", loadedSongs->size(), actualCount, µs);
+            INFO("Loaded {} (actual: {}) songs in {}us", loadedSongs.size(), actualCount, µs);
         }
 
 
@@ -320,15 +322,13 @@ namespace SongCore::SongLoader {
         return false;
     }
 
-    void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::span<SongCore::LoadedSong const>::iterator* levelsItr, std::span<SongCore::LoadedSong const>::iterator* levelsEnd) {
-  
-
+    void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::span<SongCore::BeatmapMetadata const>::iterator* levelsItr, std::span<SongCore::BeatmapMetadata const>::iterator* levelsEnd) {
 
         while (*levelsItr != *levelsEnd) {
             std::lock_guard<std::mutex> lock(*levelsItrMutex);
             if (levelsItr == levelsEnd) break;
             
-            SongCore::LoadedSong const& level = **levelsItr;
+            SongCore::BeatmapMetadata const& level = **levelsItr;
             auto levelPath = std::filesystem::path(level.get_path());
             levelsItr++;
 

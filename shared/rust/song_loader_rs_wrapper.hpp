@@ -231,20 +231,20 @@ struct SongCache {
   /// Loads the cached song data for the given path.
   /// If the song is not cached, loads and caches it.
   [[nodiscard]]
-  BeatmapMetadata load_song(std::filesystem::path const &path) {
+  BeatmapMetadata load_metadata(std::filesystem::path const &path) {
     CBeatmapMetadata c_song = song_core_load_path(path.c_str(), cache);
     return BeatmapMetadata(c_song);
   }
-
 
   /// Loads all songs from the given directory, using the cache.
   /// If a song is not cached, loads and caches it.
   [[nodiscard]]
   BeatmapMetadataArray
-  from_directory(std::filesystem::path const &path,
-                 void (*fn_callback)(CBeatmapMetadata, uintptr_t, uintptr_t,
-                                     OpaqueUserData) = nullptr,
-                 void *user_data = nullptr) {
+  metadata_of_directory(std::filesystem::path const &path,
+                        void (*fn_callback)(CBeatmapMetadata, uintptr_t,
+                                            uintptr_t,
+                                            OpaqueUserData) = nullptr,
+                        void *user_data = nullptr) {
     CBeatmapMetadataArray c_songs = song_core_load_directory(
         path.c_str(), cache, OpaqueUserData{user_data}, fn_callback);
     return BeatmapMetadataArray(c_songs);
@@ -254,13 +254,33 @@ struct SongCache {
   /// If a song is not cached, loads and caches it.
   [[nodiscard]]
   BeatmapMetadataArray
-  from_directory_parallel(std::filesystem::path const &path,
-                          void (*fn_callback)(CBeatmapMetadata, uintptr_t,
-                                              uintptr_t,
-                                              OpaqueUserData) = nullptr,
-                          void *user_data = nullptr) {
+  metadata_of_directory_parallel(std::filesystem::path const &path,
+                                 void (*fn_callback)(CBeatmapMetadata,
+                                                     uintptr_t, uintptr_t,
+                                                     OpaqueUserData) = nullptr,
+                                 void *user_data = nullptr) {
     CBeatmapMetadataArray c_songs = song_core_load_directory_parallel(
         path.c_str(), cache, OpaqueUserData{user_data}, fn_callback);
+    return BeatmapMetadataArray(c_songs);
+  }
+
+  [[nodiscard]]
+  BeatmapMetadataArray metadata_of_directories_parallel(
+      std::span<std::filesystem::path const> paths,
+      void (*fn_callback)(CBeatmapMetadata, uintptr_t, uintptr_t,
+                          OpaqueUserData) = nullptr,
+      void *user_data = nullptr) {
+    // Build an array of C strings from the filesystem::path span so we can pass
+    // a const char** to the C API without casting away qualifiers.
+    std::vector<const char *> c_paths;
+    c_paths.reserve(paths.size());
+    for (const auto &path : paths) {
+      c_paths.push_back(path.c_str());
+    }
+
+    CBeatmapMetadataArray c_songs = song_core_load_directories_parallel(
+        c_paths.data(), c_paths.size(), cache, OpaqueUserData{user_data},
+        fn_callback);
     return BeatmapMetadataArray(c_songs);
   }
 
@@ -270,206 +290,226 @@ struct SongCache {
   }
 };
 
-// C++ wrappers for CustomBeatmapLevel returned from Rust
-struct CustomBeatmapLevelOwned {
-  CCustomBeatmapLevel *level;
+// // C++ wrappers for CustomBeatmapLevel returned from Rust
+// struct CustomBeatmapLevelOwned {
+//   CCustomBeatmapLevel *level;
 
-  explicit CustomBeatmapLevelOwned(CCustomBeatmapLevel *p) : level(p) {}
+//   explicit CustomBeatmapLevelOwned(CCustomBeatmapLevel *p) : level(p) {}
 
-  // non-copyable
-  CustomBeatmapLevelOwned(const CustomBeatmapLevelOwned &) = delete;
-  CustomBeatmapLevelOwned &operator=(const CustomBeatmapLevelOwned &) = delete;
+//   // non-copyable
+//   CustomBeatmapLevelOwned(const CustomBeatmapLevelOwned &) = delete;
+//   CustomBeatmapLevelOwned &operator=(const CustomBeatmapLevelOwned &) = delete;
 
-  // movable
-  CustomBeatmapLevelOwned(CustomBeatmapLevelOwned &&other) noexcept
-      : level(other.level) {
-    other.level = nullptr;
-  }
-  CustomBeatmapLevelOwned &operator=(CustomBeatmapLevelOwned &&other) noexcept {
-    if (this == &other)
-      return *this;
-    if (level) {
-      song_core_free_level(level);
-    }
-    level = other.level;
-    other.level = nullptr;
-    return *this;
-  }
+//   // movable
+//   CustomBeatmapLevelOwned(CustomBeatmapLevelOwned &&other) noexcept
+//       : level(other.level) {
+//     other.level = nullptr;
+//   }
+//   CustomBeatmapLevelOwned &operator=(CustomBeatmapLevelOwned &&other) noexcept {
+//     if (this == &other)
+//       return *this;
+//     if (level) {
+//       song_core_free_level(level);
+//     }
+//     level = other.level;
+//     other.level = nullptr;
+//     return *this;
+//   }
 
-  ~CustomBeatmapLevelOwned() {
-    if (level) {
-      song_core_free_level(level);
-    }
-  }
+//   ~CustomBeatmapLevelOwned() {
+//     if (level) {
+//       song_core_free_level(level);
+//     }
+//   }
 
-  [[nodiscard]]
-  explicit operator bool() const {
-    return level != nullptr;
-  }
+//   [[nodiscard]]
+//   explicit operator bool() const {
+//     return level != nullptr;
+//   }
 
-  [[nodiscard]]
-  CCustomBeatmapLevel *get() const {
-    return level;
-  }
+//   [[nodiscard]]
+//   operator CCustomBeatmapLevel *() const {
+//     return level;
+//   }
 
-  [[nodiscard]]
-  uint32_t version() const {
-    return level->version;
-  }
+//   [[nodiscard]]
+//   CCustomBeatmapLevel const* operator->() const {
+//     return level;
+//   }
+//   [[nodiscard]]
+//   CCustomBeatmapLevel * operator->() {
+//     return level;
+//   }
 
-  [[nodiscard]]
-  std::string_view level_id() const {
-    return std::string_view(level->level_id._0);
-  }
+//   [[nodiscard]]
+//   CCustomBeatmapLevel *get() const {
+//     return level;
+//   }
 
-  [[nodiscard]]
-  std::string_view song_name() const {
-    return std::string_view(level->song_name._0);
-  }
+//   [[nodiscard]]
+//   uint32_t version() const {
+//     return level->version;
+//   }
 
-  [[nodiscard]]
-  std::vector<std::string> all_mappers() const {
-    std::vector<std::string> mappers;
-    for (size_t i = 0; i < level->all_mappers.length; ++i) {
-      mappers.emplace_back(level->all_mappers.data[i]._0);
-    }
-    return mappers;
-  }
+//   [[nodiscard]]
+//   std::string_view level_id() const {
+//     return std::string_view(level->level_id._0);
+//   }
 
-  [[nodiscard]]
-  float beats_per_minute() const {
-    return level->beats_per_minute;
-  }
+//   [[nodiscard]]
+//   std::string_view song_name() const {
+//     return std::string_view(level->song_name._0);
+//   }
 
-  [[nodiscard]]
-  float song_duration() const {
-    return level->song_duration;
-  }
+//   [[nodiscard]]
+//   std::vector<std::string> all_mappers() const {
+//     std::vector<std::string> mappers;
+//     for (size_t i = 0; i < level->all_mappers.length; ++i) {
+//       mappers.emplace_back(level->all_mappers.data[i]._0);
+//     }
+//     return mappers;
+//   }
 
-  [[nodiscard]]
-  std::filesystem::path custom_level_path() const {
-    return std::filesystem::path(level->custom_level_path._0);
-  }
+//   [[nodiscard]]
+//   float beats_per_minute() const {
+//     return level->beats_per_minute;
+//   }
 
-  static CustomBeatmapLevelOwned
-  load_from_path(std::filesystem::path const &path, SongCache const &cache,
-                 bool wip = false) {
-    CCustomBeatmapLevel *p = song_core_load_level_path(path.c_str(), cache, wip);
-    return CustomBeatmapLevelOwned(p);
-  }
+//   [[nodiscard]]
+//   float song_duration() const {
+//     return level->song_duration;
+//   }
 
-  
-};
+//   [[nodiscard]]
+//   std::filesystem::path custom_level_path() const {
+//     return std::filesystem::path(level->custom_level_path._0);
+//   }
 
-struct CustomBeatmapLevelArray {
-  ManagedArray<CCustomBeatmapLevel> *levels;
+//   [[nodiscard]]
+//   std::string_view hash() const {
+//     return std::string_view(level->hash._0);
+//   }
 
-  explicit CustomBeatmapLevelArray(ManagedArray<CCustomBeatmapLevel> *p)
-      : levels(p) {}
+//   static CustomBeatmapLevelOwned
+//   load_from_path(std::filesystem::path const &path, SongCache const &cache,
+//                  bool wip = false) {
+//     CCustomBeatmapLevel *p =
+//         song_core_load_level_path(path.c_str(), cache, wip);
+//     return CustomBeatmapLevelOwned(p);
+//   }
+// };
 
-  // non-copyable
-  CustomBeatmapLevelArray(const CustomBeatmapLevelArray &) = delete;
-  CustomBeatmapLevelArray &operator=(const CustomBeatmapLevelArray &) = delete;
+// struct CustomBeatmapLevelArray {
+//   ManagedArray<CCustomBeatmapLevel> *levels;
 
-  // movable
-  CustomBeatmapLevelArray(CustomBeatmapLevelArray &&other) noexcept
-      : levels(other.levels) {
-    other.levels = nullptr;
-  }
-  CustomBeatmapLevelArray &operator=(CustomBeatmapLevelArray &&other) noexcept {
-    if (this == &other)
-      return *this;
-    if (levels) {
-      song_core_free_level_array(levels);
-    }
-    levels = other.levels;
-    other.levels = nullptr;
-    return *this;
-  }
+//   explicit CustomBeatmapLevelArray(ManagedArray<CCustomBeatmapLevel> *p)
+//       : levels(p) {}
 
-  ~CustomBeatmapLevelArray() {
-    if (levels) {
-      song_core_free_level_array(levels);
-    }
-  }
+//   // non-copyable
+//   CustomBeatmapLevelArray(const CustomBeatmapLevelArray &) = delete;
+//   CustomBeatmapLevelArray &operator=(const CustomBeatmapLevelArray &) = delete;
 
-  [[nodiscard]]
-  std::size_t size() const {
-    return levels ? levels->length : 0;
-  }
+//   // movable
+//   CustomBeatmapLevelArray(CustomBeatmapLevelArray &&other) noexcept
+//       : levels(other.levels) {
+//     other.levels = nullptr;
+//   }
+//   CustomBeatmapLevelArray &operator=(CustomBeatmapLevelArray &&other) noexcept {
+//     if (this == &other)
+//       return *this;
+//     if (levels) {
+//       song_core_free_level_array(levels);
+//     }
+//     levels = other.levels;
+//     other.levels = nullptr;
+//     return *this;
+//   }
 
-  [[nodiscard]]
-  bool empty() const {
-    return size() == 0;
-  }
+//   ~CustomBeatmapLevelArray() {
+//     if (levels) {
+//       song_core_free_level_array(levels);
+//     }
+//   }
 
-  std::span<const CustomBeatmapLevelOwned> as_span() const {
-    if (!levels) {
-      return std::span<const CustomBeatmapLevelOwned>();
-    }
-    return std::span<const CustomBeatmapLevelOwned>(reinterpret_cast<CustomBeatmapLevelOwned*>(levels->data), levels->length);
-  }
+//   [[nodiscard]]
+//   std::size_t size() const {
+//     return levels ? levels->length : 0;
+//   }
 
-  [[nodiscard]]
-  const CCustomBeatmapLevel *data() const {
-    return levels ? levels->data : nullptr;
-  }
+//   [[nodiscard]]
+//   bool empty() const {
+//     return size() == 0;
+//   }
 
-  [[nodiscard]]
-  static CustomBeatmapLevelArray
-  load_from_directories(std::span<const std::filesystem::path> paths,
-                        SongCache const &cache, bool wip = false) {
-    // Build an array of C strings from the filesystem::path span so we can pass
-    // a const char** to the C API without casting away qualifiers.
-    std::vector<const char *> c_paths;
-    c_paths.reserve(paths.size());
-    for (auto const &p : paths) {
-      c_paths.push_back(p.c_str());
-    }
+//   std::span<const CustomBeatmapLevelOwned> as_span() const {
+//     if (!levels) {
+//       return std::span<const CustomBeatmapLevelOwned>();
+//     }
+//     return std::span<const CustomBeatmapLevelOwned>(
+//         reinterpret_cast<CustomBeatmapLevelOwned *>(levels->data),
+//         levels->length);
+//   }
 
-    ManagedArray<CCustomBeatmapLevel> *c_levels =
-        song_core_load_level_from_directories(c_paths.data(), paths.size(),
-                                              cache, wip);
+//   [[nodiscard]]
+//   const CCustomBeatmapLevel *data() const {
+//     return levels ? levels->data : nullptr;
+//   }
 
-    return CustomBeatmapLevelArray(c_levels);
-  }
+//   [[nodiscard]]
+//   static CustomBeatmapLevelArray
+//   load_from_directories(std::span<const std::filesystem::path> paths,
+//                         SongCache const &cache, bool wip = false) {
+//     // Build an array of C strings from the filesystem::path span so we can pass
+//     // a const char** to the C API without casting away qualifiers.
+//     std::vector<const char *> c_paths;
+//     c_paths.reserve(paths.size());
+//     for (auto const &p : paths) {
+//       c_paths.push_back(p.c_str());
+//     }
 
-  using CallbackType =
-      std::function<void(CCustomBeatmapLevel const &, size_t, size_t)>;
+//     ManagedArray<CCustomBeatmapLevel> *c_levels =
+//         song_core_load_level_from_directories(c_paths.data(), paths.size(),
+//                                               cache, wip);
 
-  [[nodiscard]]
-  static CustomBeatmapLevelArray
-  load_from_directories_parallel(std::span<const std::filesystem::path> paths,
-                                 SongCache const &cache, bool wip,
-                                 CallbackType callback = nullptr) {
-    // Build an array of C strings from the filesystem::path span so we can pass
-    // a const char** to the C API without casting away qualifiers.
-    std::vector<const char *> c_paths;
-    c_paths.reserve(paths.size());
-    for (auto const &p : paths) {
-      c_paths.push_back(p.c_str());
-    }
+//     return CustomBeatmapLevelArray(c_levels);
+//   }
 
-    // Wrap the callback to match the C function signature
-    auto c_cb = +[](const CCustomBeatmapLevel *c_level, uintptr_t index,
-                    uintptr_t total, OpaqueUserData user_data) {
-      auto *cb_ptr = reinterpret_cast<CallbackType const *>(user_data._0);
+//   using CallbackType =
+//       std::function<void(CCustomBeatmapLevel const &, size_t, size_t)>;
 
-      if (!cb_ptr) {
-        return;
-      }
+//   [[nodiscard]]
+//   static CustomBeatmapLevelArray
+//   load_from_directories_parallel(std::span<const std::filesystem::path> paths,
+//                                  SongCache const &cache, bool wip,
+//                                  CallbackType callback = nullptr) {
+//     // Build an array of C strings from the filesystem::path span so we can pass
+//     // a const char** to the C API without casting away qualifiers.
+//     std::vector<const char *> c_paths;
+//     c_paths.reserve(paths.size());
+//     for (auto const &p : paths) {
+//       c_paths.push_back(p.c_str());
+//     }
 
-      (*cb_ptr)(*c_level, static_cast<size_t>(index),
-                static_cast<size_t>(total));
-    };
+//     // Wrap the callback to match the C function signature
+//     auto c_cb = +[](const CCustomBeatmapLevel *c_level, uintptr_t index,
+//                     uintptr_t total, OpaqueUserData user_data) {
+//       auto *cb_ptr = reinterpret_cast<CallbackType const *>(user_data._0);
 
-    ManagedArray<CCustomBeatmapLevel> *c_levels =
-        song_core_load_levels_from_directories_parallel(
-            c_paths.data(), paths.size(), cache, wip, OpaqueUserData{&callback},
-            c_cb);
+//       if (!cb_ptr) {
+//         return;
+//       }
 
-    return CustomBeatmapLevelArray(c_levels);
-  }
-};
+//       (*cb_ptr)(*c_level, static_cast<size_t>(index),
+//                 static_cast<size_t>(total));
+//     };
+
+//     ManagedArray<CCustomBeatmapLevel> *c_levels =
+//         song_core_load_levels_from_directories_parallel(
+//             c_paths.data(), paths.size(), cache, wip, OpaqueUserData{&callback},
+//             c_cb);
+
+//     return CustomBeatmapLevelArray(c_levels);
+//   }
+// };
 
 } // namespace SongCore

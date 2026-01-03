@@ -14,7 +14,6 @@
 #include "paper2_scotland2/shared/utfcpp/source/utf8.h"
 
 namespace SongCore::Utils {
-    static std::shared_mutex _cacheMutex;
     static std::filesystem::path _cachePath = "/sdcard/ModData/com.beatgames.beatsaber/Mods/SongCore/CachedSongDataRust.json";
     
     // will not load until reload is called
@@ -22,49 +21,40 @@ namespace SongCore::Utils {
 
 
     void RemoveCachedInfo(std::filesystem::path const& levelPath) {
-        std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
         _songCache.reset_song(levelPath);
     }
 
     void ClearSongInfoCache() {
-        std::unique_lock<std::shared_mutex> lock(_cacheMutex);
         _songCache.clear();
     }
 
-    std::optional<BeatmapMetadata> GetCachedInfo(std::filesystem::path const &levelPath) {
-        if (!std::filesystem::exists(levelPath)) {
-            return std::nullopt;
-        }
-
-        // first check if it exists
-      {
-        std::shared_lock<std::shared_mutex> shared_lock(_cacheMutex);
-
-        if (_songCache.contains(levelPath))
-          return _songCache.load_song(levelPath.c_str());
+    std::optional<BeatmapMetadata>
+    GetCachedInfo(std::filesystem::path const &levelPath) {
+      if (!std::filesystem::exists(levelPath)) {
+        return std::nullopt;
       }
 
-      // now try to load it
-      std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
-      return _songCache.load_song(levelPath);
+      if (_songCache.contains(levelPath))
+        return _songCache.load_metadata(levelPath.c_str());
+
+      return _songCache.load_metadata(levelPath);
     }
 
-    std::optional<BeatmapMetadataArray> LoadDirectory(std::filesystem::path const& directoryPath) {
-        if (!std::filesystem::exists(directoryPath)) {
-            return std::nullopt;
-        }
+    std::optional<BeatmapMetadataArray>
+    LoadDirectory(std::filesystem::path const &directoryPath) {
+      if (!std::filesystem::exists(directoryPath)) {
+        return std::nullopt;
+      }
 
-        std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
-        return _songCache.from_directory_parallel(directoryPath);
+      return _songCache.metadata_of_directory_parallel(directoryPath);
     }
-    std::optional<BeatmapMetadataArray> LoadDirectories(std::span<std::filesystem::path const> directoryPath) {
-        std::unique_lock<std::shared_mutex> shared_lock(_cacheMutex);
-        return _songCache.from_directory_parallel(directoryPath);
+    
+    BeatmapMetadataArray
+    LoadDirectories(std::span<std::filesystem::path const> directoryPath) {
+      return _songCache.metadata_of_directories_parallel(directoryPath);
     }
 
     void SaveSongInfoCache() {
-        std::shared_lock<std::shared_mutex> lock(_cacheMutex);
-
         _songCache.save();
     }
 
@@ -72,7 +62,6 @@ namespace SongCore::Utils {
         // if the file doesn't exist, load should fail
         if (!std::filesystem::exists(_cachePath)) return false;
 
-        std::unique_lock<std::shared_mutex> lock(_cacheMutex);
         _songCache.reload();
 
         return true;

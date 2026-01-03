@@ -142,6 +142,7 @@ where
         custom_level_data: InfoDat::V4(save),
         beatmap_level_data,
         custom_level_path: beatmap.get_real_path().to_path_buf(),
+        hash: song_data.hash,
     };
 
     Ok(Some(result))
