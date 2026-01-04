@@ -1,4 +1,4 @@
-use std::{ffi::CStr, path::Path};
+use std::{ffi::{CStr, CString, c_char}, path::Path};
 
 use crate::{
     ffi::{cache::CSongCache, types::OpaqueUserData},
@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct CBeatmapMetadata {
     pub path: *const std::os::raw::c_char,
     pub hash: *const std::os::raw::c_char,
@@ -20,7 +20,7 @@ pub struct CBeatmapMetadata {
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct CBeatmapMetadataArray {
-    pub songs: *const CBeatmapMetadata,
+    pub songs: *mut CBeatmapMetadata,
     pub count: usize,
 }
 
@@ -53,8 +53,8 @@ impl From<BeatmapMetadataArray> for CBeatmapMetadataArray {
             .collect();
 
         let slice = c_songs.into_boxed_slice();
-        let songs_ptr = slice.as_ptr();
         let count = slice.len();
+        let songs_ptr = Box::into_raw(slice) as *mut CBeatmapMetadata;
 
         CBeatmapMetadataArray {
             songs: songs_ptr,
@@ -65,8 +65,9 @@ impl From<BeatmapMetadataArray> for CBeatmapMetadataArray {
 
 impl From<CBeatmapMetadata> for BeatmapMetadata {
     fn from(c_loaded_song: CBeatmapMetadata) -> Self {
-        let path_cstr = unsafe { CStr::from_ptr(c_loaded_song.path) };
-        let hash_cstr = unsafe { CStr::from_ptr(c_loaded_song.hash) };
+        // take back ownership of the CStrings to free memory
+        let path_cstr = unsafe { CString::from_raw(c_loaded_song.path as *mut c_char) };
+        let hash_cstr = unsafe { CString::from_raw(c_loaded_song.hash as *mut c_char) };
 
         let path_str = path_cstr.to_str().unwrap().to_owned();
         let hash_str = hash_cstr.to_str().unwrap().to_owned();
@@ -94,7 +95,7 @@ impl From<CBeatmapMetadataArray> for BeatmapMetadataArray {
     fn from(c_loaded_songs: CBeatmapMetadataArray) -> Self {
         let songs_slice = unsafe {
             std::slice::from_raw_parts_mut(
-                c_loaded_songs.songs as *mut CBeatmapMetadata,
+                c_loaded_songs.songs,
                 c_loaded_songs.count,
             )
         };
@@ -103,8 +104,8 @@ impl From<CBeatmapMetadataArray> for BeatmapMetadataArray {
 
         let songs: Vec<BeatmapMetadata> = songs
             .into_vec()
-            .iter()
-            .map(|c_song| BeatmapMetadata::from(*c_song))
+            .into_iter()
+            .map(BeatmapMetadata::from)
             .collect();
 
         BeatmapMetadataArray { songs }
@@ -156,7 +157,7 @@ pub unsafe extern "C" fn song_core_load_directory(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
     user_data: OpaqueUserData,
-    fn_callback: Option<extern "C" fn(CBeatmapMetadata, usize, usize, OpaqueUserData)>,
+    fn_callback: Option<extern "C" fn(&CBeatmapMetadata, usize, usize, OpaqueUserData)>,
 ) -> CBeatmapMetadataArray {
     if path.is_null() {
         panic!("Path is null");
@@ -170,7 +171,7 @@ pub unsafe extern "C" fn song_core_load_directory(
     let wrapped = fn_callback.map(|callback| {
         move |song: &BeatmapMetadata, index, count| {
             let cloaded_song = CBeatmapMetadata::from(song.clone());
-            callback(cloaded_song, index, count, user_data);
+            callback(&cloaded_song, index, count, user_data);
             // from to avoid
             let _ = BeatmapMetadata::from(cloaded_song);
         }
@@ -196,7 +197,7 @@ pub unsafe extern "C" fn song_core_load_directory_parallel(
     path: *const std::os::raw::c_char,
     cache: *mut CSongCache,
     user_data: OpaqueUserData,
-    fn_callback: Option<extern "C" fn(CBeatmapMetadata, usize, usize, OpaqueUserData)>,
+    fn_callback: Option<extern "C" fn(&CBeatmapMetadata, usize, usize, OpaqueUserData)>,
 ) -> CBeatmapMetadataArray {
     if path.is_null() {
         panic!("Path is null");
@@ -210,7 +211,7 @@ pub unsafe extern "C" fn song_core_load_directory_parallel(
     let wrapped = fn_callback.map(|callback| {
         move |song: &BeatmapMetadata, index, count| {
             let cloaded_song = CBeatmapMetadata::from(song.clone());
-            callback(cloaded_song, index, count, user_data);
+            callback(&cloaded_song, index, count, user_data);
             // from to avoid
             let _ = BeatmapMetadata::from(cloaded_song);
         }
@@ -237,7 +238,7 @@ pub unsafe extern "C" fn song_core_load_directories_parallel(
     path_count: usize,
     cache: *mut CSongCache,
     user_data: OpaqueUserData,
-    fn_callback: Option<extern "C" fn(CBeatmapMetadata, usize, usize, OpaqueUserData)>,
+    fn_callback: Option<extern "C" fn(&CBeatmapMetadata, usize, usize, OpaqueUserData)>,
 ) -> CBeatmapMetadataArray {
     if paths.is_null() {
         panic!("Path is null");
@@ -261,7 +262,7 @@ pub unsafe extern "C" fn song_core_load_directories_parallel(
     let wrapped = fn_callback.map(|callback| {
         move |song: &BeatmapMetadata, index, count| {
             let cloaded_song = CBeatmapMetadata::from(song.clone());
-            callback(cloaded_song, index, count, user_data);
+            callback(&cloaded_song, index, count, user_data);
             // from to avoid
             let _ = BeatmapMetadata::from(cloaded_song);
         }

@@ -241,7 +241,7 @@ struct SongCache {
   [[nodiscard]]
   BeatmapMetadataArray
   metadata_of_directory(std::filesystem::path const &path,
-                        void (*fn_callback)(CBeatmapMetadata, uintptr_t,
+                        void (*fn_callback)(CBeatmapMetadata const*, uintptr_t,
                                             uintptr_t,
                                             OpaqueUserData) = nullptr,
                         void *user_data = nullptr) {
@@ -255,7 +255,7 @@ struct SongCache {
   [[nodiscard]]
   BeatmapMetadataArray
   metadata_of_directory_parallel(std::filesystem::path const &path,
-                                 void (*fn_callback)(CBeatmapMetadata,
+                                 void (*fn_callback)(CBeatmapMetadata const*,
                                                      uintptr_t, uintptr_t,
                                                      OpaqueUserData) = nullptr,
                                  void *user_data = nullptr) {
@@ -267,7 +267,7 @@ struct SongCache {
   [[nodiscard]]
   BeatmapMetadataArray metadata_of_directories_parallel(
       std::span<std::filesystem::path const> paths,
-      void (*fn_callback)(CBeatmapMetadata, uintptr_t, uintptr_t,
+      void (*fn_callback)(CBeatmapMetadata const*, uintptr_t, uintptr_t,
                           OpaqueUserData) = nullptr,
       void *user_data = nullptr) {
     // Build an array of C strings from the filesystem::path span so we can pass

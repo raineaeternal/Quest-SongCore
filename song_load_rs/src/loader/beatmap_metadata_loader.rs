@@ -63,7 +63,6 @@ where
     C: SongCache + ?Sized,
 {
     let path = beatmap.get_real_path().to_path_buf();
-    info!("Loading beatmap metadata from path: {:?}", path);
 
     let cached = cache
         .map(|c| c.read().unwrap().get_cached_song(&path))
@@ -74,6 +73,8 @@ where
     if let Some(cached) = cached {
         return Ok(cached);
     }
+
+    info!("Loading beatmap metadata from path: {:?}", path);
 
     let hash = compute_custom_level_hash_from_beatmap(beatmap)?;
     let song_length = audio_loader::get_song_length(beatmap).map_err(|e| {
@@ -124,6 +125,8 @@ where
     F: Fn(&BeatmapMetadata, usize, usize),
     C: SongCache + ?Sized,
 {
+    info!("Loading beatmap directory: {:?}", path);
+
     if !path.exists() || !path.is_dir() {
         return Err(LoadBeatmapMetadataError::PathDoesNotExist(
             path.to_path_buf(),
@@ -175,6 +178,9 @@ where
     F: Fn(&BeatmapMetadata, usize, usize) + Sync,
     C: SongCache + ?Sized,
 {
+    info!("Loading beatmap directories in parallel: {:?}", paths);
+
+    let start = std::time::Instant::now();
     // validate paths
     for path in paths {
         if !path.exists() || !path.is_dir() {
@@ -221,6 +227,12 @@ where
         })
         .collect();
 
+    let end = std::time::Instant::now();
+    info!(
+        "Loaded {} beatmaps in {}ms (parallel)",
+        loaded_songs.len(),
+        (end - start).as_secs_f32() / 1000.0
+    );
     Ok(BeatmapMetadataArray {
         songs: loaded_songs,
     })
