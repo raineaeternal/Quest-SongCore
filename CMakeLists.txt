@@ -74,6 +74,7 @@ corrosion_import_crate(MANIFEST_PATH song_load_rs/Cargo.toml)
 corrosion_experimental_cbindgen(
         TARGET song_load_rs
         HEADER_NAME "song_load_rs.h"
+        --config song_load_rs/cbindgen.toml
 )
 
 target_link_libraries(${COMPILE_ID} PUBLIC song_load_rs)

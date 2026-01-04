@@ -9,7 +9,7 @@ use std::{
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tracing::warn;
+use tracing::{info, warn};
 
 use crate::{
     beatmap::BeatmapSource,
@@ -63,14 +63,15 @@ where
     C: SongCache + ?Sized,
 {
     let path = beatmap.get_real_path().to_path_buf();
+    info!("Loading beatmap metadata from path: {:?}", path);
 
-    let cached_hash = cache
+    let cached = cache
         .map(|c| c.read().unwrap().get_cached_song(&path))
         .transpose()?
         .flatten();
 
     // Return cached hash if available
-    if let Some(cached) = cached_hash {
+    if let Some(cached) = cached {
         return Ok(cached);
     }
 
