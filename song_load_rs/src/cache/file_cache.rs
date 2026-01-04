@@ -42,7 +42,7 @@ impl FileCache {
         let writer = std::io::BufWriter::new(file);
 
         let cache = self.mem_cache.get_cache();
-        serde_json::to_writer_pretty(writer, cache)?;
+        serde_json::to_writer(writer, cache)?;
 
         Ok(())
     }
