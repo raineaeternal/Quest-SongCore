@@ -62,6 +62,9 @@ SONGCORE_EXPORT_FUNC void setup(CModInfo* info) {
 SONGCORE_EXPORT_FUNC void late_load() {
     il2cpp_functions::Init();
 
+    // Initialize Rust components
+    songcore_init_rust();
+
     srand(time(nullptr));
     custom_types::Register::AutoRegister();
     BSML::Init();
