@@ -34,9 +34,6 @@ namespace SongCore::Utils {
         return std::nullopt;
       }
 
-      if (_songCache.contains(levelPath))
-        return _songCache.load_metadata(levelPath.c_str());
-
       return _songCache.load_metadata(levelPath);
     }
 

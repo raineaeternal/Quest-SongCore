@@ -182,22 +182,25 @@ namespace SongCore::SongLoader {
         }
 
         // prepare rust cache
-        std::vector<std::filesystem::path> dirs;
-        dirs.reserve(config.RootCustomLevelPaths.size() + config.RootCustomWIPLevelPaths.size());
-        std::copy(
-            config.RootCustomLevelPaths.begin(),
-            config.RootCustomLevelPaths.end(),
-            std::back_inserter(dirs)
-        );
-        std::copy(
-            config.RootCustomWIPLevelPaths.begin(),
-            config.RootCustomWIPLevelPaths.end(),
-            std::back_inserter(dirs)
-        );
+        std::set<std::filesystem::path> dirs;
+
+        auto CollectPaths = [&](auto const& paths) {
+            for (auto const& path : paths) {
+                if (!std::filesystem::exists(path)) continue;
+                dirs.insert(path);
+            }
+        };
+        CollectPaths(config.RootCustomLevelPaths);
+        CollectPaths(config.RootCustomWIPLevelPaths);
+
+        // collect all level paths
+        std::vector<std::filesystem::path> dirVec = std::vector<std::filesystem::path>(dirs.begin(), dirs.end());
 
         // eager load rust cache
-        auto loadedSongs = Utils::LoadDirectories(dirs);
-        if (!loadedSongs.as_span().empty()) {
+        auto loadedSongs = Utils::LoadDirectories(dirVec);
+        auto levelsSpan = loadedSongs.as_span();
+
+        if (levelsSpan.empty()) {
             WARNING("Failed to load songs from directories!");
             _areSongsLoaded = true;
             InvokeSongsLoaded(_allLoadedLevels);
@@ -211,17 +214,16 @@ namespace SongCore::SongLoader {
 
         // load songs on multiple threads
         std::mutex levelsItrMutex;
-        auto levelsSpan = loadedSongs.as_span();
         auto levelsItr = levelsSpan.begin();
         auto levelsEnd = levelsSpan.end();
 
         using namespace std::chrono;
         auto loadStartTime = high_resolution_clock::now();
 
-        auto workerThreadCount = std::clamp<size_t>(loadedSongs.as_span().size(), 1, MAX_THREAD_COUNT);
+        auto workerThreadCount = std::clamp<size_t>(levelsSpan.size(), 1, MAX_THREAD_COUNT);
         std::vector<std::future<void>> songLoadFutures;
         songLoadFutures.reserve(workerThreadCount);
-        _totalSongs = loadedSongs.as_span().size();
+        _totalSongs = levelsSpan.size();
 
         INFO("Now going to load {} levels on {} threads", (int)_totalSongs, workerThreadCount);
         for (int i = 0; i < workerThreadCount; i++) {
@@ -236,7 +238,7 @@ namespace SongCore::SongLoader {
             );
         }
 
-        for (auto& t : songLoadFutures) {
+        for (auto const& t : songLoadFutures) {
             t.wait();
         }
 
@@ -322,23 +324,33 @@ namespace SongCore::SongLoader {
         return false;
     }
 
-    void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::span<SongCore::BeatmapMetadata const>::iterator* levelsItr, std::span<SongCore::BeatmapMetadata const>::iterator* levelsEnd) {
+    void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutexPtr, std::span<SongCore::BeatmapMetadata const>::iterator* levelsItrPtr, std::span<SongCore::BeatmapMetadata const>::iterator* levelsEndPtr) {
+        // reference derefs for easier access
+        auto& levelsItr = *levelsItrPtr;
+        auto& levelsEnd = *levelsEndPtr;
+        auto& levelsItrMutex = *levelsItrMutexPtr;
 
-        while (*levelsItr != *levelsEnd) {
-            std::lock_guard<std::mutex> lock(*levelsItrMutex);
-            if (levelsItr == levelsEnd) break;
-            
-            SongCore::BeatmapMetadata const& level = **levelsItr;
-            auto levelPath = std::filesystem::path(level.get_path());
+        auto NextLevel = [&]() -> std::optional<SongCore::BeatmapMetadata const*> {
+            std::lock_guard<std::mutex> lock(levelsItrMutex);
+            if (levelsItr == levelsEnd) {
+                return std::nullopt;
+            }
+            // get current level and increment iterator
+            auto const* level = &*levelsItr;
             levelsItr++;
+            return level;
+        };
+
+        while (levelsItr != levelsEnd) {
+            auto const& levelOpt = NextLevel();
+            if (!levelOpt.has_value()) {
+                break;
+            }
+            SongCore::BeatmapMetadata const& level = *levelOpt.value();
+
+            auto levelPath = std::filesystem::path(level.get_path());
 
             bool wip = isWip(levelPath);
-
-            // we got an invalid levelPath
-            if (levelPath.empty()) {
-                _loadedSongs++;
-                continue;
-            }
 
             try {
                 auto startTime = high_resolution_clock::now();
@@ -347,7 +359,7 @@ namespace SongCore::SongLoader {
 
                 // pick the dictionary we need to add / check from based on whether this song is WIP
                 auto targetDict = wip ? _customWIPLevels : _customLevels;
-
+                
                 // preliminary check to see whether the song we are looking for already is in our dictionary
                 bool containsKey = targetDict->ContainsKey(csLevelPath);
                 if (containsKey) {
