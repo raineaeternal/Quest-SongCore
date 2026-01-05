@@ -64,7 +64,7 @@ pub enum CustomLevelLoaderError {
 pub fn load_level_from_path<C>(
     beatmap: &BeatmapSource,
     wip: bool,
-    song_cache: Option<&RwLock<C>>,
+    song_cache: Option<&SongCoreLock<C>>,
 ) -> Result<Option<CustomBeatmapLevel>, CustomLevelLoaderError>
 where
     C: crate::cache::SongCache + ?Sized,
@@ -84,7 +84,7 @@ where
 pub fn load_level_from_directories<C>(
     directories: &[&Path],
     is_wip: bool,
-    song_cache: Option<&RwLock<C>>,
+    song_cache: Option<&SongCoreLock<C>>,
 ) -> Result<Vec<CustomBeatmapLevel>, CustomLevelLoaderError>
 where
     C: crate::cache::SongCache + ?Sized,
@@ -129,7 +129,7 @@ where
 pub fn load_level_from_directories_parallel<C, F>(
     directories: &[&Path],
     is_wip: bool,
-    song_cache: Option<&RwLock<C>>,
+    song_cache: Option<&SongCoreLock<C>>,
     func: Option<&F>,
 ) -> Result<Vec<CustomBeatmapLevel>, CustomLevelLoaderError>
 where

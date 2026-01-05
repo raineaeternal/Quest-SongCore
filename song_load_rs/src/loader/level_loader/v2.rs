@@ -205,7 +205,7 @@ pub fn load_custom_beatmap_level_v2<C>(
     beatmap: &BeatmapSource,
     wip: bool,
     save: StandardLevelInfoSaveDataV2,
-    song_cache: Option<&RwLock<C>>,
+    song_cache: Option<&SongCoreLock<C>>,
 ) -> Result<Option<CustomBeatmapLevel>, CustomLevelLoaderError>
 where
     C: SongCache + ?Sized,

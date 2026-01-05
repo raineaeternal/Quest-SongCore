@@ -2,7 +2,7 @@ use std::{path::PathBuf, sync::RwLock};
 
 use song_load_rs::{
     cache::{SongCache, mem_cache::MemCache},
-    loader::beatmap_metadata_loader::{self, BeatmapMetadata},
+    loader::beatmap_metadata_loader::{self, BeatmapMetadata}, utils::SongCoreLock,
 };
 
 // Smoke tests for the public `song_load` APIs that exercise loading from
@@ -103,7 +103,7 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a MemCache and load with it
     let cache = song_load_rs::cache::mem_cache::MemCache::default();
-    let cache = RwLock::new(cache);
+    let cache = SongCoreLock::new(cache);
 
     // First load - should compute and populate cache
     let loaded1 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), true)
@@ -126,7 +126,7 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
 
     // Also test directory-loading populates cache entries for songs in the tests dir
     let cache2 = song_load_rs::cache::mem_cache::MemCache::default();
-    let cache2 = RwLock::new(cache2);
+    let cache2 = SongCoreLock::new(cache2);
     let loaded_dir = beatmap_metadata_loader::load_beatmap_directory::<
         MemCache,
         fn(&BeatmapMetadata, usize, usize),

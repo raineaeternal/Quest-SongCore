@@ -1,6 +1,6 @@
-use std::{ffi::CStr, path::Path, sync::RwLock};
+use std::{ffi::CStr, path::Path};
 
-use crate::cache::SongCache;
+use crate::{cache::SongCache, utils::SongCoreLock};
 
 /// Represents a song cache trait for use in FFI.
 /// 
@@ -8,7 +8,7 @@ use crate::cache::SongCache;
 /// by wrapping the inner cache in an `RwLock`.
 #[repr(C)]
 pub struct CSongCache {
-    pub inner: Box<RwLock<dyn SongCache>>,
+    pub inner: Box<SongCoreLock<dyn SongCache>>,
 }
 
 /// Creates a new file based song cache and returns a pointer to it.
@@ -29,7 +29,7 @@ pub unsafe extern "C" fn song_core_file_cache_new(
     let file_cache = crate::cache::file_cache::FileCache::new(path.into());
 
     let song_cache = CSongCache {
-        inner: Box::new(RwLock::new(file_cache)),
+        inner: Box::new(SongCoreLock::new(file_cache)),
     };
 
     Box::into_raw(Box::new(song_cache))

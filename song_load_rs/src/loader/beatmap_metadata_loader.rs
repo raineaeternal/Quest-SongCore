@@ -1,7 +1,7 @@
 use std::{
     io,
     path::{Path, PathBuf},
-    sync::{RwLock, atomic::AtomicUsize},
+    sync::atomic::AtomicUsize,
     time::Duration,
 };
 
@@ -14,7 +14,7 @@ use crate::{
     beatmap::BeatmapSource,
     cache::{CacheError, SongCache},
     hash::compute_custom_level_hash_from_beatmap,
-    loader::audio_loader,
+    loader::audio_loader, utils::SongCoreLock,
 };
 
 pub const CUSTOM_LEVEL_PREFIX_ID: &str = "custom_level_";
@@ -56,7 +56,7 @@ pub enum LoadBeatmapMetadataError {
 /// Loads a song from the given BeatmapSource, optionally using the provided cache.
 pub fn load_beatmap_metadata<C>(
     beatmap: &BeatmapSource,
-    cache: Option<&RwLock<C>>,
+    cache: Option<&SongCoreLock<C>>,
     save: bool,
 ) -> Result<BeatmapMetadata, LoadBeatmapMetadataError>
 where
@@ -107,7 +107,7 @@ where
 /// Loads a song from the given file path, optionally using the provided cache.
 pub fn load_beatmap_from_path<C>(
     path: PathBuf,
-    cache: Option<&RwLock<C>>,
+    cache: Option<&SongCoreLock<C>>,
     save: bool,
 ) -> Result<BeatmapMetadata, LoadBeatmapMetadataError>
 where
@@ -130,7 +130,7 @@ where
 /// Synchronous version.
 pub fn load_beatmap_directory<C, F>(
     path: &std::path::Path,
-    cache: Option<&RwLock<C>>,
+    cache: Option<&SongCoreLock<C>>,
     callback: Option<F>,
 ) -> Result<BeatmapMetadataArray, LoadBeatmapMetadataError>
 where
@@ -193,7 +193,7 @@ where
 /// Parallel version.
 pub fn load_beatmap_directory_parallel<F, C>(
     paths: &[&Path],
-    cache: Option<&RwLock<C>>,
+    cache: Option<&SongCoreLock<C>>,
     callback: Option<F>,
 ) -> Result<BeatmapMetadataArray, LoadBeatmapMetadataError>
 where

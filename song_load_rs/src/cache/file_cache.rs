@@ -3,11 +3,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use ahash::AHashMap;
 
 use crate::{
     cache::{SongCache, mem_cache::MemCache},
-    loader::beatmap_metadata_loader::BeatmapMetadata,
+    loader::beatmap_metadata_loader::BeatmapMetadata, utils::SongCoreMap,
 };
 
 #[derive(Debug)]
@@ -16,7 +15,7 @@ pub struct FileCache {
     pub mem_cache: MemCache,
 }
 
-type CacheData = AHashMap<PathBuf, BeatmapMetadata>;
+type CacheData = SongCoreMap<PathBuf, BeatmapMetadata>;
 
 impl FileCache {
     pub fn new(path: PathBuf) -> Self {

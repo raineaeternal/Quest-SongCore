@@ -1,5 +1,7 @@
 pub mod bindings;
 
+pub mod utils;
+
 pub mod ffi;
 pub mod models;
 

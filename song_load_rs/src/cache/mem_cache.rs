@@ -1,33 +1,31 @@
 use std::path::PathBuf;
 
-use ahash::AHashMap;
-
 use crate::{
     cache::{CacheError, SongCache},
-    loader::beatmap_metadata_loader::BeatmapMetadata,
+    loader::beatmap_metadata_loader::BeatmapMetadata, utils::SongCoreMap,
 };
 
 #[derive(Debug, Default)]
 pub struct MemCache {
-    cache: AHashMap<PathBuf, BeatmapMetadata>,
+    cache: SongCoreMap<PathBuf, BeatmapMetadata>,
 }
 
 impl MemCache {
     pub fn new() -> Self {
         Self {
-            cache: AHashMap::new(),
+            cache: SongCoreMap::default(),
         }
     }
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            cache: AHashMap::with_capacity(capacity),
+            cache: SongCoreMap::with_capacity_and_hasher(capacity, Default::default()),
         }
     }
-    pub fn from_cache(cache: AHashMap<PathBuf, BeatmapMetadata>) -> Self {
+    pub fn from_cache(cache: SongCoreMap<PathBuf, BeatmapMetadata>) -> Self {
         Self { cache }
     }
 
-    pub fn get_cache(&self) -> &AHashMap<PathBuf, BeatmapMetadata> {
+    pub fn get_cache(&self) -> &SongCoreMap<PathBuf, BeatmapMetadata> {
         &self.cache
     }
 }
