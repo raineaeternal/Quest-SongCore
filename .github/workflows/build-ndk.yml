@@ -30,7 +30,7 @@ on:
 env:
     module_id: songcore
     qmod_name: SongCore
-    LIBCLANG_PATH: /usr/lib/llvm-19/lib/
+    # LIBCLANG_PATH: /usr/lib/llvm-18/lib/
 
 
 jobs:
