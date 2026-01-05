@@ -59,6 +59,7 @@ jobs:
         rustup install nightly
         rustup target add aarch64-linux-android --toolchain stable
         rustup target add aarch64-linux-android --toolchain nightly
+        cargo install --locked cbindgen
 
     - name: Get dependencies
       run: |
