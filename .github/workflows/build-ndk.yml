@@ -67,7 +67,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y build-essential libc6-dev libclang-dev clang cmake ninja-build linux-libc-dev llvm
-        which clang
+        clang --version
 
     # if we don't have a tag, don't do anything special
     - name: Setup qpm
