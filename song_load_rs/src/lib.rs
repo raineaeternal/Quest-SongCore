@@ -1,3 +1,8 @@
+
+// switch to use mimalloc as the global allocator
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 pub mod bindings;
 
 pub mod utils;
