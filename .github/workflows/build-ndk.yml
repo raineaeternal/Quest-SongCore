@@ -90,7 +90,8 @@ jobs:
 
     - name: Get dependencies
       run: |
-        sudo apt install libc6-dev clang
+        sudo apt update
+        sudo apt install build-essential libc6-dev clang cmake ninja-build linux-libc-dev
 
       # Run Rust tests
     - name: Run Rust Tests
