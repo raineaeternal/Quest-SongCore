@@ -10,7 +10,7 @@ fn bench_load_from_zip(c: &mut Criterion) {
 
     c.bench_function("load_from_zip", |b| {
         b.iter(|| {
-            let loaded = beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(zip_path.clone(), None)
+            let loaded = beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(zip_path.clone(), None, false)
                 .expect("load from zip failed");
             // Keep the result in scope so it's not optimized away
             std::hint::black_box(loaded);
@@ -24,7 +24,7 @@ fn bench_load_from_dir(c: &mut Criterion) {
 
     c.bench_function("load_from_dir", |b| {
         b.iter(|| {
-            let loaded = beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(dir_path.clone(), None)
+            let loaded = beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(dir_path.clone(), None, false)
                 .expect("load from dir failed");
             std::hint::black_box(loaded);
         })

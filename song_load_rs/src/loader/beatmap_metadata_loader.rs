@@ -1,12 +1,11 @@
 use std::{
-    fs::DirEntry,
     io,
     path::{Path, PathBuf},
     sync::{RwLock, atomic::AtomicUsize},
     time::Duration,
 };
 
-use rayon::iter::{ParallelBridge, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::{info, warn};
@@ -58,6 +57,7 @@ pub enum LoadBeatmapMetadataError {
 pub fn load_beatmap_metadata<C>(
     beatmap: &BeatmapSource,
     cache: Option<&RwLock<C>>,
+    save: bool,
 ) -> Result<BeatmapMetadata, LoadBeatmapMetadataError>
 where
     C: SongCache + ?Sized,
@@ -81,7 +81,7 @@ where
         LoadBeatmapMetadataError::ComputeHashError(format!("Failed to get song length: {}", e))
     })?;
 
-    if let Some(c) = &cache {
+    if save && let Some(c) = &cache {
         c.write().unwrap().cache_song(BeatmapMetadata {
             hash: hash.clone(),
             path: path.clone(),
@@ -100,6 +100,7 @@ where
 pub fn load_beatmap_from_path<C>(
     path: PathBuf,
     cache: Option<&RwLock<C>>,
+    save: bool,
 ) -> Result<BeatmapMetadata, LoadBeatmapMetadataError>
 where
     C: SongCache + ?Sized,
@@ -109,7 +110,7 @@ where
     }
     let beatmap = BeatmapSource::from_path(path)?;
 
-    load_beatmap_metadata(&beatmap, cache)
+    load_beatmap_metadata(&beatmap, cache, save)
 }
 
 /// Loads all songs from the given directory.
@@ -144,7 +145,7 @@ where
             let entry = entry.ok()?;
             let path = entry.path();
             // we cache later in bulk
-            let song_data = match load_beatmap_from_path::<C>(entry.path(), cache) {
+            let song_data = match load_beatmap_from_path::<C>(entry.path(), cache, false) {
                 Ok(data) => data,
                 Err(e) => {
                     warn!("Failed to load song from path {:?}: {}", path, e);
@@ -159,6 +160,14 @@ where
             Some(song_data)
         })
         .collect();
+
+    // cache in bulk
+    if let Some(c) = &cache {
+        let mut write = c.write().unwrap();
+        for song in &loaded_songs {
+            write.cache_song(song.clone())?;
+        }
+    }
 
     Ok(BeatmapMetadataArray {
         songs: loaded_songs,
@@ -194,23 +203,22 @@ where
     let read_dir_entries: Vec<_> = paths
         .iter()
         .map(std::fs::read_dir)
-        .collect::<Result<Vec<_>, _>>()?;
-    let read_dir_entries: Vec<DirEntry> = read_dir_entries
+        .collect::<Result<_, _>>()?;
+
+    let paths: Vec<PathBuf> = read_dir_entries
         .into_iter()
-        .flat_map(|r| r.filter_map(|e| e.ok()))
+        .flat_map(|dir_iter| dir_iter.filter_map(Result::ok))
+        .map(|entry| entry.path())
         .collect();
 
-    let count = read_dir_entries.len();
+    let count = paths.len();
 
     let worked = AtomicUsize::new(0);
-
-    let loaded_songs: Vec<BeatmapMetadata> = read_dir_entries
-        .into_iter()
-        .par_bridge()
-        .filter_map(|entry| {
-            let path = entry.path();
+    let loaded_songs: Vec<BeatmapMetadata> = paths
+        .into_par_iter()
+        .filter_map(|path| {
             // we cache later in bulk
-            let song_data = match load_beatmap_from_path::<C>(entry.path(), cache) {
+            let song_data = match load_beatmap_from_path::<C>(path.clone(), cache, false) {
                 Ok(data) => data,
                 Err(e) => {
                     warn!("Failed to load song from path {:?}: {}", path, e);
@@ -227,11 +235,19 @@ where
         })
         .collect();
 
+    // cache in bulk
+    if let Some(c) = &cache {
+        let mut write = c.write().unwrap();
+        for song in &loaded_songs {
+            write.cache_song(song.clone())?;
+        }
+    }
+
     let end = std::time::Instant::now();
     info!(
         "Loaded {} beatmaps in {}ms (parallel)",
         loaded_songs.len(),
-        (end - start).as_secs_f32() / 1000.0
+        (end - start).as_millis()
     );
     Ok(BeatmapMetadataArray {
         songs: loaded_songs,

@@ -1,5 +1,7 @@
 use std::{ffi::{CStr, CString, c_char}, path::Path};
 
+use tracing::info;
+
 use crate::{
     ffi::{cache::CSongCache, types::OpaqueUserData},
     loader::beatmap_metadata_loader::{
@@ -139,7 +141,7 @@ pub unsafe extern "C" fn song_core_load_path(
     
 
     let song_load =
-        load_beatmap_from_path(path.into(), cache).expect("Failed to load song from path");
+        load_beatmap_from_path(path.into(), cache, true).expect("Failed to load song from path");
 
     song_load.into()
 }
@@ -220,7 +222,14 @@ pub unsafe extern "C" fn song_core_load_directory_parallel(
     let songs = load_beatmap_directory_parallel(&[path], cache, wrapped.as_ref())
         .expect("Failed to load song directory in parallel");
 
+    let start = std::time::Instant::now();
     let c_loaded_songs: CBeatmapMetadataArray = songs.into();
+    let end = std::time::Instant::now();
+    info!(
+        "Converted loaded songs to C representation in {}ms",
+        (end - start).as_millis()
+    );
+
     c_loaded_songs
 }
 
