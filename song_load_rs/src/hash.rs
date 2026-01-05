@@ -13,8 +13,8 @@ pub fn create_sha1_from_path_bytes<I>(prepend_bytes: &[u8], files: I) -> io::Res
 where
     I: IntoIterator<Item = Bytes>,
 {
-    let mut hasher = Sha1::new();
-    hasher.update(prepend_bytes);
+    let mut hasher = Sha1::new_with_prefix(prepend_bytes);
+    // hasher.update(prepend_bytes);
 
     for bytes in files.into_iter() {
         hasher.update(&bytes);
@@ -25,7 +25,7 @@ where
 
 /// Get the list of necessary files from the InfoDat for hashing.
 pub fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
-    let mut necessary_files: Vec<PathBuf> = Vec::new();
+    let mut necessary_files: Vec<PathBuf> = Vec::with_capacity(10);
 
     // if let Some(song_filename) = info.get_song_filename() {
     //     necessary_files.push(song_filename.into());
