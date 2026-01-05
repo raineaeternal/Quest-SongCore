@@ -198,8 +198,10 @@ namespace SongCore::SongLoader {
 
         // eager load rust cache
         auto loadedSongs = Utils::LoadDirectories(dirVec);
-        auto levelsSpan = loadedSongs.as_span();
+        auto loadTime = high_resolution_clock::now() - refreshStartTime;
+        INFO("Loaded {} songs from {} directories in {}ms", loadedSongs.size(), dirVec.size(), duration_cast<milliseconds>(loadTime).count());
 
+        auto levelsSpan = loadedSongs.as_span();
         if (levelsSpan.empty()) {
             WARNING("Failed to load songs from directories!");
             _areSongsLoaded = true;
@@ -207,8 +209,10 @@ namespace SongCore::SongLoader {
             return;
         }
 
-        // save
-        Utils::SaveSongInfoCache();
+        // save in async thread
+        std::thread([](){
+            Utils::SaveSongInfoCache();
+        }).detach();
         // we got the Rust LoadedSongs, now load them into beat saber
 
 
