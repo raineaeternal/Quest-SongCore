@@ -1,4 +1,6 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
+
+use ahash::AHashMap;
 
 use crate::{
     cache::{CacheError, SongCache},
@@ -7,25 +9,25 @@ use crate::{
 
 #[derive(Debug, Default)]
 pub struct MemCache {
-    cache: HashMap<PathBuf, BeatmapMetadata>,
+    cache: AHashMap<PathBuf, BeatmapMetadata>,
 }
 
 impl MemCache {
     pub fn new() -> Self {
         Self {
-            cache: HashMap::new(),
+            cache: AHashMap::new(),
         }
     }
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            cache: HashMap::with_capacity(capacity),
+            cache: AHashMap::with_capacity(capacity),
         }
     }
-    pub fn from_cache(cache: HashMap<PathBuf, BeatmapMetadata>) -> Self {
+    pub fn from_cache(cache: AHashMap<PathBuf, BeatmapMetadata>) -> Self {
         Self { cache }
     }
 
-    pub fn get_cache(&self) -> &HashMap<PathBuf, BeatmapMetadata> {
+    pub fn get_cache(&self) -> &AHashMap<PathBuf, BeatmapMetadata> {
         &self.cache
     }
 }

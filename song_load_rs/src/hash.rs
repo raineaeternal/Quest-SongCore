@@ -1,8 +1,8 @@
 use std::{
-    collections::HashMap,
     io::{self},
 };
 
+use ahash::AHashMap;
 use bytes::Bytes;
 use sha1::{Digest, Sha1};
 
@@ -52,7 +52,7 @@ pub fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
 ///
 /// Only files present in the provided `files` map are included; missing files are skipped.
 fn compute_custom_level_hash_from_info_dat(
-    files: &HashMap<PathBuf, Bytes>,
+    files: &AHashMap<PathBuf, Bytes>,
     info: &InfoDat,
     info_bytes: &[u8],
 ) -> io::Result<String> {
@@ -82,7 +82,7 @@ pub fn compute_custom_level_hash_from_beatmap(beatmap: &BeatmapSource) -> io::Re
 
     let necessary_files: Vec<PathBuf> = necessary_files_from_info_dat(&info_dat);
 
-    let mut files_map: HashMap<PathBuf, Bytes> = HashMap::new();
+    let mut files_map: AHashMap<PathBuf, Bytes> = AHashMap::new();
     for p in necessary_files {
         let Ok(bytes) = beatmap.get_file_bytes(&p) else {
             continue;

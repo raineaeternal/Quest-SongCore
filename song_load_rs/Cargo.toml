@@ -30,6 +30,7 @@ thiserror = "2"
 symphonia = { version = "0.5", features = ["wav", "vorbis", "opt-simd"], default-features = false}
 semver = { version = "1.0", features = ["serde"] }
 regex = "1.12.2"
+ahash = { version = "0.8", features = ["serde"] }
 
 # Android aarch64 dependencies
 # [target.aarch64-linux-android.features]
