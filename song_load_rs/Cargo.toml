@@ -27,9 +27,13 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rayon = "1.11.0"
 thiserror = "2"
-symphonia = { version = "0.5", features = ["wav", "ogg", "opt-simd"], default-features = false}
+symphonia = { version = "0.5", features = [
+    "wav",
+    "ogg",
+    "opt-simd",
+], default-features = false }
 semver = { version = "1.0", features = ["serde"] }
-regex = "1.12.2"
+regex = { version = "1.12.2", default-features = false, features = ["perf", "std", "unicode-perl"] }
 ahash = { version = "0.8", features = ["serde"] }
 
 # Android aarch64 dependencies

@@ -96,27 +96,23 @@ impl BeatmapSource {
 
     /// Parses and returns the Info.dat data from the beatmap source.
     /// Automatically detects the version and deserializes into the appropriate struct.
-    pub fn get_info_dat(&self) -> io::Result<InfoDat> {
+    #[inline]
+    pub fn get_info_dat(&self) -> io::Result<(Bytes, InfoDat)> {
         let info_bytes = self.get_info_dat_bytes()?;
-        let info_vec = info_bytes.to_vec();
-
-        let info_contents = String::from_utf8(info_vec)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-
-        let version = version::get_version(&info_contents).unwrap_or(version::NO_VERSION);
+        let version = version::get_version(&info_bytes).unwrap_or(version::NO_VERSION);
 
         match version {
             v if v == version::NO_VERSION || v.major == 2 => {
                 let info_dat: crate::models::info_dat::v2::StandardLevelInfoSaveDataV2 =
-                    serde_json::from_str(&info_contents)
+                    serde_json::from_slice(&info_bytes)
                         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-                Ok(InfoDat::V2(info_dat))
+                Ok((info_bytes, InfoDat::V2(info_dat)))
             }
             v if v.major == 4 => {
                 let info_dat: crate::models::info_dat::v4::BeatmapLevelSaveDataV4 =
-                    serde_json::from_str(&info_contents)
+                    serde_json::from_slice(&info_bytes)
                         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-                Ok(InfoDat::V4(info_dat))
+                Ok((info_bytes, InfoDat::V4(info_dat)))
             }
             _ => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -135,7 +131,7 @@ impl BeatmapSource {
     pub fn load_level<C>(
         &self,
         wip: bool,
-        song_cache: Option<&RwLock<C>>,
+        song_cache: Option<&crate::utils::SongCoreLock<C>>,
     ) -> Result<Option<CustomBeatmapLevel>, CustomLevelLoaderError>
     where
         C: SongCache + ?Sized,

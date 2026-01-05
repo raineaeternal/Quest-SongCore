@@ -52,8 +52,7 @@ pub fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
 #[tracing::instrument(level = "trace", skip(beatmap))]
 pub fn compute_custom_level_hash_from_beatmap(beatmap: &BeatmapSource) -> io::Result<String> {
     // Read Info.dat/info.dat bytes via Beatmap helper
-    let info_bytes = beatmap.get_info_dat_bytes()?;
-    let info_dat: InfoDat = beatmap.get_info_dat()?;
+    let (info_bytes, info_dat) = beatmap.get_info_dat()?;
 
     let necessary_files: Vec<PathBuf> = necessary_files_from_info_dat(&info_dat);
 

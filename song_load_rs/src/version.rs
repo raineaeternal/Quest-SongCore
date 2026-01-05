@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
-    path::Path,
+    path::Path, sync::LazyLock,
 };
 
 use regex::Regex;
@@ -19,17 +19,21 @@ pub const NO_VERSION: Version = Version {
 /// Attempts to extract the version from the given data string.
 /// Looks for a JSON field named "version" or "_version" and parses its value.
 /// Returns None if no version field is found or if parsing fails.
-pub fn get_version(data: &str) -> Option<Version> {
+#[inline]
+pub fn get_version(data: &[u8]) -> Option<Version> {
     if data.is_empty() {
         return None;
     }
 
+    static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#""_?version"\s*:\s*"([0-9]+\.[0-9]+(?:\.[0-9]+)?)""#).unwrap());
+
     // Only examine the first 50 bytes for performance
     let truncated = &data[..data.len().min(50)];
-    let re = Regex::new(r#""_?version"\s*:\s*"([0-9]+\.[0-9]+(?:\.[0-9]+)?)""#).unwrap();
 
-    let caps = re.captures(truncated)?;
-    let m = caps.get(1)?;
+    // Convert to &str for regex processing
+    let truncated = std::str::from_utf8(truncated).ok()?;
+
+    let m = RE.find(truncated)?;
 
     let ver_str = m.as_str();
     Version::parse(ver_str).ok()
@@ -58,6 +62,6 @@ pub fn version_from_file_path(path: &Path) -> Option<Version> {
     let mut buf = vec![0u8; to_read];
     let n = file.read(&mut buf).ok()?;
 
-    let start_of_file = String::from_utf8_lossy(&buf[..n]).into_owned();
-    get_version(&start_of_file)
+
+    get_version(&buf[..n])
 }
