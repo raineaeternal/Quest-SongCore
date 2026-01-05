@@ -54,7 +54,7 @@ fn bench_create_sha1_in_memory(c: &mut Criterion) {
         serde_json::from_str(&info_contents).expect("parse info dat");
     let info_dat = song_load_rs::info_dat::InfoDat::V2(info_dat);
 
-    let files_vec: Vec<(bytes::Bytes)> =
+    let files_vec: Vec<bytes::Bytes > =
         song_load_rs::hash::necessary_files_from_info_dat(&info_dat)
             .into_iter()
             .filter_map(|p| {
