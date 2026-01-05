@@ -88,6 +88,10 @@ jobs:
         qpm_qmod: ${{ env.qmod_name }}.qmod
         resolve_ndk: true
 
+    - name: Get dependencies
+      run: |
+        sudo apt install libc6-dev clang
+
       # Run Rust tests
     - name: Run Rust Tests
       run: |
