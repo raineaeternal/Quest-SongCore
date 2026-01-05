@@ -58,7 +58,7 @@ add_library(
 add_assets(assets_${COMPILE_ID} STATIC ${CMAKE_CURRENT_LIST_DIR}/assets ${INCLUDE_DIR}/assets.hpp)
 
 set(Rust_TOOLCHAIN "nightly")
-# set(Rust_CARGO_TARGET "aarch64-linux-android")
+set(Rust_CARGO_TARGET "aarch64-linux-android")
 include(FetchContent)
 
 FetchContent_Declare(
