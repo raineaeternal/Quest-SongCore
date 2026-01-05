@@ -106,7 +106,7 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     let cache = RwLock::new(cache);
 
     // First load - should compute and populate cache
-    let loaded1 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), false)
+    let loaded1 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), true)
         .map_err(|e| format!("first load failed: {}", e))?;
 
     // Cache should now contain the entry
@@ -119,7 +119,7 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(cached.hash, loaded1.hash);
 
     // Second load should return the same data (and hit the cache)
-    let loaded2 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), false)
+    let loaded2 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), true)
         .map_err(|e| format!("second load failed: {}", e))?;
 
     assert_eq!(loaded1.hash, loaded2.hash);
