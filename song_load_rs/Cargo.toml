@@ -21,13 +21,13 @@ bytes = "1.11.0"
 sha1 = "0.10"
 sha2 = "0.10"
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "registry"] }
 zip = "7.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rayon = "1.11.0"
 thiserror = "2"
-symphonia = { version = "0.5", features = ["wav", "vorbis", "opt-simd"], default-features = false}
+symphonia = { version = "0.5", features = ["wav", "ogg", "opt-simd"], default-features = false}
 semver = { version = "1.0", features = ["serde"] }
 regex = "1.12.2"
 ahash = { version = "0.8", features = ["serde"] }

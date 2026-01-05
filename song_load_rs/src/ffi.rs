@@ -16,6 +16,8 @@ pub extern "C" fn songcore_init_rust() {
         // filter via `RUST_LOG` (if set) or a reasonable default that
         // silences Symphonia debug logs.
         use tracing_subscriber::{registry::Registry, EnvFilter};
+        use tracing_subscriber::layer::SubscriberExt;
+        use tracing_subscriber::util::SubscriberInitExt;
 
         let default_filter = "info,symphonia=warn,symphonia_core=warn,symphonia_format_ogg=warn";
         let filter_str = std::env::var("RUST_LOG").unwrap_or_else(|_| default_filter.to_string());
