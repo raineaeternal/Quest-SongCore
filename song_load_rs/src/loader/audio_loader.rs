@@ -5,6 +5,7 @@ use symphonia::{core::io::MediaSourceStream, default::get_probe};
 
 use crate::beatmap;
 
+#[tracing::instrument(level = "trace", skip(song))]
 fn get_song_length_from(song: Bytes) -> Result<Option<Duration>, String> {
     let cursor = std::io::Cursor::new(song);
     let mss = MediaSourceStream::new(Box::new(cursor), Default::default());

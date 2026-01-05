@@ -8,7 +8,7 @@ use std::{
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tracing::{info, warn};
+use tracing::{info, info_span, warn};
 
 use crate::{
     beatmap::BeatmapSource,
@@ -63,6 +63,8 @@ where
     C: SongCache + ?Sized,
 {
     let path = beatmap.get_real_path().to_path_buf();
+    let span = info_span!("load_beatmap_metadata", path = %path.display());
+    let _enter = span.enter();
 
     let cached = cache
         .map(|c| c.read().unwrap().get_cached_song(&path))
@@ -74,12 +76,18 @@ where
         return Ok(cached);
     }
 
-    info!("Loading beatmap metadata from path: {:?}", path);
-
+    // Measure hash and audio timing separately for profiling.
+    let hash_start = std::time::Instant::now();
     let hash = compute_custom_level_hash_from_beatmap(beatmap)?;
+    let hash_ms = hash_start.elapsed().as_millis();
+
+    let audio_start = std::time::Instant::now();
     let song_length = audio_loader::get_song_length(beatmap).map_err(|e| {
         LoadBeatmapMetadataError::ComputeHashError(format!("Failed to get song length: {}", e))
     })?;
+    let audio_ms = audio_start.elapsed().as_millis();
+
+    info!(hash_ms = hash_ms, audio_ms = audio_ms, "Loaded beatmap metadata");
 
     if save && let Some(c) = &cache {
         c.write().unwrap().cache_song(BeatmapMetadata {
@@ -108,6 +116,9 @@ where
     if !path.exists() {
         return Err(LoadBeatmapMetadataError::PathDoesNotExist(path));
     }
+    let span = info_span!("load_beatmap_from_path", path = %path.display());
+    let _enter = span.enter();
+
     let beatmap = BeatmapSource::from_path(path)?;
 
     load_beatmap_metadata(&beatmap, cache, save)
@@ -126,7 +137,9 @@ where
     F: Fn(&BeatmapMetadata, usize, usize),
     C: SongCache + ?Sized,
 {
-    info!("Loading beatmap directory: {:?}", path);
+    let span = info_span!("load_beatmap_directory", path = %path.display());
+    let _enter = span.enter();
+    info!("Loading beatmap directory");
 
     if !path.exists() || !path.is_dir() {
         return Err(LoadBeatmapMetadataError::PathDoesNotExist(
@@ -187,7 +200,9 @@ where
     F: Fn(&BeatmapMetadata, usize, usize) + Sync,
     C: SongCache + ?Sized,
 {
-    info!("Loading beatmap directories in parallel: {:?}", paths);
+    let span = info_span!("load_beatmap_directory_parallel", dirs = ?paths);
+    let _enter = span.enter();
+    info!("Loading beatmap directories in parallel");
 
     let start = std::time::Instant::now();
     // validate paths

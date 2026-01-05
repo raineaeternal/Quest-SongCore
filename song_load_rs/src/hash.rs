@@ -71,6 +71,7 @@ fn compute_custom_level_hash_from_info_dat(
 }
 
 /// Compute the custom level hash from a `Beatmap` (zip or directory).
+#[tracing::instrument(level = "trace", skip(beatmap))]
 pub fn compute_custom_level_hash_from_beatmap(beatmap: &BeatmapSource) -> io::Result<String> {
     // Read Info.dat/info.dat bytes via Beatmap helper
     let info_bytes = beatmap.get_info_dat_bytes()?;
