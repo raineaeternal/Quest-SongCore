@@ -33,7 +33,8 @@ pub fn get_version(data: &[u8]) -> Option<Version> {
     // Convert to &str for regex processing
     let truncated = std::str::from_utf8(truncated).ok()?;
 
-    let m = RE.find(truncated)?;
+    let captures = RE.captures(truncated)?;
+    let m = captures.get(1)?;
 
     let ver_str = m.as_str();
     Version::parse(ver_str).ok()
