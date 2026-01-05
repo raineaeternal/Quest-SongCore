@@ -30,6 +30,8 @@ on:
 env:
     module_id: songcore
     qmod_name: SongCore
+    LIBCLANG_PATH: /usr/lib/llvm-19/lib/
+
 
 jobs:
   build:
@@ -64,7 +66,8 @@ jobs:
     - name: Get dependencies
       run: |
         sudo apt update
-        sudo apt install -y build-essential libc6-dev libclang-dev clang cmake ninja-build linux-libc-dev
+        sudo apt install -y build-essential libc6-dev libclang-dev clang cmake ninja-build linux-libc-dev llvm
+        where clang
 
     # if we don't have a tag, don't do anything special
     - name: Setup qpm
