@@ -241,9 +241,7 @@ where
     // cache in bulk
     if let Some(c) = &cache {
         let mut write = c.write().unwrap();
-        for song in &loaded_songs {
-            write.cache_song(song.clone())?;
-        }
+        write.cache_songs(loaded_songs.clone())?;
     }
     info!("Cached loaded beatmaps in {}ms", start.elapsed().as_millis());
 
