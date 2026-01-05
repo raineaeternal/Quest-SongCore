@@ -1,11 +1,15 @@
-use std::{ffi::{CStr, CString, c_char}, path::Path};
+use std::{
+    ffi::{CStr, CString, c_char},
+    path::Path,
+};
 
 use tracing::info;
 
 use crate::{
     ffi::{cache::CSongCache, types::OpaqueUserData},
     loader::beatmap_metadata_loader::{
-        BeatmapMetadata, BeatmapMetadataArray, load_beatmap_directory, load_beatmap_directory_parallel,
+        BeatmapMetadata, BeatmapMetadataArray, load_beatmap_directory,
+        load_beatmap_directory_parallel, load_beatmap_directory_parallel_async,
         load_beatmap_from_path,
     },
 };
@@ -95,12 +99,8 @@ impl From<CBeatmapMetadata> for BeatmapMetadata {
 
 impl From<CBeatmapMetadataArray> for BeatmapMetadataArray {
     fn from(c_loaded_songs: CBeatmapMetadataArray) -> Self {
-        let songs_slice = unsafe {
-            std::slice::from_raw_parts_mut(
-                c_loaded_songs.songs,
-                c_loaded_songs.count,
-            )
-        };
+        let songs_slice =
+            unsafe { std::slice::from_raw_parts_mut(c_loaded_songs.songs, c_loaded_songs.count) };
 
         let songs = unsafe { Box::from_raw(songs_slice) };
 
@@ -138,7 +138,6 @@ pub unsafe extern "C" fn song_core_load_path(
         .expect("Failed to convert path to str");
 
     let cache = unsafe { cache.as_ref().map(|c| c.inner.as_ref()) };
-    
 
     let song_load =
         load_beatmap_from_path(path.into(), cache, true).expect("Failed to load song from path");
@@ -279,6 +278,65 @@ pub unsafe extern "C" fn song_core_load_directories_parallel(
 
     let songs = load_beatmap_directory_parallel(&paths, cache, wrapped.as_ref())
         .expect("Failed to load song directory in parallel");
+
+    let c_loaded_songs: CBeatmapMetadataArray = songs.into();
+    c_loaded_songs
+}
+
+/// Loads all songs from the given directory in parallel asynchronously.
+///
+/// # Parameters
+/// - `path`: A pointer to a null-terminated C string representing the path to the directory of songs
+/// - `cache`: A pointer to a `CSongCache` instance for caching (can be null to ignore cache).
+/// # Safety
+/// The `path` pointer must be a valid null-terminated C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_core_load_directories_parallel_async(
+    paths: *const *const std::os::raw::c_char,
+    path_count: usize,
+    cache: *mut CSongCache,
+    user_data: OpaqueUserData,
+    fn_callback: Option<extern "C" fn(&CBeatmapMetadata, usize, usize, OpaqueUserData)>,
+) -> CBeatmapMetadataArray {
+    if paths.is_null() {
+        panic!("Path is null");
+    }
+    let paths = unsafe { std::slice::from_raw_parts(paths, path_count) };
+
+    let paths: Vec<&Path> = paths
+        .iter()
+        .map(|&p| {
+            if p.is_null() {
+                panic!("One of the paths is null");
+            }
+            unsafe { CStr::from_ptr(p) }
+                .to_str()
+                .map(Path::new)
+                .expect("Failed to convert path to str")
+        })
+        .collect();
+
+    let cache = unsafe { cache.as_ref().map(|c| c.inner.as_ref()) };
+    let wrapped = fn_callback.map(|callback| {
+        move |song: &BeatmapMetadata, index, count| {
+            let cloaded_song = CBeatmapMetadata::from(song.clone());
+            callback(&cloaded_song, index, count, user_data);
+            // from to avoid
+            let _ = BeatmapMetadata::from(cloaded_song);
+        }
+    });
+
+
+    
+    let songs = tokio::runtime::Builder::new_multi_thread()
+        .enable_io()
+        .build()
+        .unwrap()
+        .block_on(async {
+            load_beatmap_directory_parallel_async(&paths, cache, wrapped.as_ref())
+                .await
+                .expect("Failed to load song directory in parallel")
+        });
 
     let c_loaded_songs: CBeatmapMetadataArray = songs.into();
     c_loaded_songs

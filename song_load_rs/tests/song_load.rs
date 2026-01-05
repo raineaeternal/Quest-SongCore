@@ -1,8 +1,8 @@
-use std::{path::PathBuf, sync::RwLock};
+use std::{path::PathBuf};
 
 use song_load_rs::{
     cache::{SongCache, mem_cache::MemCache},
-    loader::beatmap_metadata_loader::{self, BeatmapMetadata},
+    loader::beatmap_metadata_loader::{self, BeatmapMetadata}, utils::{SongCoreAsyncLock, SongCoreLock},
 };
 
 // Smoke tests for the public `song_load` APIs that exercise loading from
@@ -103,14 +103,14 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a MemCache and load with it
     let cache = song_load_rs::cache::mem_cache::MemCache::default();
-    let cache = RwLock::new(cache);
+    let cache = SongCoreAsyncLock::new(cache);
 
     // First load - should compute and populate cache
     let loaded1 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), true)
         .map_err(|e| format!("first load failed: {}", e))?;
 
     // Cache should now contain the entry
-    let cached = cache.read().unwrap().get_cached_song(&zip_path)?;
+    let cached = cache.blocking_read().get_cached_song(&zip_path)?;
     assert!(
         cached.is_some(),
         "expected cache to contain the loaded song"
@@ -126,7 +126,7 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
 
     // Also test directory-loading populates cache entries for songs in the tests dir
     let cache2 = song_load_rs::cache::mem_cache::MemCache::default();
-    let cache2 = RwLock::new(cache2);
+    let cache2 = SongCoreAsyncLock::new(cache2);
     let loaded_dir = beatmap_metadata_loader::load_beatmap_directory::<
         MemCache,
         fn(&BeatmapMetadata, usize, usize),
@@ -135,7 +135,7 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
 
     // Each loaded song should be cached
     for s in &loaded_dir.songs {
-        let got = cache2.read().unwrap().get_cached_song(&s.path)?;
+        let got = cache2.blocking_read().get_cached_song(&s.path)?;
         assert!(got.is_some(), "song {:?} was not cached", s.path);
     }
 

@@ -17,6 +17,8 @@ use crate::{info_dat::InfoDat, version};
 pub enum BeatmapSource {
     //TODO: Can we use ZipArchive<Cursor<Bytes>> directly?
     // I would rather not make every read op &mut
+
+    // TODO: Consider using Arc or something to allow thread safe copies
     Zip(PathBuf, RefCell<ZipArchive<std::io::Cursor<Bytes>>>),
     Directory(PathBuf),
 }
@@ -67,6 +69,30 @@ impl BeatmapSource {
         }
     }
 
+    pub async fn get_file_bytes_async<P>(&self, file_path: P) -> io::Result<Bytes>
+    where
+        P: AsRef<Path>,
+    {
+        match self {
+            BeatmapSource::Zip(_, zip_file) => {
+                let mut zip_file_ref = zip_file.borrow_mut();
+
+                let mut file = zip_file_ref
+                    .by_name(&file_path.as_ref().to_string_lossy())
+                    .map_err(|e| io::Error::new(io::ErrorKind::NotFound, e))?;
+
+                let mut buffer = Vec::with_capacity(file.size() as usize);
+                file.read_to_end(&mut buffer)?;
+                Ok(Bytes::from(buffer))
+            }
+            BeatmapSource::Directory(dir_path) => {
+                let full_path = dir_path.join(file_path);
+                let bytes = tokio::fs::read(full_path).await?;
+                Ok(Bytes::from(bytes))
+            }
+        }
+    }
+
     /// Creates a Beatmap from the given path, which can be either a zip file or a directory.
     /// Returns an error if the path does not exist or is not accessible.
     ///
@@ -88,6 +114,24 @@ impl BeatmapSource {
         Ok(BeatmapSource::Directory(path.to_path_buf()))
     }
 
+    pub async fn from_path_async(path: PathBuf) -> io::Result<BeatmapSource> {
+        if !path.exists() {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Path does not exist",
+            ));
+        }
+
+        if path.is_file() {
+            let zip_bytes = tokio::fs::read(&path).await?;
+            let cursor = std::io::Cursor::new(bytes::Bytes::from(zip_bytes));
+            let archive = zip::ZipArchive::new(cursor)?;
+
+            return Ok(BeatmapSource::Zip(path, archive.into()));
+        }
+        Ok(BeatmapSource::Directory(path.to_path_buf()))
+    }
+
     /// Reads and returns the Info.dat or info.dat file bytes from the beatmap source.
     pub fn get_info_dat_bytes(&self) -> io::Result<Bytes> {
         self.get_file_bytes(Path::new("Info.dat"))
@@ -96,11 +140,10 @@ impl BeatmapSource {
 
     /// Parses and returns the Info.dat data from the beatmap source.
     /// Automatically detects the version and deserializes into the appropriate struct.
-    pub fn get_info_dat(&self) -> io::Result<InfoDat> {
+    pub fn get_info_dat(&self) -> io::Result<(Bytes, InfoDat)> {
         let info_bytes = self.get_info_dat_bytes()?;
-        let info_vec = info_bytes.to_vec();
 
-        let info_contents = String::from_utf8(info_vec)
+        let info_contents = String::from_utf8(info_bytes.to_vec())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
         let version = version::get_version(&info_contents).unwrap_or(version::NO_VERSION);
@@ -110,19 +153,57 @@ impl BeatmapSource {
                 let info_dat: crate::models::info_dat::v2::StandardLevelInfoSaveDataV2 =
                     serde_json::from_str(&info_contents)
                         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-                Ok(InfoDat::V2(info_dat))
+                Ok((info_bytes, InfoDat::V2(info_dat)))
             }
             v if v.major == 4 => {
                 let info_dat: crate::models::info_dat::v4::BeatmapLevelSaveDataV4 =
                     serde_json::from_str(&info_contents)
                         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-                Ok(InfoDat::V4(info_dat))
+                Ok((info_bytes, InfoDat::V4(info_dat)))
             }
             _ => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "Unsupported Info.dat version",
             )),
         }
+    }
+
+    /// Asynchronously reads and returns the Info.dat or info.dat file bytes from the beatmap source.
+    pub async fn get_info_dat_bytes_async(&self) -> io::Result<Bytes> {
+        match self.get_file_bytes_async(Path::new("Info.dat")).await {
+            Ok(bytes) => Ok(bytes),
+            Err(_) => self.get_file_bytes_async(Path::new("info.dat")).await,
+        }
+    }
+
+    pub async fn get_info_dat_async(&self) -> io::Result<(Bytes, InfoDat)> {
+        let info_bytes = self.get_info_dat_bytes_async().await?;
+
+        let (bytes, info_dat) = tokio::task::spawn_blocking(move || {
+            let info_contents = String::from_utf8(info_bytes.to_vec())
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+            let dat = match version::get_version(&info_contents).unwrap_or(version::NO_VERSION) {
+                v if v == version::NO_VERSION || v.major == 2 => {
+                    let d = serde_json::from_str(&info_contents)
+                        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+                    Ok(InfoDat::V2(d))
+                }
+                v if v.major == 4 => {
+                    let d = serde_json::from_str(&info_contents)
+                        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+                    Ok(InfoDat::V4(d))
+                }
+                _ => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Unsupported Info.dat version",
+                )),
+            }?;
+            Ok::<(Bytes, InfoDat), io::Error>((info_bytes, dat))
+        })
+        .await??;
+
+        Ok((bytes, info_dat))
     }
 
     /// Loads the beatmap level from the beatmap source.
@@ -135,7 +216,7 @@ impl BeatmapSource {
     pub fn load_level<C>(
         &self,
         wip: bool,
-        song_cache: Option<&RwLock<C>>,
+        song_cache: Option<&crate::utils::SongCoreLock<C>>,
     ) -> Result<Option<CustomBeatmapLevel>, CustomLevelLoaderError>
     where
         C: SongCache + ?Sized,

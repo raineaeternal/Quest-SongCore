@@ -52,11 +52,9 @@ pub fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
 #[tracing::instrument(level = "trace", skip(beatmap))]
 pub fn compute_custom_level_hash_from_beatmap(beatmap: &BeatmapSource) -> io::Result<String> {
     // Read Info.dat/info.dat bytes via Beatmap helper
-    let info_bytes = beatmap.get_info_dat_bytes()?;
-    let info_dat: InfoDat = beatmap.get_info_dat()?;
+    let (info_bytes, info_dat) = beatmap.get_info_dat()?;
 
     let necessary_files: Vec<PathBuf> = necessary_files_from_info_dat(&info_dat);
-
 
     // Collect beatmap files in the order from the InfoDat, skipping missing entries.
     let path_bytes: Vec<Bytes> = necessary_files
@@ -66,4 +64,24 @@ pub fn compute_custom_level_hash_from_beatmap(beatmap: &BeatmapSource) -> io::Re
         .collect::<Result<_, _>>()?;
 
     create_sha1_from_path_bytes(&info_bytes, path_bytes)
+}
+
+/// Asynchronously compute the custom level hash from a `Beatmap` (zip or directory).
+#[tracing::instrument(level = "trace", skip(beatmap))]
+pub async fn compute_custom_level_hash_from_beatmap_async(
+    beatmap: &BeatmapSource,
+) -> io::Result<String> {
+    // Read Info.dat/info.dat bytes via Beatmap helper
+    let (info_bytes, info_dat) = beatmap.get_info_dat_async().await?;
+    let necessary_files: Vec<PathBuf> = necessary_files_from_info_dat(&info_dat);
+    
+    // Collect beatmap files in the order from the InfoDat, skipping missing entries.
+    let mut path_bytes: Vec<Bytes> = Vec::with_capacity(necessary_files.len());
+    for p in necessary_files.into_iter().filter(|p| beatmap.has_file(p)) {
+        let bytes = beatmap.get_file_bytes_async(&p).await?;
+        path_bytes.push(bytes);
+    }
+
+    tokio::task::spawn_blocking(move || create_sha1_from_path_bytes(&info_bytes, path_bytes))
+        .await?
 }

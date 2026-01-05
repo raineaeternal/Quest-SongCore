@@ -204,7 +204,7 @@ namespace SongCore::SongLoader {
                 _totalSongs = total;
             };
 
-        auto loadedSongs = Utils::GetSongCache().metadata_of_directories_parallel(dirVec, callback);
+        auto loadedSongs = Utils::GetSongCache().metadata_of_directories_parallel_async(dirVec, callback);
         auto loadTime = high_resolution_clock::now() - refreshStartTime;
         INFO("Loaded {} songs from {} directories in {}ms", loadedSongs.size(), dirVec.size(), duration_cast<milliseconds>(loadTime).count());
 

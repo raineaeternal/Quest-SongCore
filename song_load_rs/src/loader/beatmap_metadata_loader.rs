@@ -1,10 +1,14 @@
 use std::{
     io,
     path::{Path, PathBuf},
-    sync::{RwLock, atomic::AtomicUsize},
+    sync::atomic::AtomicUsize,
     time::Duration,
 };
 
+use futures::{
+    StreamExt, TryStreamExt,
+    stream::{FuturesOrdered, FuturesUnordered},
+};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -15,6 +19,7 @@ use crate::{
     cache::{CacheError, SongCache},
     hash::compute_custom_level_hash_from_beatmap,
     loader::audio_loader,
+    utils::SongCoreAsyncLock,
 };
 
 pub const CUSTOM_LEVEL_PREFIX_ID: &str = "custom_level_";
@@ -56,7 +61,7 @@ pub enum LoadBeatmapMetadataError {
 /// Loads a song from the given BeatmapSource, optionally using the provided cache.
 pub fn load_beatmap_metadata<C>(
     beatmap: &BeatmapSource,
-    cache: Option<&RwLock<C>>,
+    cache: Option<&SongCoreAsyncLock<C>>,
     save: bool,
 ) -> Result<BeatmapMetadata, LoadBeatmapMetadataError>
 where
@@ -67,7 +72,7 @@ where
     let _enter = span.enter();
 
     let cached = cache
-        .map(|c| c.read().unwrap().get_cached_song(&path))
+        .map(|c| c.blocking_read().get_cached_song(&path))
         .transpose()?
         .flatten();
 
@@ -87,10 +92,63 @@ where
     })?;
     let audio_ms = audio_start.elapsed().as_millis();
 
-    info!(hash_ms = hash_ms, audio_ms = audio_ms, "Loaded beatmap metadata");
+    info!(
+        hash_ms = hash_ms,
+        audio_ms = audio_ms,
+        "Loaded beatmap metadata"
+    );
 
     if save && let Some(c) = &cache {
-        c.write().unwrap().cache_song(BeatmapMetadata {
+        c.blocking_write().cache_song(BeatmapMetadata {
+            hash: hash.clone(),
+            path: path.clone(),
+            song_length,
+        })?;
+    }
+
+    Ok(BeatmapMetadata {
+        hash,
+        path,
+        song_length,
+    })
+}
+
+pub async fn load_beatmap_metadata_async<C>(
+    beatmap: &BeatmapSource,
+    cache: Option<&SongCoreAsyncLock<C>>,
+    save: bool,
+) -> Result<BeatmapMetadata, LoadBeatmapMetadataError>
+where
+    C: SongCache + ?Sized,
+{
+    let path = beatmap.get_real_path().to_path_buf();
+    let span = info_span!("load_beatmap_metadata_async", path = %path.display());
+    let _enter = span.enter();
+
+    let cached = match &cache {
+        Some(c) => c.read().await.get_cached_song(&path)?,
+        _ => None,
+    };
+
+    // Return cached hash if available
+    if let Some(cached) = cached {
+        return Ok(cached);
+    }
+
+    let hash = compute_custom_level_hash_from_beatmap(beatmap).map_err(|e| {
+        LoadBeatmapMetadataError::ComputeHashError(format!("Failed to compute hash: {}", e))
+    })?;
+
+    let song_length = audio_loader::get_song_length_async(beatmap)
+        .await
+        .map_err(|e| {
+            LoadBeatmapMetadataError::ComputeHashError(format!("Failed to get song length: {}", e))
+        })?;
+
+    info!("Loaded beatmap metadata asynchronously");
+
+    if save && let Some(c) = &cache {
+        c.write().await.cache_song(BeatmapMetadata {
             hash: hash.clone(),
             path: path.clone(),
             song_length,
@@ -107,7 +165,7 @@ where
 /// Loads a song from the given file path, optionally using the provided cache.
 pub fn load_beatmap_from_path<C>(
     path: PathBuf,
-    cache: Option<&RwLock<C>>,
+    cache: Option<&SongCoreAsyncLock<C>>,
     save: bool,
 ) -> Result<BeatmapMetadata, LoadBeatmapMetadataError>
 where
@@ -130,7 +188,7 @@ where
 /// Synchronous version.
 pub fn load_beatmap_directory<C, F>(
     path: &std::path::Path,
-    cache: Option<&RwLock<C>>,
+    cache: Option<&SongCoreAsyncLock<C>>,
     callback: Option<F>,
 ) -> Result<BeatmapMetadataArray, LoadBeatmapMetadataError>
 where
@@ -176,7 +234,7 @@ where
 
     // cache in bulk
     if let Some(c) = &cache {
-        let mut write = c.write().unwrap();
+        let mut write = c.blocking_write();
         for song in &loaded_songs {
             write.cache_song(song.clone())?;
         }
@@ -193,7 +251,7 @@ where
 /// Parallel version.
 pub fn load_beatmap_directory_parallel<F, C>(
     paths: &[&Path],
-    cache: Option<&RwLock<C>>,
+    cache: Option<&SongCoreAsyncLock<C>>,
     callback: Option<F>,
 ) -> Result<BeatmapMetadataArray, LoadBeatmapMetadataError>
 where
@@ -226,7 +284,11 @@ where
         .map(|entry| entry.path())
         .collect();
 
-    info!("Found {} beatmap paths to load in time {}ms", paths.len(), (start.elapsed().as_millis()));
+    info!(
+        "Found {} beatmap paths to load in time {}ms",
+        paths.len(),
+        (start.elapsed().as_millis())
+    );
 
     let count = paths.len();
 
@@ -251,18 +313,127 @@ where
             Some(song_data)
         })
         .collect();
-    info!("Finished processing beatmaps in parallel in {}ms", start.elapsed().as_millis());
+    info!(
+        "Finished processing beatmaps in parallel in {}ms",
+        start.elapsed().as_millis()
+    );
 
     // cache in bulk
     if let Some(c) = &cache {
-        let mut write = c.write().unwrap();
+        let mut write = c.blocking_write();
         write.cache_songs(loaded_songs.clone())?;
     }
-    info!("Cached loaded beatmaps in {}ms", start.elapsed().as_millis());
+    info!(
+        "Cached loaded beatmaps in {}ms",
+        start.elapsed().as_millis()
+    );
 
     let end = std::time::Instant::now();
     info!(
         "Loaded {} beatmaps in {}ms (parallel)",
+        loaded_songs.len(),
+        (end - start).as_millis()
+    );
+    Ok(BeatmapMetadataArray {
+        songs: loaded_songs,
+    })
+}
+
+pub async fn load_beatmap_directory_parallel_async<F, C>(
+    paths: &[&Path],
+    cache: Option<&SongCoreAsyncLock<C>>,
+    callback: Option<F>,
+) -> Result<BeatmapMetadataArray, LoadBeatmapMetadataError>
+where
+    F: Fn(&BeatmapMetadata, usize, usize) + Sync,
+    C: SongCache + ?Sized,
+{
+    let span = info_span!("load_beatmap_directory_parallel_async", dirs = ?paths);
+    let _enter = span.enter();
+    info!("Loading beatmap directories in parallel asynchronously");
+
+    let start = std::time::Instant::now();
+    // validate paths
+    for path in paths {
+        if !path.exists() || !path.is_dir() {
+            return Err(LoadBeatmapMetadataError::PathDoesNotExist(
+                path.to_path_buf(),
+            ));
+        }
+    }
+
+    // Asynchronously read directory entries for each provided directory.
+    // Use a FuturesUnordered to start all `read_dir` calls concurrently,
+    // then iterate each `ReadDir` to collect its entries.
+    let mut read_dir_futures: FuturesUnordered<_> = paths.iter().map(tokio::fs::read_dir).collect();
+
+    let mut paths: Vec<PathBuf> = Vec::with_capacity(100);
+    while let Some(read_dir_res) = read_dir_futures.next().await {
+        let mut read_dir = read_dir_res?;
+        while let Some(entry) = read_dir.next_entry().await? {
+            paths.push(entry.path());
+        }
+    }
+
+    info!(
+        "Found {} beatmap paths to load in time {}ms",
+        paths.len(),
+        (start.elapsed().as_millis())
+    );
+
+    let count = paths.len();
+
+    let worked = AtomicUsize::new(0);
+    // Build a future for each path and run them concurrently with join_all
+    let futures: FuturesUnordered<_> = paths
+        .into_iter()
+        .map(|path| {
+            let callback = callback.as_ref();
+            let worked_ref = &worked;
+            async move {
+                // we cache later in bulk
+                let beatmap = BeatmapSource::from_path_async(path.clone()).await.ok()?;
+
+                let song_data = match load_beatmap_metadata_async::<C>(&beatmap, cache, false).await
+                {
+                    Ok(data) => data,
+                    Err(e) => {
+                        warn!("Failed to load song from path {:?}: {}", path, e);
+                        return None;
+                    }
+                };
+
+                if let Some(cb) = callback {
+                    let worked = worked_ref.fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+                    cb(&song_data, worked, count);
+                }
+
+                Some(song_data)
+            }
+        })
+        .collect();
+
+    let loaded_songs: Vec<BeatmapMetadata> = futures
+        .collect::<Vec<Option<BeatmapMetadata>>>()
+        .await
+        .into_iter()
+        .flatten()
+        .collect();
+
+    info!(
+        "Finished processing beatmaps in parallel in {}ms",
+        start.elapsed().as_millis()
+    );
+
+    // cache in bulk
+    if let Some(c) = &cache {
+        let mut write = c.write().await;
+        write.cache_songs(loaded_songs.clone())?;
+    }
+
+    let end = std::time::Instant::now();
+    info!(
+        "Loaded {} beatmaps in {}ms (parallel async)",
         loaded_songs.len(),
         (end - start).as_millis()
     );

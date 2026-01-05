@@ -3,6 +3,7 @@ pub mod mem_cache;
 
 use std::path::Path;
 
+use async_trait::async_trait;
 use thiserror::Error;
 
 use crate::loader::beatmap_metadata_loader::BeatmapMetadata;
@@ -19,6 +20,7 @@ pub enum CacheError {
 /// Implementors can provide different caching strategies for loaded songs.
 /// though it is recommended to use RwLock<SongCache> for thread safety as
 /// it is not guaranteed that implementations will be thread safe.
+#[async_trait]
 pub trait SongCache: Send + Sync {
     /// Clears the entire song cache.
     fn clear_cache(&mut self) -> Result<(), CacheError>;

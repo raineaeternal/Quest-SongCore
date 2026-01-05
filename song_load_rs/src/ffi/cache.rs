@@ -1,6 +1,6 @@
-use std::{ffi::CStr, path::Path, sync::RwLock};
+use std::{ffi::CStr, path::Path};
 
-use crate::cache::SongCache;
+use crate::{cache::SongCache, utils::SongCoreAsyncLock};
 
 /// Represents a song cache trait for use in FFI.
 /// 
@@ -8,7 +8,7 @@ use crate::cache::SongCache;
 /// by wrapping the inner cache in an `RwLock`.
 #[repr(C)]
 pub struct CSongCache {
-    pub inner: Box<RwLock<dyn SongCache>>,
+    pub inner: Box<SongCoreAsyncLock<dyn SongCache>>,
 }
 
 /// Creates a new file based song cache and returns a pointer to it.
@@ -29,7 +29,7 @@ pub unsafe extern "C" fn song_core_file_cache_new(
     let file_cache = crate::cache::file_cache::FileCache::new(path.into());
 
     let song_cache = CSongCache {
-        inner: Box::new(RwLock::new(file_cache)),
+        inner: Box::new(SongCoreAsyncLock::new(file_cache)),
     };
 
     Box::into_raw(Box::new(song_cache))
@@ -47,8 +47,7 @@ pub unsafe extern "C" fn song_core_cache_load(cache: *mut CSongCache) {
 
     cache
         .inner
-        .write()
-        .unwrap()
+        .blocking_write()
         .reload_cache()
         .expect("Failed to reload cache");
 }
@@ -65,8 +64,7 @@ pub unsafe extern "C" fn song_core_cache_save(cache: *const CSongCache) {
 
     cache
         .inner
-        .read()
-        .unwrap()
+        .blocking_read()
         .save_cache()
         .expect("Failed to reload cache");
 }
@@ -93,8 +91,7 @@ pub unsafe extern "C" fn song_core_cache_reset_song(
         .expect("Failed to convert song path to str");
     cache
         .inner
-        .write()
-        .unwrap()
+        .blocking_write()
         .reset_song_cache(song_path)
         .expect("Failed to reset song cache");
 }
@@ -109,7 +106,7 @@ pub unsafe extern "C" fn song_core_cache_clear(cache: *mut CSongCache) {
     }
     let cache = unsafe { cache.as_mut().unwrap() };
 
-    cache.inner.write().unwrap().clear_cache().expect("Failed to clear cache");
+    cache.inner.blocking_write().clear_cache().expect("Failed to clear cache");
 }
 
 /// Checks if the cache contains a cached song for the given path.
@@ -133,7 +130,7 @@ pub unsafe extern "C" fn song_core_cache_contains_cache(
         .map(Path::new)
         .expect("Failed to convert song path to str");
 
-    match cache.inner.read().unwrap().get_cached_song(song_path) {
+    match cache.inner.blocking_read().get_cached_song(song_path) {
         Ok(opt) => opt.is_some(),
         Err(e) => {
             panic!("Failed to check if cache contains song: {}", e);

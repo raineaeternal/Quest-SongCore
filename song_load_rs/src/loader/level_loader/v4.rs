@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path, sync::RwLock};
+use std::{collections::HashMap, path::Path};
 
 use tracing::warn;
 
@@ -60,7 +60,7 @@ pub fn load_custom_beatmap_level_v4<C>(
     beatmap: &BeatmapSource,
     wip: bool,
     save: BeatmapLevelSaveDataV4,
-    song_cache: Option<&RwLock<C>>,
+    song_cache: Option<&SongCoreLock<C>>,
 ) -> Result<Option<CustomBeatmapLevel>, CustomLevelLoaderError>
 where
     C: SongCache + ?Sized,

@@ -29,10 +29,11 @@ fn get_song_length_from(song: Bytes) -> Result<Option<Duration>, String> {
     Ok(None)
 }
 
+/// Get the song length from a beatmap source (zip or directory).
 pub fn get_song_length(
     beatmap: &beatmap::BeatmapSource,
 ) -> Result<Option<Duration>, io::Error> {
-    let info_dat = beatmap
+    let (_, info_dat) = beatmap
         .get_info_dat()
         .map_err(|e| io::Error::other(format!("Failed to get Info.dat: {}", e)))?;
 
@@ -43,5 +44,31 @@ pub fn get_song_length(
     let song_bytes = beatmap.get_file_bytes(Path::new(song_filename))?;
     let length = get_song_length_from(song_bytes)
         .map_err(|e| io::Error::other(format!("Failed to get song length: {}", e)))?;
+    Ok(length)
+}
+
+/// Asynchronous version of `get_song_length`.
+pub async fn get_song_length_async(
+    beatmap: &beatmap::BeatmapSource,
+) -> Result<Option<Duration>, io::Error> {
+    let (_, info_dat) = beatmap
+        .get_info_dat_async()
+        .await
+        .map_err(|e| io::Error::other(format!("Failed to get Info.dat: {}", e)))?;
+
+    let Some(song_filename) = &info_dat.get_song_filename() else {
+        return Ok(None);
+    };
+
+    let song_bytes = beatmap
+        .get_file_bytes_async(Path::new(song_filename))
+        .await?;
+    let length = tokio::task::spawn_blocking(move || {
+        get_song_length_from(song_bytes)
+            .map_err(|e| io::Error::other(format!("Failed to get song length: {}", e)))
+    })
+    .await
+    .map_err(|e| io::Error::other(format!("Task join error: {}", e)))??;
+
     Ok(length)
 }
