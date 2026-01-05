@@ -19,12 +19,12 @@ fn load_song_from_zip_and_directory_match() -> Result<(), Box<dyn std::error::Er
 
     // Load from zip
     let song_from_zip =
-        beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(zip_path.clone(), None)
+        beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(zip_path.clone(), None, false)
             .map_err(|e| format!("load from zip failed: {}", e))?;
 
     // Load from directory (the public API accepts both file and directory)
     let song_from_dir =
-        beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(dir_path.clone(), None)
+        beatmap_metadata_loader::load_beatmap_from_path::<MemCache>(dir_path.clone(), None, false)
             .map_err(|e| format!("load from dir failed: {}", e))?;
 
     // The hashes should match
@@ -106,7 +106,7 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     let cache = RwLock::new(cache);
 
     // First load - should compute and populate cache
-    let loaded1 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache))
+    let loaded1 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), false)
         .map_err(|e| format!("first load failed: {}", e))?;
 
     // Cache should now contain the entry
@@ -119,7 +119,7 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(cached.hash, loaded1.hash);
 
     // Second load should return the same data (and hit the cache)
-    let loaded2 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache))
+    let loaded2 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), false)
         .map_err(|e| format!("second load failed: {}", e))?;
 
     assert_eq!(loaded1.hash, loaded2.hash);
