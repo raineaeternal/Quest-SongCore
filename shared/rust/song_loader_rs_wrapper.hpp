@@ -267,9 +267,7 @@ struct SongCache {
   [[nodiscard]]
   BeatmapMetadataArray metadata_of_directories_parallel(
       std::span<std::filesystem::path const> paths,
-      void (*fn_callback)(CBeatmapMetadata const*, uintptr_t, uintptr_t,
-                          OpaqueUserData) = nullptr,
-      void *user_data = nullptr) {
+      std::function<void(BeatmapMetadata const&, size_t, size_t)> callback = nullptr){
     // Build an array of C strings from the filesystem::path span so we can pass
     // a const char** to the C API without casting away qualifiers.
     std::vector<const char *> c_paths;
@@ -278,9 +276,24 @@ struct SongCache {
       c_paths.push_back(path.c_str());
     }
 
+    auto c_callback =
+        +[](const CBeatmapMetadata *c_song, uintptr_t index, uintptr_t total,
+            OpaqueUserData user_data) {
+          auto *cb_ptr =
+              reinterpret_cast<std::function<void(BeatmapMetadata const&, size_t, size_t
+                                                  )> const*>(
+                  user_data._0);
+
+          if (!cb_ptr) {
+            return;
+          }
+          BeatmapMetadata const& song = *reinterpret_cast<BeatmapMetadata const*>(c_song);
+          (*cb_ptr)(song, index, total);
+        };
+
     CBeatmapMetadataArray c_songs = song_core_load_directories_parallel(
-        c_paths.data(), c_paths.size(), cache, OpaqueUserData{user_data},
-        fn_callback);
+        c_paths.data(), c_paths.size(), cache, OpaqueUserData{
+                                         reinterpret_cast<void *>(&callback)}, c_callback);
     return BeatmapMetadataArray(c_songs);
   }
 

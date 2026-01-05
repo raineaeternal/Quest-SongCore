@@ -211,6 +211,8 @@ where
         .map(|entry| entry.path())
         .collect();
 
+    info!("Found {} beatmap paths to load in time {}ms", paths.len(), (start.elapsed().as_millis()));
+
     let count = paths.len();
 
     let worked = AtomicUsize::new(0);
@@ -234,6 +236,7 @@ where
             Some(song_data)
         })
         .collect();
+    info!("Finished processing beatmaps in parallel in {}ms", start.elapsed().as_millis());
 
     // cache in bulk
     if let Some(c) = &cache {
@@ -242,6 +245,7 @@ where
             write.cache_song(song.clone())?;
         }
     }
+    info!("Cached loaded beatmaps in {}ms", start.elapsed().as_millis());
 
     let end = std::time::Instant::now();
     info!(

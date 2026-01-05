@@ -19,6 +19,9 @@ namespace SongCore::Utils {
     // will not load until reload is called
     static SongCache _songCache = SongCache::file_cache(_cachePath);
 
+    SongCore::SongCache& GetSongCache() {
+        return _songCache;
+    }
 
     void RemoveCachedInfo(std::filesystem::path const& levelPath) {
         _songCache.reset_song(levelPath);

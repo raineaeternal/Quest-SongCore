@@ -23,6 +23,7 @@
 #include "System/IDisposable.hpp"
 
 #include "Utils/SaveDataVersion.hpp"
+#include "rust/song_loader_rs_wrapper.hpp"
 
 #include <tuple>
 #include <utility>
@@ -196,8 +197,14 @@ namespace SongCore::SongLoader {
         // collect all level paths
         std::vector<std::filesystem::path> dirVec = std::vector<std::filesystem::path>(dirs.begin(), dirs.end());
 
-        // eager load rust cache
-        auto loadedSongs = Utils::LoadDirectories(dirVec);
+        // eager load rust cache and progress report cache load
+        std::function<void(BeatmapMetadata const&, size_t, size_t)> callback =
+            [this](BeatmapMetadata const& song, size_t index, size_t total) {
+                _loadedSongs = index + 1;
+                _totalSongs = total;
+            };
+
+        auto loadedSongs = Utils::GetSongCache().metadata_of_directories_parallel(dirVec, callback);
         auto loadTime = high_resolution_clock::now() - refreshStartTime;
         INFO("Loaded {} songs from {} directories in {}ms", loadedSongs.size(), dirVec.size(), duration_cast<milliseconds>(loadTime).count());
 
@@ -228,6 +235,7 @@ namespace SongCore::SongLoader {
         std::vector<std::future<void>> songLoadFutures;
         songLoadFutures.reserve(workerThreadCount);
         _totalSongs = levelsSpan.size();
+        _loadedSongs = _customLevels->Count + _customWIPLevels->Count;
 
         INFO("Now going to load {} levels on {} threads", (int)_totalSongs, workerThreadCount);
         for (int i = 0; i < workerThreadCount; i++) {

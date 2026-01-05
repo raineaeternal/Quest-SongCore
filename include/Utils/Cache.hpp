@@ -16,6 +16,9 @@ namespace SongCore::Utils {
     std::optional<BeatmapMetadataArray> LoadDirectory(std::filesystem::path const& directoryPath);
     BeatmapMetadataArray LoadDirectories(std::span<std::filesystem::path const> directoryPath);
 
+    /// @brief gets the global song cache instance
+    SongCore::SongCache& GetSongCache();
+
     /// @brief just removes cached info if it exists
     void RemoveCachedInfo(std::filesystem::path const& levelPath);
 
