@@ -662,7 +662,7 @@ dependencies = [
 [[package]]
 name = "paper2_ffi"
 version = "0.1.0"
-source = "git+https://github.com/Fernthedev/paperlog.git#f1a7e17e6be37ab98a5bcb9e4aca6ff2edb6dbda"
+source = "git+https://github.com/Fernthedev/paperlog.git#4f6908c5b951c60619d6c3f27c4d41f7e5a61471"
 dependencies = [
  "bindgen",
 ]
@@ -670,7 +670,7 @@ dependencies = [
 [[package]]
 name = "paper2_tracing"
 version = "0.1.0"
-source = "git+https://github.com/Fernthedev/paperlog.git#f1a7e17e6be37ab98a5bcb9e4aca6ff2edb6dbda"
+source = "git+https://github.com/Fernthedev/paperlog.git#4f6908c5b951c60619d6c3f27c4d41f7e5a61471"
 dependencies = [
  "paper2_ffi",
  "tracing",

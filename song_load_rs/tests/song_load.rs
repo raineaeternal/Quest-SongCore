@@ -1,8 +1,9 @@
-use std::{path::PathBuf, sync::RwLock};
+use std::path::PathBuf;
 
 use song_load_rs::{
     cache::{SongCache, mem_cache::MemCache},
-    loader::beatmap_metadata_loader::{self, BeatmapMetadata}, utils::SongCoreLock,
+    loader::beatmap_metadata_loader::{self, BeatmapMetadata},
+    utils::SongCoreLock,
 };
 
 // Smoke tests for the public `song_load` APIs that exercise loading from
@@ -106,8 +107,9 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     let cache = SongCoreLock::new(cache);
 
     // First load - should compute and populate cache
-    let loaded1 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), true)
-        .map_err(|e| format!("first load failed: {}", e))?;
+    let loaded1 =
+        beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), true)
+            .map_err(|e| format!("first load failed: {}", e))?;
 
     // Cache should now contain the entry
     let cached = cache.read().unwrap().get_cached_song(&zip_path)?;
@@ -119,8 +121,9 @@ fn load_song_with_memcache() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(cached.hash, loaded1.hash);
 
     // Second load should return the same data (and hit the cache)
-    let loaded2 = beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), true)
-        .map_err(|e| format!("second load failed: {}", e))?;
+    let loaded2 =
+        beatmap_metadata_loader::load_beatmap_from_path(zip_path.clone(), Some(&cache), true)
+            .map_err(|e| format!("second load failed: {}", e))?;
 
     assert_eq!(loaded1.hash, loaded2.hash);
 
