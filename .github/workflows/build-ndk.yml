@@ -57,8 +57,13 @@ jobs:
     - name: Setup Rust
       run: |
         rustup install nightly
+        rustup target add aarch64-linux-android --toolchain stable
         rustup target add aarch64-linux-android --toolchain nightly
 
+    - name: Get dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential libc6-dev libclang-dev clang cmake ninja-build linux-libc-dev
 
     # if we don't have a tag, don't do anything special
     - name: Setup qpm
@@ -87,11 +92,6 @@ jobs:
         qpm_debug_bin: true
         qpm_qmod: ${{ env.qmod_name }}.qmod
         resolve_ndk: true
-
-    - name: Get dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential libc6-dev clang cmake ninja-build linux-libc-dev
 
       # Run Rust tests
     - name: Run Rust Tests
