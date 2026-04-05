@@ -368,7 +368,6 @@ System::Version* GetBeatmapVersion(StringW data) {
 
     return TryGetBeatmapVersion(span);
 }
-}
 
 MAKE_AUTO_HOOK_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
     auto version = GetBeatmapVersion(data);
