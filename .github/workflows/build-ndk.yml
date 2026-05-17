@@ -91,6 +91,10 @@ jobs:
         cd ${GITHUB_WORKSPACE}
         qpm s qmod
 
+    - name: Useless junk marker
+      run: |
+        echo '//hi//'
+
     - name: Get Library Name
       id: libname
       run: |

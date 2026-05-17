@@ -14,11 +14,10 @@ bool IsPracticeButtonInteractable = true;
 bool IsPlayButtonInteractable = true;
 
 namespace SongCore::UI {
-    void PlayButtonsUpdater::ctor(SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, Capabilities* capabilities, LevelSelect* levelSelect) {
+    void PlayButtonsUpdater::ctor(SongLoader::RuntimeSongLoader* runtimeSongLoader, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, PlayButtonInteractable* playButtonInteractable, LevelSelect* levelSelect) {
         _runtimeSongLoader = runtimeSongLoader;
         _levelDetailViewController = levelDetailViewController;
         _playButtonInteractable = playButtonInteractable;
-        _capabilities = capabilities;
         _levelSelect = levelSelect;
     }
 
@@ -51,7 +50,6 @@ namespace SongCore::UI {
         if (_isRefreshing) return false;
         if (_anyDisablingModInfos) return false;
         if (!_levelIsCustom) return true;
-        if (_missingRequirements) return false;
 
         return true;
     }
@@ -81,16 +79,6 @@ namespace SongCore::UI {
     void PlayButtonsUpdater::LevelWasSelected(LevelSelect::LevelWasSelectedEventArgs const& eventArgs) {
         _levelIsCustom = eventArgs.isCustom;
         _levelIsWIP = eventArgs.isWIP;
-
-        _missingRequirements = false;
-        if (eventArgs.customLevelDetails.has_value()) {
-            for (auto& requirement : eventArgs.customLevelDetails->difficultyDetails.requirements) {
-                if (!_capabilities->IsCapabilityRegistered(requirement)) {
-                    _missingRequirements = true;
-                    break;
-                }
-            }
-        }
 
         UpdatePlayButtonsState();
     }
