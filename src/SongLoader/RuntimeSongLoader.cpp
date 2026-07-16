@@ -13,6 +13,7 @@
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 
+#include "Utils/Hashing.hpp"
 #include "Utils/File.hpp"
 #include "Utils/Cache.hpp"
 
@@ -23,10 +24,6 @@
 #include "System/IDisposable.hpp"
 
 #include "Utils/SaveDataVersion.hpp"
-#include "rust/song_loader_rs_wrapper.hpp"
-
-#include <tuple>
-#include <utility>
 
 DEFINE_TYPE(SongCore::SongLoader, RuntimeSongLoader);
 
@@ -172,70 +169,31 @@ namespace SongCore::SongLoader {
         InvokeSongsWillRefresh();
 
         auto refreshStartTime = high_resolution_clock::now();
+        std::set<LevelPathAndWip> levels;
         _areSongsLoaded = false;
         _loadedSongs = 0;
 
-
+        // travel the given song paths to collect levels to load
+        CollectLevels(config.RootCustomLevelPaths, false, levels);
+        CollectLevels(config.RootCustomWIPLevelPaths, true, levels);
 
         if (fullRefresh) {
             CustomLevels->Clear();
             CustomWIPLevels->Clear();
         }
 
-        // prepare rust cache
-        std::set<std::filesystem::path> dirs;
-
-        auto CollectPaths = [&](auto const& paths) {
-            for (auto const& path : paths) {
-                if (!std::filesystem::exists(path)) continue;
-                dirs.insert(path);
-            }
-        };
-        CollectPaths(config.RootCustomLevelPaths);
-        CollectPaths(config.RootCustomWIPLevelPaths);
-
-        // collect all level paths
-        std::vector<std::filesystem::path> dirVec = std::vector<std::filesystem::path>(dirs.begin(), dirs.end());
-
-        // eager load rust cache and progress report cache load
-        std::function<void(BeatmapMetadata const&, size_t, size_t)> callback =
-            [this](BeatmapMetadata const& song, size_t index, size_t total) {
-                _loadedSongs = index + 1;
-                _totalSongs = total;
-            };
-
-        auto loadedSongs = Utils::GetSongCache().metadata_of_directories_parallel(dirVec, callback);
-        auto loadTime = high_resolution_clock::now() - refreshStartTime;
-        INFO("Loaded {} songs from {} directories in {}ms", loadedSongs.size(), dirVec.size(), duration_cast<milliseconds>(loadTime).count());
-
-        auto levelsSpan = loadedSongs.as_span();
-        if (levelsSpan.empty()) {
-            WARNING("Failed to load songs from directories!");
-            _areSongsLoaded = true;
-            InvokeSongsLoaded(_allLoadedLevels);
-            return;
-        }
-
-        // save in async thread
-        std::thread([](){
-            Utils::SaveSongInfoCache();
-        }).detach();
-        // we got the Rust LoadedSongs, now load them into beat saber
-
-
         // load songs on multiple threads
         std::mutex levelsItrMutex;
-        auto levelsItr = levelsSpan.begin();
-        auto levelsEnd = levelsSpan.end();
+        std::set<LevelPathAndWip>::const_iterator levelsItr = levels.begin();
+        std::set<LevelPathAndWip>::const_iterator levelsEnd = levels.end();
 
         using namespace std::chrono;
         auto loadStartTime = high_resolution_clock::now();
 
-        auto workerThreadCount = std::clamp<size_t>(levelsSpan.size(), 1, MAX_THREAD_COUNT);
+        auto workerThreadCount = std::clamp<size_t>(levels.size(), 1, MAX_THREAD_COUNT);
         std::vector<std::future<void>> songLoadFutures;
         songLoadFutures.reserve(workerThreadCount);
-        _totalSongs = levelsSpan.size();
-        _loadedSongs = _customLevels->Count + _customWIPLevels->Count;
+        _totalSongs = levels.size();
 
         INFO("Now going to load {} levels on {} threads", (int)_totalSongs, workerThreadCount);
         for (int i = 0; i < workerThreadCount; i++) {
@@ -250,20 +208,21 @@ namespace SongCore::SongLoader {
             );
         }
 
-        for (auto const& t : songLoadFutures) {
+        for (auto& t : songLoadFutures) {
             t.wait();
         }
 
         size_t actualCount = _customLevels->Count + _customWIPLevels->Count;
         auto time = high_resolution_clock::now() - loadStartTime;
         if (auto ms = duration_cast<milliseconds>(time).count(); ms > 0) {
-            INFO("Loaded {} (actual: {}) songs in {}ms", loadedSongs.size(), actualCount, ms);
+            INFO("Loaded {} (actual: {}) songs in {}ms", levels.size(), actualCount, ms);
         } else {
             auto µs = (float)duration_cast<nanoseconds>(time).count() / 1000.0f;
-            INFO("Loaded {} (actual: {}) songs in {}us", loadedSongs.size(), actualCount, µs);
+            INFO("Loaded {} (actual: {}) songs in {}us", levels.size(), actualCount, µs);
         }
 
-
+        // save cache to file after all songs are loaded
+        Utils::SaveSongInfoCache();
 
         // anonymous function to get the values from a songdict into a vector
         static auto GetValues = [](SongDict* dict){
@@ -327,42 +286,26 @@ namespace SongCore::SongLoader {
         INFO("Refresh performed in {}ms", duration_cast<milliseconds>(high_resolution_clock::now() - refreshStartTime).count());
     }
 
-    bool isWip(std::filesystem::path const& levelPath) {
-        for (auto const& wipRoot : config.RootCustomWIPLevelPaths) {
-            if (levelPath.string().starts_with(wipRoot.string())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutexPtr, std::span<SongCore::BeatmapMetadata const>::iterator* levelsItrPtr, std::span<SongCore::BeatmapMetadata const>::iterator* levelsEndPtr) {
-        // reference derefs for easier access
-        auto& levelsItr = *levelsItrPtr;
-        auto& levelsEnd = *levelsEndPtr;
-        auto& levelsItrMutex = *levelsItrMutexPtr;
-
-        auto NextLevel = [&]() -> std::optional<SongCore::BeatmapMetadata const*> {
+    void RuntimeSongLoader::RefreshSongWorkerThread(std::mutex* levelsItrMutex, std::set<LevelPathAndWip>::const_iterator* levelsItr, std::set<LevelPathAndWip>::const_iterator* levelsEnd) {
+        auto NextLevel = [](std::mutex& levelsItrMutex, std::set<LevelPathAndWip>::const_iterator& levelsItr, std::set<LevelPathAndWip>::const_iterator& levelsEnd) -> LevelPathAndWip {
             std::lock_guard<std::mutex> lock(levelsItrMutex);
-            if (levelsItr == levelsEnd) {
-                return std::nullopt;
+            if (levelsItr != levelsEnd) {
+                auto v = *levelsItr;
+                levelsItr++;
+                return v;
+            } else {
+                return {};
             }
-            // get current level and increment iterator
-            auto const* level = &*levelsItr;
-            levelsItr++;
-            return level;
         };
 
-        while (levelsItr != levelsEnd) {
-            auto const& levelOpt = NextLevel();
-            if (!levelOpt.has_value()) {
-                break;
+        while (*levelsItr != *levelsEnd) {
+            auto [levelPath, isWip] = NextLevel(*levelsItrMutex, *levelsItr, *levelsEnd);
+
+            // we got an invalid levelPath
+            if (levelPath.empty()) {
+                _loadedSongs++;
+                continue;
             }
-            SongCore::BeatmapMetadata const& level = *levelOpt.value();
-
-            auto levelPath = std::filesystem::path(level.get_path());
-
-            bool wip = isWip(levelPath);
 
             try {
                 auto startTime = high_resolution_clock::now();
@@ -370,8 +313,8 @@ namespace SongCore::SongLoader {
                 StringW csLevelPath(levelPath.string());
 
                 // pick the dictionary we need to add / check from based on whether this song is WIP
-                auto targetDict = wip ? _customWIPLevels : _customLevels;
-                
+                auto targetDict = isWip ? _customWIPLevels : _customLevels;
+
                 // preliminary check to see whether the song we are looking for already is in our dictionary
                 bool containsKey = targetDict->ContainsKey(csLevelPath);
                 if (containsKey) {
@@ -392,13 +335,13 @@ namespace SongCore::SongLoader {
                         auto saveData = _levelLoader->GetSaveDataFromV3(levelPath);
                         if (saveData) {
                             std::string hash;
-                            level = _levelLoader->LoadCustomBeatmapLevel(levelPath, wip, saveData, hash);
+                            level = _levelLoader->LoadCustomBeatmapLevel(levelPath, isWip, saveData, hash);
                         }
                     } else { // v4
                         auto saveData = _levelLoader->GetSaveDataFromV4(levelPath);
                         if (saveData) {
                             std::string hash;
-                            level = _levelLoader->LoadCustomBeatmapLevel(levelPath, wip, saveData, hash);
+                            level = _levelLoader->LoadCustomBeatmapLevel(levelPath, isWip, saveData, hash);
                         }
                     }
                 }
