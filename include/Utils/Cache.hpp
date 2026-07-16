@@ -5,19 +5,26 @@
 #include <filesystem>
 #include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
 
-#include "rust/song_loader_rs_wrapper.hpp"
-
 namespace SongCore::Utils {
+    struct CachedSongData {
+        int directoryHash;
+        std::optional<std::string> sha1 = std::nullopt;
+        std::optional<float> songDuration = std::nullopt;
+
+        /// @brief serializes the data to a rapidjson value using the provided allocator
+        rapidjson::Value Serialize(rapidjson::Document::AllocatorType& allocator) const;
+
+        /// @brief deserializes the songdata from a provided value
+        /// @return true if deserialization was succesful, false if something required wasn't found
+        bool Deserialize(rapidjson::Value const& value);
+    };
 
     /// @brief gets the cached info for the level
     /// @return optional song info entry, if the info isn't able to provided this returns nullopt (i.e. no song found at path)
-    std::optional<BeatmapMetadata> GetCachedInfo(std::filesystem::path const& levelPath);
+    std::optional<CachedSongData> GetCachedInfo(std::filesystem::path const& levelPath);
 
-    std::optional<BeatmapMetadataArray> LoadDirectory(std::filesystem::path const& directoryPath);
-    BeatmapMetadataArray LoadDirectories(std::span<std::filesystem::path const> directoryPath);
-
-    /// @brief gets the global song cache instance
-    SongCore::SongCache& GetSongCache();
+    /// @brief sets the cached info for a path
+    void SetCachedInfo(std::filesystem::path const& levelPath, CachedSongData const& newInfo);
 
     /// @brief just removes cached info if it exists
     void RemoveCachedInfo(std::filesystem::path const& levelPath);
