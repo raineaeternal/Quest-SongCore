@@ -23,6 +23,7 @@
 #include "UnityEngine/UI/Image.hpp"
 #include "UnityEngine/Sprite.hpp"
 #include "UnityEngine/RenderMode.hpp"
+#include "HMUI/CurvedCanvasSettings.hpp"
 
 #include "SongLoader/RuntimeSongLoader.hpp"
 #include "bsml/shared/BSML/Components/TextGradientUpdater.hpp"
@@ -62,6 +63,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::UI, ProgressBar, System::Object, Zenj
     DECLARE_INSTANCE_FIELD(UnityEngine::Color, _bgColor);
 
     UnityEngine::Coroutine* _disableCanvasRoutine;
+    HMUI::CurvedCanvasSettings* _curvedCanvasSettings;
 
     std::string HeaderText;
     std::string PluginText;
