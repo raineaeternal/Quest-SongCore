@@ -59,7 +59,9 @@ namespace SongCore::SongLoader {
             auto pack = _levelFilteringNavigationController->selectedBeatmapLevelPack;
             if (pack) {
                 // check whether the pack was still in the beatmap levels model
-                if (_beatmapLevelsModel->GetLevelPack(pack->packID)) {
+                // TODO: Implement properly?
+                auto ignoreCase = false;
+                if (_beatmapLevelsModel->GetLevelPack(pack->packID, ignoreCase)) {
                     _levelFilteringNavigationController->_levelPackIdToBeSelectedAfterPresent = pack->packID;
                 }
                 // don't scroll back to the last position if the same pack won't be reselected
@@ -74,7 +76,9 @@ namespace SongCore::SongLoader {
             },
             [this, levelId, scrollPosition](){
                 INFO("Selecting level '{}'", levelId);
-                auto level = _beatmapLevelsModel->GetBeatmapLevel(levelId);
+                // TODO: Better implement
+                auto ignoreCase = false;
+                auto level = _beatmapLevelsModel->GetBeatmapLevel(levelId, ignoreCase);
 
                 auto levelCollectionTableView = _levelCollectionViewController->_levelCollectionTableView;
                 if (level && levelCollectionTableView) levelCollectionTableView->SelectLevel(level);
