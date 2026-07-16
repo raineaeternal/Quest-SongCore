@@ -1,11 +1,13 @@
+#[cfg(feature = "cache")]
 pub mod file_cache;
+#[cfg(feature = "cache")]
 pub mod mem_cache;
 
 use std::path::Path;
 
 use thiserror::Error;
 
-use crate::loader::beatmap_metadata_loader::BeatmapMetadata;
+use crate::models::metadata::BeatmapMetadata;
 
 #[derive(Debug, Error)]
 pub enum CacheError {

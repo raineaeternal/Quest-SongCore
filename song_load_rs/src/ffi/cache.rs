@@ -14,6 +14,7 @@ pub struct CSongCache {
 /// Creates a new file based song cache and returns a pointer to it.
 /// # Safety
 /// The caller is responsible for freeing the returned pointer using `song_core_free_song_cache`.
+#[cfg(feature = "cache")]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_core_file_cache_new(
     path: *const std::os::raw::c_char,

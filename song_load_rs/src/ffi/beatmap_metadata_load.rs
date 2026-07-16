@@ -1,11 +1,14 @@
 use std::{ffi::{CStr, CString, c_char}, path::Path};
 
+#[cfg(feature = "parallel")]
 use tracing::info;
 
+#[cfg(feature = "parallel")]
+use crate::loader::beatmap_metadata_loader::load_beatmap_directory_parallel;
 use crate::{
     ffi::{cache::CSongCache, types::OpaqueUserData},
     loader::beatmap_metadata_loader::{
-        BeatmapMetadata, BeatmapMetadataArray, load_beatmap_directory, load_beatmap_directory_parallel,
+        BeatmapMetadata, BeatmapMetadataArray, load_beatmap_directory,
         load_beatmap_from_path,
     },
 };
@@ -194,6 +197,7 @@ pub unsafe extern "C" fn song_core_load_directory(
 /// - `cache`: A pointer to a `CSongCache` instance for caching (can be null to ignore cache).
 /// # Safety
 /// The `path` pointer must be a valid null-terminated C string.
+#[cfg(feature = "parallel")]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_core_load_directory_parallel(
     path: *const std::os::raw::c_char,
@@ -241,6 +245,7 @@ pub unsafe extern "C" fn song_core_load_directory_parallel(
 /// - `cache`: A pointer to a `CSongCache` instance for caching (can be null to ignore cache).
 /// # Safety
 /// The `path` pointer must be a valid null-terminated C string.
+#[cfg(feature = "parallel")]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_core_load_directories_parallel(
     paths: *const *const std::os::raw::c_char,

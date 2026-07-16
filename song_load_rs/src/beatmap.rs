@@ -8,7 +8,15 @@ use std::{
 use bytes::Bytes;
 use zip::ZipArchive;
 
-use crate::{info_dat::InfoDat, version};
+#[cfg(feature = "info-dat")]
+use crate::info_dat::InfoDat;
+#[cfg(feature = "info-dat")]
+use crate::version;
+#[cfg(feature = "level-loading")]
+use crate::{
+    cache::SongCache,
+    loader::level_loader::{self, CustomBeatmapLevel, CustomLevelLoaderError},
+};
 
 /// Represents a beatmap, which can be either a zip archive or a directory.
 ///
@@ -96,6 +104,7 @@ impl BeatmapSource {
 
     /// Parses and returns the Info.dat data from the beatmap source.
     /// Automatically detects the version and deserializes into the appropriate struct.
+    #[cfg(feature = "info-dat")]
     #[inline]
     pub fn get_info_dat(&self) -> io::Result<(Bytes, InfoDat)> {
         let info_bytes = self.get_info_dat_bytes()?;

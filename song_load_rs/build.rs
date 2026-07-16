@@ -4,7 +4,7 @@ use std::path::PathBuf;
 fn main() {
     // Tell cargo to look for shared libraries in the specified directory
 
-    if cfg!(target_os = "android") {
+    if cfg!(target_os = "android") && env::var("CARGO_FEATURE_PAPER2_LOGGING").is_ok() {
         // link to ../extern/libs
         println!(
             "cargo:rustc-link-search=/{}/extern/libs",
@@ -13,6 +13,12 @@ fn main() {
 
         // link to paper2_scotland2
         println!("cargo:rustc-link-lib=paper2_scotland2");
+    }
+
+    // The `bindings` module (and the C ABI it supports) is only needed when the
+    // `ffi` feature is enabled, so skip the bindgen step otherwise.
+    if env::var("CARGO_FEATURE_FFI").is_err() {
+        return;
     }
 
     // The bindgen::Builder is the main entry point

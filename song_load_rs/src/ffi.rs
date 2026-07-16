@@ -1,5 +1,7 @@
+#[cfg(feature = "metadata-loading")]
 pub mod beatmap_metadata_load;
 pub mod cache;
+#[cfg(feature = "version-parsing")]
 pub mod version;
 
 #[cfg(feature = "level-loading")]

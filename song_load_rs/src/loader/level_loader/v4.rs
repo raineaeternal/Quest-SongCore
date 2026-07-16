@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path, sync::RwLock};
+use std::{collections::HashMap, path::Path};
 
 use tracing::warn;
 
@@ -17,6 +17,7 @@ use crate::{
         },
         info_dat::{ColorScheme, v4::BeatmapLevelSaveDataV4},
     },
+    utils::SongCoreLock,
 };
 
 pub fn basic_verify_map_v4(beatmap: &BeatmapSource, save_data: &BeatmapLevelSaveDataV4) -> bool {
@@ -70,11 +71,11 @@ where
         return Err(CustomLevelLoaderError::BeatmapVerificationFailed);
     }
 
-    let song_data = beatmap_metadata_loader::load_beatmap_metadata(beatmap, song_cache)?;
+    let song_data = beatmap_metadata_loader::load_beatmap_metadata(beatmap, song_cache, true)?;
+    let hash = song_data.hash.clone();
 
     let level_id = format!(
-        "{CUSTOM_LEVEL_PREFIX_ID}{}{}",
-        song_data.hash,
+        "{CUSTOM_LEVEL_PREFIX_ID}{hash}{}",
         if wip { " WIP" } else { "" }
     );
 
@@ -142,7 +143,7 @@ where
         custom_level_data: InfoDat::V4(save),
         beatmap_level_data,
         custom_level_path: beatmap.get_real_path().to_path_buf(),
-        hash: song_data.hash,
+        hash,
     };
 
     Ok(Some(result))

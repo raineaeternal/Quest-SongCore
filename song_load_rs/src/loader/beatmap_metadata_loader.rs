@@ -1,39 +1,27 @@
-use std::{
-    io,
-    path::{Path, PathBuf},
-    sync::atomic::AtomicUsize,
-    time::Duration,
-};
+use std::{io, path::PathBuf};
 
+#[cfg(not(feature = "audio-loading"))]
+use std::time::Duration;
+
+#[cfg(feature = "parallel")]
+use std::{path::Path, sync::atomic::AtomicUsize};
+
+#[cfg(feature = "parallel")]
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::{info, info_span, warn};
 
+#[cfg(feature = "audio-loading")]
+use crate::loader::audio_loader;
+pub use crate::models::metadata::{BeatmapMetadata, BeatmapMetadataArray};
 use crate::{
     beatmap::BeatmapSource,
     cache::{CacheError, SongCache},
     hash::compute_custom_level_hash_from_beatmap,
-    loader::audio_loader, utils::SongCoreLock,
+    utils::SongCoreLock,
 };
 
 pub const CUSTOM_LEVEL_PREFIX_ID: &str = "custom_level_";
-
-/// A struct representing useful cached data for a loaded song.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct BeatmapMetadata {
-    /// Path to the beatmap
-    pub path: PathBuf,
-    /// SHA1 hash of the beatmap
-    pub hash: String,
-    /// Optional length of the song if known
-    pub song_length: Option<Duration>,
-}
-
-#[derive(Clone)]
-pub struct BeatmapMetadataArray {
-    pub songs: Vec<BeatmapMetadata>,
-}
 
 #[derive(Debug, Error)]
 pub enum LoadBeatmapMetadataError {
@@ -82,12 +70,19 @@ where
     let hash_ms = hash_start.elapsed().as_millis();
 
     let audio_start = std::time::Instant::now();
-    let song_length = audio_loader::get_song_length(beatmap).map_err(|e| {
+    #[cfg(feature = "audio-loading")]
+    let song_length = audio_loader::get_beatmap_song_length(beatmap).map_err(|e| {
         LoadBeatmapMetadataError::ComputeHashError(format!("Failed to get song length: {}", e))
     })?;
+    #[cfg(not(feature = "audio-loading"))]
+    let song_length: Option<Duration> = None;
     let audio_ms = audio_start.elapsed().as_millis();
 
-    info!(hash_ms = hash_ms, audio_ms = audio_ms, "Loaded beatmap metadata");
+    info!(
+        hash_ms = hash_ms,
+        audio_ms = audio_ms,
+        "Loaded beatmap metadata"
+    );
 
     if save && let Some(c) = &cache {
         c.write().unwrap().cache_song(BeatmapMetadata {
@@ -191,6 +186,7 @@ where
 /// Loads all songs from the given directory in parallel.
 /// Returns an error if the path does not exist or is not a directory.
 /// Parallel version.
+#[cfg(feature = "parallel")]
 pub fn load_beatmap_directory_parallel<F, C>(
     paths: &[&Path],
     cache: Option<&SongCoreLock<C>>,
@@ -226,7 +222,11 @@ where
         .map(|entry| entry.path())
         .collect();
 
-    info!("Found {} beatmap paths to load in time {}ms", paths.len(), (start.elapsed().as_millis()));
+    info!(
+        "Found {} beatmap paths to load in time {}ms",
+        paths.len(),
+        (start.elapsed().as_millis())
+    );
 
     let count = paths.len();
 
@@ -251,14 +251,20 @@ where
             Some(song_data)
         })
         .collect();
-    info!("Finished processing beatmaps in parallel in {}ms", start.elapsed().as_millis());
+    info!(
+        "Finished processing beatmaps in parallel in {}ms",
+        start.elapsed().as_millis()
+    );
 
     // cache in bulk
     if let Some(c) = &cache {
         let mut write = c.write().unwrap();
         write.cache_songs(loaded_songs.clone())?;
     }
-    info!("Cached loaded beatmaps in {}ms", start.elapsed().as_millis());
+    info!(
+        "Cached loaded beatmaps in {}ms",
+        start.elapsed().as_millis()
+    );
 
     let end = std::time::Instant::now();
     info!(

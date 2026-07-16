@@ -14,7 +14,7 @@ fn despacito_zip_length() -> Result<(), Box<dyn std::error::Error>> {
         .join("f4c3 (Despacito - cookie).zip");
 
     let beatmap = song_load_rs::beatmap::BeatmapSource::from_path(zip_path)?;
-    let len = audio_loader::get_song_length(&beatmap)?;
+    let len = audio_loader::get_beatmap_song_length(&beatmap)?;
 
     assert!(len.is_some(), "expected Some(duration) for zip");
     let d = len.unwrap();
@@ -39,7 +39,7 @@ fn despacito_dir_length() -> Result<(), Box<dyn std::error::Error>> {
     let dir = manifest_dir.join("tests").join("f4c3 (Despacito - cookie)");
 
     let beatmap = song_load_rs::beatmap::BeatmapSource::from_path(dir)?;
-    let len = audio_loader::get_song_length(&beatmap)?;
+    let len = audio_loader::get_beatmap_song_length(&beatmap)?;
 
     assert!(len.is_some(), "expected Some(duration) for dir");
     let d = len.unwrap();

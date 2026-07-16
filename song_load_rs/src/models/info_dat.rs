@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::common::Color;
 
+#[cfg(feature = "info-dat")]
 pub mod v2;
+#[cfg(feature = "info-dat")]
 pub mod v4;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

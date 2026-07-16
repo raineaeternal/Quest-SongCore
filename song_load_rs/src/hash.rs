@@ -3,8 +3,10 @@ use std::io::{self};
 use bytes::Bytes;
 use sha1::{Digest, Sha1};
 
+#[cfg(all(feature = "info-dat", feature = "beatmap"))]
 use std::path::PathBuf;
 
+#[cfg(all(feature = "info-dat", feature = "beatmap"))]
 use crate::{beatmap::BeatmapSource, info_dat::InfoDat};
 
 /// Compute a SHA-1 from an ordered iterator of `(PathBuf, Bytes)` pairs.
@@ -24,6 +26,7 @@ where
 }
 
 /// Get the list of necessary files from the InfoDat for hashing.
+#[cfg(all(feature = "info-dat", feature = "beatmap"))]
 pub fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
     let mut necessary_files: Vec<PathBuf> = Vec::with_capacity(10);
 
@@ -49,6 +52,7 @@ pub fn necessary_files_from_info_dat(info: &InfoDat) -> Vec<PathBuf> {
 }
 
 /// Compute the custom level hash from a `Beatmap` (zip or directory).
+#[cfg(all(feature = "info-dat", feature = "beatmap"))]
 #[tracing::instrument(level = "trace", skip(beatmap))]
 pub fn compute_custom_level_hash_from_beatmap(beatmap: &BeatmapSource) -> io::Result<String> {
     // Read Info.dat/info.dat bytes via Beatmap helper

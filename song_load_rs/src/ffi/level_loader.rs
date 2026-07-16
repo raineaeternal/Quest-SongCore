@@ -4,11 +4,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[cfg(feature = "parallel")]
+use crate::ffi::types::OpaqueUserData;
 use crate::{
     beatmap::BeatmapSource,
     ffi::{
         cache::CSongCache,
-        types::{ManagedArray, ManagedCString, OpaqueUserData},
+        types::{ManagedArray, ManagedCString},
     },
     loader::level_loader::{self, CustomBeatmapLevel},
     models::{
@@ -200,6 +202,7 @@ pub unsafe extern "C" fn song_core_load_level_from_directories(
 ///   along with its index and the total count.
 /// # Safety
 /// The `dirs` pointer must be a valid null-terminated C string.
+#[cfg(feature = "parallel")]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn song_core_load_levels_from_directories_parallel(
     dirs: *const *const c_char,

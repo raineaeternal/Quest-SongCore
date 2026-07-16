@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 use crate::{
     cache::{CacheError, SongCache},
-    loader::beatmap_metadata_loader::BeatmapMetadata, utils::SongCoreMap,
+    models::metadata::BeatmapMetadata,
+    utils::SongCoreMap,
 };
 
 #[derive(Debug, Default)]

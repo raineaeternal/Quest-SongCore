@@ -6,7 +6,8 @@ use std::{
 
 use crate::{
     cache::{SongCache, mem_cache::MemCache},
-    loader::beatmap_metadata_loader::BeatmapMetadata, utils::SongCoreMap,
+    models::metadata::BeatmapMetadata,
+    utils::SongCoreMap,
 };
 
 #[derive(Debug)]

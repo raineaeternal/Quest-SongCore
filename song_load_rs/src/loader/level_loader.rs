@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
 
 use crate::beatmap::BeatmapSource;
 use crate::info_dat::InfoDat;
@@ -8,8 +7,11 @@ use crate::models::beatmap::{
     BeatmapBasicData, BeatmapCharacteristic, BeatmapDifficulty, FileSystemBeatmapLevelData,
     PlayerSensitivityFlag, PreviewMediaData,
 };
+use crate::utils::SongCoreLock;
 
+#[cfg(feature = "info-dat")]
 pub mod v2;
+#[cfg(feature = "info-dat")]
 pub mod v4;
 
 #[derive(Debug, Clone)]
@@ -69,7 +71,7 @@ pub fn load_level_from_path<C>(
 where
     C: crate::cache::SongCache + ?Sized,
 {
-    let info_dat = beatmap.get_info_dat()?;
+    let (_, info_dat) = beatmap.get_info_dat()?;
 
     match info_dat {
         InfoDat::V2(save_data_v2) => {
@@ -126,6 +128,7 @@ where
 /// - `song_cache`: An optional reference to a RwLock containing a SongCache for caching.
 /// - `func`: An optional callback function that is called with each loaded CustomBeatmapLevel,
 ///   along with its index and the total count.
+#[cfg(feature = "parallel")]
 pub fn load_level_from_directories_parallel<C, F>(
     directories: &[&Path],
     is_wip: bool,
