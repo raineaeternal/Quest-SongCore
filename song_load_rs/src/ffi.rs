@@ -1,8 +1,12 @@
+use std::ffi::{CString, c_char};
+
 #[cfg(feature = "audio-loading")]
 pub mod audio;
 #[cfg(feature = "metadata-loading")]
 pub mod beatmap_metadata_load;
 pub mod cache;
+#[cfg(feature = "hashing")]
+pub mod hash;
 #[cfg(feature = "version-parsing")]
 pub mod version;
 
@@ -34,4 +38,18 @@ pub extern "C" fn songcore_init_rust() {
     }
 
     tracing::info!("Hello from Rust!");
+}
+
+/// Frees a string returned by a `song_load_rs` function that documents
+/// freeing via this function (e.g. `song_core_get_beatmap_hash_from_path`).
+/// # Safety
+/// The pointer must not be used again after this call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn song_core_free_string(ptr: *mut c_char) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let _ = CString::from_raw(ptr);
+    }
 }
