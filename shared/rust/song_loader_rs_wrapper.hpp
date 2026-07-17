@@ -199,6 +199,7 @@ struct SongCache {
     }
   }
 
+#if defined(CACHE)
   /// Creates a new file-based song cache at the given path.
   /// Does not load the cache from disk; call `reload` to do so.
   [[nodiscard]]
@@ -206,6 +207,7 @@ struct SongCache {
     CSongCache *c_cache = song_core_file_cache_new(cache_path.c_str());
     return SongCache(c_cache);
   }
+#endif
 
   /// Reloads the cache from disk.
   void reload() { song_core_cache_load(cache); }
@@ -250,6 +252,7 @@ struct SongCache {
     return BeatmapMetadataArray(c_songs);
   }
 
+#if defined(PARALLEL)
   /// Loads all songs from the given directory in parallel, using the cache.
   /// If a song is not cached, loads and caches it.
   [[nodiscard]]
@@ -296,6 +299,7 @@ struct SongCache {
                                          reinterpret_cast<void *>(&callback)}, c_callback);
     return BeatmapMetadataArray(c_songs);
   }
+#endif
 
   [[nodiscard]]
   operator CSongCache *() const {

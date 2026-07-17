@@ -80,16 +80,11 @@ paper2_tracing = { git = "https://github.com/Fernthedev/paperlog.git", package =
 default = [
     "paper2-logging",
     "ffi",
-    "cache",
-
-    "beatmap",
-    "hashing",
-    "version-parsing",
-    "info-dat",
     "audio-loading",
-    "level-loading",
-    "metadata-loading",
-    "parallel",
+    "hashing",
+    #required for hashing based on a path
+    "info-dat",
+    "beatmap"
 ]
 # Computes song length by decoding audio via symphonia. get_beatmap_song_length
 # additionally requires beatmap + info-dat to read a song out of a BeatmapSource;
