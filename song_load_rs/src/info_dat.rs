@@ -27,11 +27,12 @@ impl InfoDat {
                     .flat_map(|set| set.difficulty_beatmaps.iter())
                     .map(|beatmap| Path::new(&beatmap.beatmap_filename)),
             ),
-            InfoDat::V4(data) => Box::new(
-                data.difficulty_beatmaps
-                    .iter()
-                    .map(|beatmap| Path::new(&beatmap.beatmap_data_filename)),
-            ),
+            InfoDat::V4(data) => Box::new(data.difficulty_beatmaps.iter().flat_map(|beatmap| {
+                [
+                    Path::new(&beatmap.beatmap_data_filename),
+                    Path::new(&beatmap.lightshow_data_filename),
+                ]
+            })),
         }
     }
 }
