@@ -48,8 +48,11 @@ bytes = "1.11"
 sha1 = { version = "0.10", optional = true }
 # sha2 = "0.10"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "registry"] }
-zip = { version = "7", default-features = false, optional = true, features = [
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+    "env-filter",
+    "registry",
+] }
+zip = { version = "8", default-features = false, optional = true, features = [
     "deflate",
     "deflate64",
 ] }
@@ -62,7 +65,7 @@ symphonia = { version = "0.5", features = [
     "ogg",
     "opt-simd",
 ], default-features = false, optional = true }
-semver = { version = "1.0", features = ["serde"], optional = true }
+semver = { version = "1.0", optional = true }
 regex = { version = "1.12", default-features = false, features = [
     "perf",
     "std",
