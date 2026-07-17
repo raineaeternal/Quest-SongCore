@@ -1,0 +1,145 @@
+[package]
+name = "song_load_rs"
+version = "0.1.0"
+edition = "2024"
+
+[[bench]]
+name = "beatmap_load_bench"
+harness = false
+required-features = ["cache", "audio-loading", "info-dat", "metadata-loading"]
+
+[[bench]]
+name = "hash_bench"
+harness = false
+required-features = ["info-dat", "hashing", "beatmap"]
+
+[[test]]
+name = "audio_length"
+path = "tests/audio_length.rs"
+required-features = ["audio-loading", "info-dat", "beatmap"]
+
+[[test]]
+name = "hash"
+path = "tests/hash.rs"
+required-features = ["info-dat", "hashing", "beatmap"]
+
+[[test]]
+name = "mem_cache"
+path = "tests/mem_cache.rs"
+required-features = ["cache", "metadata-loading"]
+
+[[test]]
+name = "song_load"
+path = "tests/song_load.rs"
+required-features = ["cache", "audio-loading", "info-dat", "metadata-loading"]
+
+[[test]]
+name = "version"
+path = "tests/version.rs"
+required-features = ["version-parsing"]
+
+[lib]
+name = "song_load_rs"
+path = "src/lib.rs"
+crate-type = ["rlib", "staticlib", "cdylib"]
+
+[dependencies]
+bytes = "1.11"
+sha1 = { version = "0.10", optional = true }
+# sha2 = "0.10"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+    "env-filter",
+    "registry",
+] }
+zip = { version = "8", default-features = false, optional = true, features = [
+    "deflate",
+    "deflate64",
+] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rayon = { version = "1.11", optional = true }
+thiserror = "2"
+symphonia = { version = "0.5", features = [
+    "wav",
+    "ogg",
+    "opt-simd",
+], default-features = false, optional = true }
+semver = { version = "1.0", optional = true }
+regex = { version = "1.12", default-features = false, features = [
+    "perf",
+    "std",
+    "unicode-perl",
+], optional = true }
+ahash = { version = "0.8", features = ["serde"] }
+mimalloc = "0.1"
+
+# Android aarch64 dependencies
+# [target.aarch64-linux-android.features]
+[target.'cfg( target_os = "android" )'.dependencies]
+paper2_tracing = { git = "https://github.com/Fernthedev/paperlog.git", package = "paper2_tracing", optional = true }
+
+[features]
+default = [
+    "paper2-logging",
+    "ffi",
+    "audio-loading",
+    "hashing",
+    #required for hashing based on a path
+    "info-dat",
+    "beatmap"
+]
+# Computes song length by decoding audio via symphonia. get_beatmap_song_length
+# additionally requires beatmap + info-dat to read a song out of a BeatmapSource;
+# get_song_length_from (raw bytes -> duration) only needs this feature.
+audio-loading = ["dep:symphonia"]
+# Reads beatmaps (zip files or directories) from disk. BeatmapSource is the
+# entry point most other loading capabilities are built on.
+beatmap = ["dep:zip"]
+# In-memory and file-backed (JSON) song cache implementations. Store
+# BeatmapMetadata (a model type that's always available) but do not require
+# metadata-loading themselves, since a cache only moves BeatmapMetadata
+# around, it doesn't construct one.
+cache = []
+# Exposes the C ABI (extern "C" bindings) for use from C/C++.
+ffi = []
+# Computes a SHA-1 digest over raw bytes. compute_custom_level_hash_from_beatmap
+# additionally requires info-dat + beatmap to determine which files to hash from
+# a BeatmapSource; create_sha1_from_path_bytes only needs this feature.
+hashing = ["dep:sha1"]
+# Parses/loads Info.dat, both the legacy v2/v3 format and the v4 format.
+info-dat = ["version-parsing"]
+# Allows loading full levels, including parsing beatmap data.
+# Requires metadata-loading, since a level's identity (level_id) is derived
+# from its BeatmapMetadata hash.
+level-loading = ["metadata-loading"]
+# Loads BeatmapMetadata (path, hash, song length) for a beatmap. Requires
+# hashing, since a BeatmapMetadata's hash is always a real, required value,
+# and beatmap + info-dat, since BeatmapSource/Info.dat are read directly.
+metadata-loading = ["hashing", "beatmap", "info-dat"]
+# Uses paper2_tracing (Android-only) as the tracing sink.
+paper2-logging = ["dep:paper2_tracing"]
+# Enables rayon-based parallel directory loading.
+parallel = ["dep:rayon"]
+throw_on_missing_data = []
+# Detects the Info.dat schema version via its "_version"/"version" field, used
+# to pick which format (v2/v4) to parse a beatmap's Info.dat with.
+version-parsing = ["dep:regex", "dep:semver"]
+
+[build-dependencies]
+bindgen = { version = "0.72", default-features = false }
+cbindgen = { version = "0.29", default-features = false }
+
+[dev-dependencies]
+criterion = "0.8"
+
+[package.metadata.cbindgen.defines]
+# Map Cargo features to C macros so cbindgen will emit #ifdef guards
+# around the corresponding FFI items in generated headers.
+'feature = "level-loading"' = "LEVEL_LOADING"
+'feature = "cache"' = "CACHE"
+'feature = "parallel"' = "PARALLEL"
+
+[profile.release]
+opt-level = 3
+lto = true

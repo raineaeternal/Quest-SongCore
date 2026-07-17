@@ -1,0 +1,45 @@
+use std::env;
+use std::path::PathBuf;
+
+fn main() {
+    // Tell cargo to look for shared libraries in the specified directory
+
+    if cfg!(target_os = "android") && env::var("CARGO_FEATURE_PAPER2_LOGGING").is_ok() {
+        // link to ../extern/libs
+        println!(
+            "cargo:rustc-link-search=/{}/extern/libs",
+            env::var("CARGO_MANIFEST_DIR").unwrap()
+        );
+
+        // link to paper2_scotland2
+        println!("cargo:rustc-link-lib=paper2_scotland2");
+    }
+
+    // The `bindings` module (and the C ABI it supports) is only needed when the
+    // `ffi` feature is enabled, so skip the bindgen step otherwise.
+    if env::var("CARGO_FEATURE_FFI").is_err() {
+        return;
+    }
+
+    // The bindgen::Builder is the main entry point
+    // to bindgen, and lets you build up options for
+    // the resulting bindings.
+    let bindings = bindgen::Builder::default()
+        // The input header we would like to generate
+        // bindings for.
+        .header("wrapper.h")
+        .size_t_is_usize(false)
+        // Tell cargo to invalidate the built crate whenever any of the
+        // included header files changed.
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        // Finish the builder and generate the bindings.
+        .generate()
+        // Unwrap the Result and panic on failure.
+        .expect("Unable to generate bindings");
+
+    // Write the bindings to the $OUT_DIR/bindings.rs file.
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("Couldn't write bindings!");
+}

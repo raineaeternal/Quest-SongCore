@@ -30,6 +30,8 @@ on:
 env:
     module_id: songcore
     qmod_name: SongCore
+    # LIBCLANG_PATH: /usr/lib/llvm-18/lib/
+
 
 jobs:
   build:
@@ -52,6 +54,20 @@ jobs:
       run: |
         echo "TAG=${GITHUB_REF#refs/tags/}" >> ${GITHUB_OUTPUT}
         echo "VERSION=${GITHUB_REF#refs/tags/v}" >> ${GITHUB_OUTPUT}
+
+# Setup Rust nightly
+    - name: Setup Rust
+      run: |
+        rustup install nightly
+        rustup target add aarch64-linux-android --toolchain stable
+        rustup target add aarch64-linux-android --toolchain nightly
+        cargo install --locked cbindgen
+
+    - name: Get dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential libc6-dev libclang-dev clang cmake ninja-build linux-libc-dev llvm libclang1 libclang-rt-dev gcc-multilib
+        clang --version
 
     # if we don't have a tag, don't do anything special
     - name: Setup qpm
@@ -80,6 +96,12 @@ jobs:
         qpm_debug_bin: true
         qpm_qmod: ${{ env.qmod_name }}.qmod
         resolve_ndk: true
+
+      # Run Rust tests
+    - name: Run Rust Tests
+      run: |
+        cd ${GITHUB_WORKSPACE}/song_load_rs
+        cargo +nightly test
 
     - name: Build & Create Qmod
       run: |
