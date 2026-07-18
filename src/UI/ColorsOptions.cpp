@@ -34,13 +34,13 @@ namespace SongCore::UI {
 
     void ColorsOptions::Parse() {
         if (!_colorsOptionsModal) {
-            BSML::parse_and_construct(Assets::colors_bsml, _levelDetailViewController->_standardLevelDetailView->transform, this);
+            BSML::parse_and_construct(IncludedAssets::colors_bsml, _levelDetailViewController->_standardLevelDetailView->transform, this);
             _modalPosition = _colorsOptionsModal->transform->position;
         }
     }
 
     void ColorsOptions::PostParse() {
-        auto colorSchemeViewPrefab = UnityEngine::Resources::FindObjectsOfTypeAll<GlobalNamespace::ColorSchemeView*>()->First();
+        auto colorSchemeViewPrefab = UnityEngine::Resources::FindObjectsOfTypeAll<GlobalNamespace::ColorSchemeView*>().front();
         auto colorSchemeViewObject = UnityEngine::Object::Instantiate(colorSchemeViewPrefab->gameObject, _selectedColorBG);
         _colorSchemeView = colorSchemeViewObject->GetComponent<GlobalNamespace::ColorSchemeView*>();
         _colorsOptionsModal->onHide = std::bind(&ColorsOptions::Dismiss, this);

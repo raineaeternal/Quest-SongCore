@@ -7,6 +7,8 @@
 #include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
 #include "System/Collections/Generic/IReadOnlyList_1.hpp"
 
+#include "beatsaber-hook/shared/listw.hpp"
+
 void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDidFinishTimeSliceTranspile(
     GlobalNamespace::BeatmapObjectsInTimeRowProcessor* self,
     GlobalNamespace::BeatmapObjectsInTimeRowProcessor::TimeSliceContainer_1<::GlobalNamespace::BeatmapDataItem*>* allObjectsTimeSlice,
@@ -22,7 +24,7 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
     auto count = itemsReadOnly->i___System__Collections__Generic__IReadOnlyCollection_1_T_()->Count;
 
     for (int i = 0; i < count; i++) {
-        auto noteData = il2cpp_utils::try_cast<GlobalNamespace::NoteData>(itemsReadOnly->get_Item(i)).value_or(nullptr);
+        auto noteData = i2c::try_cast<GlobalNamespace::NoteData*>(itemsReadOnly->get_Item(i));
         if (!noteData) continue;
 
         // this is the transpile. we have to clamp the line index here to make the game not break
@@ -52,11 +54,11 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
     }
 
     for (int i = 0; i < count; i++) {
-        auto sliderData = il2cpp_utils::try_cast<GlobalNamespace::SliderData>(itemsReadOnly->get_Item(i)).value_or(nullptr);
+        auto sliderData = i2c::try_cast<GlobalNamespace::SliderData*>(itemsReadOnly->get_Item(i));
         if (!sliderData) continue;
 
         for (int j = 0; j < count; j++) {
-            auto noteData = il2cpp_utils::try_cast<GlobalNamespace::NoteData>(itemsReadOnly->get_Item(j)).value_or(nullptr);
+            auto noteData = i2c::try_cast<GlobalNamespace::NoteData*>(itemsReadOnly->get_Item(j));
             if (!noteData) continue;
             if (GlobalNamespace::BeatmapObjectsInTimeRowProcessor::SliderHeadPositionOverlapsWithNote(sliderData, noteData)) {
                 sliderData->SetHasHeadNote(true);
@@ -72,11 +74,11 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
     }
 
     for (int i = 0; i < count; i++) {
-        auto sliderData1 = il2cpp_utils::try_cast<GlobalNamespace::SliderData>(itemsReadOnly->get_Item(i)).value_or(nullptr);
+        auto sliderData1 = i2c::try_cast<GlobalNamespace::SliderData*>(itemsReadOnly->get_Item(i));
         if (!sliderData1) continue;
 
         for (int j = 0; j < count; j++) {
-            auto sliderData2 = il2cpp_utils::try_cast<GlobalNamespace::SliderData>(itemsReadOnly->get_Item(j)).value_or(nullptr);
+            auto sliderData2 = i2c::try_cast<GlobalNamespace::SliderData*>(itemsReadOnly->get_Item(j));
             if (!sliderData2) continue;
             if (sliderData1 == sliderData2) continue;
 
@@ -87,7 +89,7 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
         }
 
         for (int j = 0; j < count; j++) {
-            auto sliderTailData = il2cpp_utils::try_cast<GlobalNamespace::BeatmapObjectsInTimeRowProcessor::SliderTailData>(itemsReadOnly->get_Item(j)).value_or(nullptr);
+            auto sliderTailData = i2c::try_cast<GlobalNamespace::BeatmapObjectsInTimeRowProcessor::SliderTailData*>(itemsReadOnly->get_Item(j));
             if (!sliderTailData) continue;
 
             if (GlobalNamespace::BeatmapObjectsInTimeRowProcessor::SliderHeadPositionOverlapsWithBurstTail(sliderData1, sliderTailData->slider)) {
@@ -98,12 +100,12 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
     }
 
     for (int i = 0; i < count; i++) {
-        auto sliderTailData = il2cpp_utils::try_cast<GlobalNamespace::BeatmapObjectsInTimeRowProcessor::SliderTailData>(itemsReadOnly->get_Item(i)).value_or(nullptr);
+        auto sliderTailData = i2c::try_cast<GlobalNamespace::BeatmapObjectsInTimeRowProcessor::SliderTailData*>(itemsReadOnly->get_Item(i));
         if (!sliderTailData) continue;
         auto slider = sliderTailData->slider;
 
         for (int j = 0; j < count; j++) {
-            auto noteData = il2cpp_utils::try_cast<GlobalNamespace::NoteData>(itemsReadOnly->get_Item(j)).value_or(nullptr);
+            auto noteData = i2c::try_cast<GlobalNamespace::NoteData*>(itemsReadOnly->get_Item(j));
             if (!noteData) continue;
 
             if (GlobalNamespace::BeatmapObjectsInTimeRowProcessor::SliderTailPositionOverlapsWithNote(slider, noteData)) {
@@ -115,7 +117,7 @@ void BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDi
     }
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDidFinishTimeSlice,
+MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapObjectsInTimeRowProcessor_HandleCurrentTimeSliceAllNotesAndSlidersDidFinishTimeSlice,
                 &GlobalNamespace::BeatmapObjectsInTimeRowProcessor::HandleCurrentTimeSliceAllNotesAndSlidersDidFinishTimeSlice,
                 void,
                 GlobalNamespace::BeatmapObjectsInTimeRowProcessor* self,

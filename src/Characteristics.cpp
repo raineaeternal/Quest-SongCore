@@ -15,10 +15,10 @@ namespace SongCore {
         _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
         _appStaticSettings = appStaticSettings;
 
-        auto characteristics = il2cpp_utils::cast<System::Collections::Generic::List_1<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>>(_beatmapCharacteristicCollection->beatmapCharacteristics);
+        auto characteristics = i2c::cast<System::Collections::Generic::List_1<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>*>(_beatmapCharacteristicCollection->beatmapCharacteristics);
         _beatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(characteristics);
 
-        auto disabledCharacteristics = il2cpp_utils::cast<System::Collections::Generic::List_1<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>>(_beatmapCharacteristicCollection->disabledBeatmapCharacteristics);
+        auto disabledCharacteristics = i2c::cast<System::Collections::Generic::List_1<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>*>(_beatmapCharacteristicCollection->disabledBeatmapCharacteristics);
         _disabledBeatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(disabledCharacteristics);
     }
 
@@ -54,7 +54,7 @@ namespace SongCore {
         return _disabledBeatmapCharacteristics.ref_to();
     }
 
-    UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& Characteristics::GetCharacteristicsUpdatedEvent() {
+    unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& Characteristics::GetCharacteristicsUpdatedEvent() {
         return _characteristicsUpdated;
     }
 

@@ -1,5 +1,7 @@
 #include "SongLoader/CustomLevelPack.hpp"
 
+#include "beatsaber-hook/shared/listw.hpp"
+
 #include <compare>
 #include <string_view>
 
@@ -7,7 +9,7 @@ DEFINE_TYPE(SongCore::SongLoader, CustomLevelPack);
 
 namespace SongCore::SongLoader {
     void CustomLevelPack::ctor(StringW packId, StringW packName, UnityEngine::Sprite* coverImage) {
-        _ctor(packId, packName, packName, coverImage, coverImage, GlobalNamespace::PackBuyOption::DisableBuyOption, ArrayW<GlobalNamespace::BeatmapLevel*>::Empty(), GlobalNamespace::PlayerSensitivityFlag::Unknown);
+        _ctor(packId, packName, packName, coverImage, coverImage, GlobalNamespace::PackBuyOption::DisableBuyOption, ArrayW<GlobalNamespace::BeatmapLevel*>::New(), GlobalNamespace::PlayerSensitivityFlag::Unknown);
     }
 
     CustomLevelPack* CustomLevelPack::New(std::string_view packId, std::string_view packName, UnityEngine::Sprite* coverImage) {

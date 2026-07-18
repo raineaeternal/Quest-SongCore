@@ -8,7 +8,6 @@
 #include "System/IDisposable.hpp"
 #include "GlobalNamespace/StandardLevelDetailViewController.hpp"
 
-
 DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, Zenject::IInitializable*, System::IDisposable*) {
         DECLARE_CTOR(ctor, GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController);
 
@@ -25,7 +24,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, Zenject:
     public:
         using LevelWasSelectedEventArgs = SongCore::API::LevelSelect::LevelWasSelectedEventArgs;
 
-        UnorderedEventCallback<LevelWasSelectedEventArgs const&> LevelWasSelected;
+        unordered_event_callback<LevelWasSelectedEventArgs const&> LevelWasSelected;
 
         GlobalNamespace::BeatmapLevelPack* GetSelectedLevelPack();
         __declspec(property(get=GetSelectedLevelPack)) GlobalNamespace::BeatmapLevelPack* SelectedLevelPack;

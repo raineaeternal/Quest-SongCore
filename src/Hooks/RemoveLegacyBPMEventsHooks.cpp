@@ -1,9 +1,11 @@
 #include "hooking.hpp"
 #include "logging.hpp"
 
-#include "BeatmapSaveDataVersion2_6_0AndEarlier/BeatmapSaveDataVersion2_6_0AndEarlier.hpp"
+#include "BeatmapSaveDataVersion2_6_0AndEarlier/BeatmapSaveData.hpp"
+#include "BeatmapSaveDataVersion2_6_0AndEarlier/EventData.hpp"
 
 #include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
+#include "System/Collections/Generic/List_1.hpp"
 
 // Event10 was briefly used as an official BPM change between 1.8.0 and 1.18.0,
 // but it was never supported by custom mapping tools and later reused as a light event.

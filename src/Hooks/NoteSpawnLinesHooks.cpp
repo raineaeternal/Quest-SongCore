@@ -7,7 +7,7 @@
 bool NoteSpawnLinesOverrideLevelIsCustom = false;
 bool NoteSpawnLinesOverrideShowLines = false;
 
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatLineManager_HandleNoteWasSpawned, &GlobalNamespace::BeatLineManager::HandleNoteWasSpawned, void, GlobalNamespace::BeatLineManager* self, GlobalNamespace::NoteController* noteController) {
+MAKE_AUTO_ORIG_HOOK_MATCH(BeatLineManager_HandleNoteWasSpawned, &GlobalNamespace::BeatLineManager::HandleNoteWasSpawned, void, GlobalNamespace::BeatLineManager* self, GlobalNamespace::NoteController* noteController) {
     if (!NoteSpawnLinesOverrideLevelIsCustom) return BeatLineManager_HandleNoteWasSpawned(self, noteController);
 
     if (NoteSpawnLinesOverrideShowLines) return BeatLineManager_HandleNoteWasSpawned(self, noteController);

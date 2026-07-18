@@ -32,7 +32,7 @@ MAKE_AUTO_HOOK_MATCH(
     void,
     GlobalNamespace::StandardLevelScenesTransitionSetupDataSO* self,
     ::StringW gameMode,
-    ::ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
+    ::by_ref<::GlobalNamespace::BeatmapKey> beatmapKey,
     ::GlobalNamespace::BeatmapLevel* beatmapLevel,
     ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
     ::GlobalNamespace::ColorScheme* playerOverrideColorScheme,
@@ -50,7 +50,7 @@ MAKE_AUTO_HOOK_MATCH(
     ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
     ::System::Nullable_1<::GlobalNamespace::RecordingToolManager_SetupData> recordingToolData
 ) {
-    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(beatmapLevel).value_or(nullptr);
+    auto customLevel = i2c::try_cast<SongCore::SongLoader::CustomBeatmapLevel*>(beatmapLevel);
     if (!customLevel) {
         return StandardLevelScenesTransitionSetupDataSO_Init(
             self,
@@ -86,7 +86,7 @@ MAKE_AUTO_HOOK_MATCH(
     GlobalNamespace::BeatmapBasicData* basicData;
     auto tuple = ::System::ValueTuple_2(characteristic, diff);
 
-    if (beatmapDatas && beatmapDatas->TryGetValue(tuple, byref(basicData))) {
+    if (beatmapDatas && beatmapDatas->TryGetValue(tuple, by_ref(basicData))) {
         auto colorScheme = basicData->beatmapColorScheme;
         auto target = targetEnvironmentInfo.Item2;
         auto usingOverrideEnvironment = targetEnvironmentInfo.Item3;

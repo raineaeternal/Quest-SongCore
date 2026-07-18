@@ -118,7 +118,7 @@ namespace SongCore::UI {
 
         for (auto& contributor : levelDetails.contributors) {
             auto cell = GetCellInfo();
-            
+
             cell->text = fmt::format("<size=75%>{}", contributor.name);
             cell->subText = contributor.role;
             UnityEngine::Sprite* icon = nullptr;
@@ -213,7 +213,9 @@ namespace SongCore::UI {
 
             auto cell = GetCellInfo();
             cell->text = EnvironmentInfo;
-            cell->subText = eventArgs.customBeatmapLevel->GetEnvironmentName(eventArgs.beatmapKey.beatmapCharacteristic, eventArgs.beatmapKey.difficulty)._environmentName;
+            cell->subText = eventArgs.customBeatmapLevel
+                ->GetEnvironmentName(const_cast<LevelSelect::LevelWasSelectedEventArgs&>(eventArgs).beatmapKey.beatmapCharacteristic, eventArgs.beatmapKey.difficulty)
+                ._environmentName;
             cell->icon = _iconCache->EnvironmentIcon;
             _levelInfoCells.push_back(cell);
         }
@@ -241,7 +243,7 @@ namespace SongCore::UI {
 
     void RequirementsListManager::ShowRequirements() {
         if (!_requirementModal) {
-            BSML::parse_and_construct(Assets::requirements_bsml, _requirementButton->transform, this);
+            BSML::parse_and_construct(IncludedAssets::requirements_bsml, _requirementButton->transform, this);
             _modalPosition = _requirementModal->transform->position;
         }
 

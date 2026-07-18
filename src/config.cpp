@@ -1,22 +1,15 @@
 #include "config.hpp"
 #include "logging.hpp"
-#include "beatsaber-hook/shared/config/config-utils.hpp"
-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
-#include <string>
+#include "beatsaber-hook/shared/rapidjson.hpp"
+#include "beatsaber-hook/shared/utils.hpp"
 
 Config config;
-
-Configuration& get_config() {
-    static Configuration config({MOD_ID, VERSION, 0});
-    config.Load();
-    return config;
-}
+rapidjson::Document doc{rapidjson::kNullType};
 
 #define SET(name) doc.AddMember(#name, config.name, allocator)
 
 void SaveConfig() {
     INFO("Saving Config...");
-    rapidjson::Document& doc = get_config().config;
     doc.RemoveAllMembers();
     doc.SetObject();
     auto& allocator = doc.GetAllocator();
@@ -43,7 +36,11 @@ void SaveConfig() {
     }
     doc.AddMember("RootCustomWIPLevelPaths", rootCustomWIPLevelPaths, allocator);
 
-    get_config().Write();
+    rapidjson::StringBuffer buf;
+    rapidjson::PrettyWriter writer(buf);
+    doc.Accept(writer);
+    writefile(get_config_path(MOD_ID), buf.GetString());
+
     INFO("Config Saved!");
 }
 
@@ -56,8 +53,21 @@ if (auto name##_itr = doc.FindMember(#name); name##_itr != doc.MemberEnd()) {   
 
 bool LoadConfig() {
     INFO("Loading Config...");
+    if (doc.IsNull()) {
+        auto path = get_config_path(MOD_ID);
+        if (!fileexists(path)) {
+            writefile(path, "{}");
+            doc.SetObject();
+        } else {
+            doc.Parse(readfile(path));
+            if (doc.HasParseError() || !doc.IsObject()) {
+                WARNING("Config was invalid! Clearing.");
+                doc.SetObject();
+            }
+        }
+    }
+
     bool foundEverything = true;
-    rapidjson::Document& doc = get_config().config;
 
     GET(customSongNoteColors);
     GET(customSongObstacleColors);

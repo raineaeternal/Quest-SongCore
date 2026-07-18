@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <string>
 #include <string_view>
 #include <filesystem>
@@ -7,6 +8,7 @@
 #include <mutex>
 #include <set>
 
+#include "beatsaber-hook/shared/callback.hpp"
 #include "custom-types/shared/macros.hpp"
 
 #include "LevelLoader.hpp"
@@ -130,22 +132,22 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore::SongLoader, RuntimeSongLoader, System
         __declspec(property(get=get_AllLevels)) std::span<CustomBeatmapLevel* const> AllLevels;
 
         /// @brief event invoked when songs will be refreshed
-        UnorderedEventCallback<> SongsWillRefresh;
+        unordered_event_callback<> SongsWillRefresh;
 
         /// @brief event invoked after song loading has completed, ran on main thread. the provided span is a readonly reference to all levels
-        UnorderedEventCallback<std::span<CustomBeatmapLevel* const>> SongsLoaded;
+        unordered_event_callback<std::span<CustomBeatmapLevel* const>> SongsLoaded;
 
         /// @brief event invoked before the beatmaplevelsmodel is updated with the new collections
-        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> CustomLevelPacksWillRefresh;
+        unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> CustomLevelPacksWillRefresh;
 
         /// @brief event invoked after the beatmaplevelsmodel was updated with the new collection
-        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> CustomLevelPacksRefreshed;
+        unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> CustomLevelPacksRefreshed;
 
         /// @brief event invoked before a song is deleted so you can do last minute things you want to do with the deleted level
-        UnorderedEventCallback<CustomBeatmapLevel*> SongWillBeDeleted;
+        unordered_event_callback<CustomBeatmapLevel*> SongWillBeDeleted;
 
         /// @brief event invoked after a song got deleted, so you may redo certain operations
-        UnorderedEventCallback<> SongDeleted;
+        unordered_event_callback<> SongDeleted;
 
         /// @brief gets a level by the levelpath
         /// @return nullptr if level not found

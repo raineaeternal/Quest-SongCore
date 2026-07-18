@@ -4,13 +4,14 @@
 
 #include "SongLoader/CustomBeatmapLevel.hpp"
 #include "SongLoader/CustomBeatmapLevelsRepository.hpp"
-#include "beatsaber-hook/shared/utils/typedefs.h"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 
 #include "SongLoader/CustomLevelPack.hpp"
 #include "SongLoader/CustomBeatmapLevel.hpp"
 
 #include "CustomJSONData.hpp"
+
+#include "beatsaber-hook/shared/callback.hpp"
 
 #include <span>
 #include <future>
@@ -39,7 +40,7 @@ namespace SongCore::API {
         SONGCORE_EXPORT std::span<const std::string> GetRegisteredCapabilities();
 
         /// @brief provides access to an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! not cleared on soft restart. Invoked after the particular capability is added to the list.
-        SONGCORE_EXPORT UnorderedEventCallback<std::string_view, Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent();
+        SONGCORE_EXPORT unordered_event_callback<std::string_view, Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent();
     }
 
     namespace PlayButton {
@@ -71,7 +72,7 @@ namespace SongCore::API {
         #endif
 
         /// @brief event ran when the disabling mod infos change, like when Disable or Enable Play button is called from any mod, provides a span of the disabling mod ids and reasons
-        SONGCORE_EXPORT UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>>& GetPlayButtonDisablingModsChangedEvent();
+        SONGCORE_EXPORT unordered_event_callback<std::span<PlayButtonDisablingModInfo const>>& GetPlayButtonDisablingModsChangedEvent();
 
         /// @brief provides a span of the disabling mod infos
         SONGCORE_EXPORT std::span<PlayButtonDisablingModInfo const> GetPlayButtonDisablingModInfos();
@@ -100,7 +101,7 @@ namespace SongCore::API {
         SONGCORE_EXPORT std::span<GlobalNamespace::BeatmapCharacteristicSO*> GetRegisteredCharacteristics();
 
         /// @brief provides access to an event that gets invoked when the custom characteristics are updated. not guaranteed to run on main thread! not cleared on soft restart. Invoked after the particular characteristic is added to the list.
-        SONGCORE_EXPORT UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent();
+        SONGCORE_EXPORT unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent();
 
         /// @brief creates a characteristic to register, it's your responsibility to manage the lifetime of it
         SONGCORE_EXPORT GlobalNamespace::BeatmapCharacteristicSO* CreateCharacteristic(UnityEngine::Sprite* icon, StringW characteristicName, StringW hintText, StringW serializedName, StringW compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder);
@@ -123,22 +124,22 @@ namespace SongCore::API {
         SONGCORE_EXPORT std::future<void> DeleteSong(::SongCore::SongLoader::CustomBeatmapLevel* beatmapLevel);
 
         /// @brief event ran when songs are done refreshing
-        SONGCORE_EXPORT UnorderedEventCallback<std::span<::SongCore::SongLoader::CustomBeatmapLevel* const>>& GetSongsLoadedEvent();
+        SONGCORE_EXPORT unordered_event_callback<std::span<::SongCore::SongLoader::CustomBeatmapLevel* const>>& GetSongsLoadedEvent();
 
         /// @brief event ran when song refreshing will start
-        SONGCORE_EXPORT UnorderedEventCallback<>& GetSongsWillRefreshEvent();
+        SONGCORE_EXPORT unordered_event_callback<>& GetSongsWillRefreshEvent();
 
         /// @brief event ran before the beatmap levels model is updated, ideal for adding your own packs to the collection ordering them differently, or removing packs you don't want in there
-        SONGCORE_EXPORT UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksWillRefreshEvent();
+        SONGCORE_EXPORT unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksWillRefreshEvent();
 
         /// @brief event ran after the beatmap levels model got updated
-        SONGCORE_EXPORT UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksRefreshedEvent();
+        SONGCORE_EXPORT unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksRefreshedEvent();
 
         /// @brief event ran before a song is actually deleted in case you want to keep track of the deleted songs
-        SONGCORE_EXPORT UnorderedEventCallback<::SongCore::SongLoader::CustomBeatmapLevel*>& GetSongWillBeDeletedEvent();
+        SONGCORE_EXPORT unordered_event_callback<::SongCore::SongLoader::CustomBeatmapLevel*>& GetSongWillBeDeletedEvent();
 
         /// @brief event ran after a song was deleted. At this point there's no way of knowing what song it was so it's advised to look at `GetSongWillBeDeletedEvent`
-        SONGCORE_EXPORT UnorderedEventCallback<>& GetSongDeletedEvent();
+        SONGCORE_EXPORT unordered_event_callback<>& GetSongDeletedEvent();
 
         /// @brief returns the path where levels should be stored
         SONGCORE_EXPORT std::filesystem::path GetPreferredCustomLevelPath();
@@ -248,6 +249,6 @@ namespace SongCore::API {
             GlobalNamespace::BeatmapKey beatmapKey;
         };
 
-        SONGCORE_EXPORT UnorderedEventCallback<LevelWasSelectedEventArgs const&>& GetLevelWasSelectedEvent();
+        SONGCORE_EXPORT unordered_event_callback<LevelWasSelectedEventArgs const&>& GetLevelWasSelectedEvent();
     }
 }

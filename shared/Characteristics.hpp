@@ -32,8 +32,8 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Characteristics, System::Object, Zenj
         __declspec(property(get=GetRegisteredCharacteristics)) std::span<GlobalNamespace::BeatmapCharacteristicSO*> RegisteredCharacteristics;
 
         /// @brief provides access to an event that gets invoked when the custom characteristics are updated. not guaranteed to run on main thread! cleared on soft restart. Invoked after the particular characteristic is added to the list.
-        UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent();
-        __declspec(property(get=GetCharacteristicsUpdatedEvent)) UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& CharacteristicsUpdatedEvent;
+        unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent();
+        __declspec(property(get=GetCharacteristicsUpdatedEvent)) unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& CharacteristicsUpdatedEvent;
 
         /// @brief provides access to enabled characteristics
         std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> GetEnabledCharacteristics();
@@ -52,6 +52,6 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Characteristics, System::Object, Zenj
         /// @brief callback ran when the songcore api is used to update characteristics
         void CharacteristicsUpdated(GlobalNamespace::BeatmapCharacteristicSO* characteristic, SongCore::API::Characteristics::CharacteristicEventKind eventKind);
 
-        UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind> _characteristicsUpdated;
+        unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind> _characteristicsUpdated;
         std::mutex _collectionMutex;
 };

@@ -8,7 +8,7 @@
 DEFINE_TYPE(SongCore::UI, IconCache);
 
 #define GetIconImpl(fieldname, assetname) do { \
-        if (!fieldname) fieldname = BSML::Utilities::LoadSpriteRaw(Assets::Resources::assetname##_png); \
+        if (!fieldname) fieldname = BSML::Utilities::LoadSpriteRaw(IncludedAssets::Resources::assetname##_png); \
         return fieldname; \
 } while(0)
 
@@ -60,7 +60,7 @@ namespace SongCore::UI {
 
         UnityEngine::Sprite* sprite = nullptr;
         StringW csPath(path.string());
-        if (_pathIcons->TryGetValue(csPath, byref(sprite))) {
+        if (_pathIcons->TryGetValue(csPath, by_ref(sprite))) {
             PathWasUsed(path);
             return sprite;
         }

@@ -15,9 +15,9 @@
 #include "UI/ProgressBar.hpp"
 #include "_config.h"
 #include "config.hpp"
-#include "main.hpp"
 #include "lapiz/shared/zenject/Zenjector.hpp"
 #include "bsml/shared/BSML.hpp"
+#include "beatsaber-hook/shared/safeptr.hpp"
 #include "custom-types/shared/register.hpp"
 #include "logging.hpp"
 #include "hooking.hpp"
@@ -31,7 +31,7 @@
 #include "Capabilities.hpp"
 #include "Characteristics.hpp"
 #include "PlayButtonInteractable.hpp"
-#include "include/UI/ProgressBar.hpp"
+#include "UI/ProgressBar.hpp"
 #include "config.hpp"
 #include <filesystem>
 #include <fstream>
@@ -40,34 +40,25 @@ void RegisterDefaultCharacteristics();
 void EnsureNoMedia();
 void SongLoaderInstalled();
 
-static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0}; // Stores the ID and version of our mod, and is sent to the modloader upon startup
-
-// Loads the config from disk using our modInfo, then returns it for use
-// other config tools such as config-utils don't use this config, so it can be removed if those are in use
-Configuration& getConfig() {
-    static Configuration config(modInfo);
-    return config;
-}
+static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0};
 
 // Called at the early stages of game loading
 SONGCORE_EXPORT_FUNC void setup(CModInfo* info) {
-    info->id = MOD_ID;
-    info->version = VERSION;
-
-    getConfig().Load();
+    *info = modInfo.to_c();
+    LoadConfig();
     INFO("Completed setup!");
 }
 
 // Called later on in the game loading - a good time to install function hooks
 SONGCORE_EXPORT_FUNC void late_load() {
-    il2cpp_functions::Init();
+    i2c::functions::initialize();
 
     srand(time(nullptr));
     custom_types::Register::AutoRegister();
     BSML::Init();
     if (!LoadConfig()) SaveConfig();
 
-    SongCore::Hooking::InstallHooks();
+    Hooks::InstallHooks();
     auto z = Lapiz::Zenject::Zenjector::Get();
 
     // load cached hashes n stuff
@@ -112,8 +103,8 @@ SONGCORE_EXPORT_FUNC void late_load() {
 }
 
 void RegisterDefaultCharacteristics() {
-    static SafePtrUnity<GlobalNamespace::BeatmapCharacteristicSO> missingCharacteristic = SongCore::API::Characteristics::CreateCharacteristic(
-        BSML::Lite::ArrayToSprite(Assets::Resources::MissingChar_png),
+    static safe_ptr<GlobalNamespace::BeatmapCharacteristicSO*> missingCharacteristic = SongCore::API::Characteristics::CreateCharacteristic(
+        BSML::Lite::ArrayToSprite(IncludedAssets::Resources::MissingChar_png),
         "Missing Characteristic",
         "Missing Characteristic",
         "MissingCharacteristic",
@@ -123,8 +114,8 @@ void RegisterDefaultCharacteristics() {
         1000
     );
 
-    static SafePtrUnity<GlobalNamespace::BeatmapCharacteristicSO> lightshow = SongCore::API::Characteristics::CreateCharacteristic(
-        BSML::Lite::ArrayToSprite(Assets::Resources::Lightshow_png),
+    static safe_ptr<GlobalNamespace::BeatmapCharacteristicSO*> lightshow = SongCore::API::Characteristics::CreateCharacteristic(
+        BSML::Lite::ArrayToSprite(IncludedAssets::Resources::Lightshow_png),
         "Lightshow",
         "Lightshow",
         "Lightshow",
@@ -134,8 +125,8 @@ void RegisterDefaultCharacteristics() {
         100
     );
 
-    static SafePtrUnity<GlobalNamespace::BeatmapCharacteristicSO> lawless = SongCore::API::Characteristics::CreateCharacteristic(
-        BSML::Lite::ArrayToSprite(Assets::Resources::Lawless_png),
+    static safe_ptr<GlobalNamespace::BeatmapCharacteristicSO*> lawless = SongCore::API::Characteristics::CreateCharacteristic(
+        BSML::Lite::ArrayToSprite(IncludedAssets::Resources::Lawless_png),
         "Lawless",
         "Lawless - Anything Goes",
         "Lawless",

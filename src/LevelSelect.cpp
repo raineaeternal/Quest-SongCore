@@ -64,7 +64,7 @@ namespace SongCore {
 
         eventArgs.levelID = static_cast<std::string>(eventArgs.beatmapKey.levelId);
 
-        auto customLevel = il2cpp_utils::try_cast<SongLoader::CustomBeatmapLevel>(eventArgs.beatmapLevel).value_or(nullptr);
+        auto customLevel = i2c::try_cast<SongLoader::CustomBeatmapLevel*>(eventArgs.beatmapLevel);
         if (customLevel) {
             eventArgs.isCustom = true;
             HandleCustomLevelWasSelected(eventArgs);

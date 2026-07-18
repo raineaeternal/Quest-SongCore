@@ -19,7 +19,7 @@ namespace SongCore::Overrides {
         auto sceneSetupData = container->TryResolve<GlobalNamespace::GameplayCoreSceneSetupData*>();
         if (!sceneSetupData) return;
 
-        auto customLevel = il2cpp_utils::try_cast<SongLoader::CustomBeatmapLevel>(sceneSetupData->beatmapLevel).value_or(nullptr);
+        auto customLevel = i2c::try_cast<SongLoader::CustomBeatmapLevel*>(sceneSetupData->beatmapLevel);
         if (!customLevel) return;
         NoteSpawnLinesOverrideLevelIsCustom = true;
 

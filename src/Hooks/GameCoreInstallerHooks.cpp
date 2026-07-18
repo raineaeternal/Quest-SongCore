@@ -30,7 +30,7 @@ MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::Ga
 
     auto sceneSetupData = self->_sceneSetupData;
     // get custom preview level
-    auto level = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(sceneSetupData->beatmapLevel).value_or(nullptr);
+    auto level = i2c::try_cast<SongCore::SongLoader::CustomBeatmapLevel*>(sceneSetupData->beatmapLevel);
     if (!level) return GameplayCoreInstaller_InstallBindings(self);
 
     // get custom level save data if possible

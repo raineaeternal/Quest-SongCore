@@ -49,7 +49,7 @@
 #include "Utils/SaveDataVersion.hpp"
 
 // custom songs tab is disabled by default on quest, reenable
-MAKE_AUTO_HOOK_ORIG_MATCH(SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels, &GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator::get_enableCustomLevels, bool, GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator* self) {
+MAKE_AUTO_ORIG_HOOK_MATCH(SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels, &GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator::get_enableCustomLevels, bool, GlobalNamespace::SinglePlayerLevelSelectionFlowCoordinator* self) {
     DEBUG("SinglePlayerLevelSelectionFlowCoordinator_get_enableCustomLevels override returning true");
     return true;
 }
@@ -95,12 +95,12 @@ MAKE_AUTO_HOOK_MATCH(LevelScenesTransitionSetupDataSO_BeforeScenesWillBeActivate
 }
 
 // we return our own levels repository to which we can add packs we please
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::LoadAllBeatmapLevelPacks, void, BeatmapLevelsModel* self) {
+MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &BeatmapLevelsModel::LoadAllBeatmapLevelPacks, void, BeatmapLevelsModel* self) {
     BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks(self);
 
     auto custom = SongCore::SongLoader::CustomBeatmapLevelsRepository::New_ctor();
     auto levelPacks = self->____allLoadedBeatmapLevelsRepository->____beatmapLevelPacks;
-    auto packCount = levelPacks->get_Length();
+    auto packCount = levelPacks.size();
     for (int i = 0; i < packCount; i++) {
         custom->AddLevelPack(levelPacks[i]);
     }
@@ -120,7 +120,7 @@ MAKE_AUTO_HOOK_MATCH(BeatmapLevelLoader_HandleItemWillBeRemovedFromCache, &Beatm
 }
 
 // ifd out on quest, just check for custom_level_ prepend and say owned if so
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsEntitlementModel_GetLevelEntitlementStatusAsync, &BeatmapLevelsEntitlementModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, BeatmapLevelsEntitlementModel* self, StringW levelID, CancellationToken token) {
+MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapLevelsEntitlementModel_GetLevelEntitlementStatusAsync, &BeatmapLevelsEntitlementModel::GetLevelEntitlementStatusAsync, Task_1<EntitlementStatus>*, BeatmapLevelsEntitlementModel* self, StringW levelID, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
     }
@@ -128,14 +128,14 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsEntitlementModel_GetLevelEntitlementStatu
 }
 
 // ifd out on quest, just check for custom_levelPack_ prepend and say owned if so
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsEntitlementModel_GetPackEntitlementStatusAsync, &BeatmapLevelsEntitlementModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, BeatmapLevelsEntitlementModel* self, StringW levelPackID, CancellationToken token) {
+MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapLevelsEntitlementModel_GetPackEntitlementStatusAsync, &BeatmapLevelsEntitlementModel::GetPackEntitlementStatusAsync, Task_1<EntitlementStatus>*, BeatmapLevelsEntitlementModel* self, StringW levelPackID, CancellationToken token) {
     if (levelPackID.starts_with(u"custom_levelPack_")) {
         return Task_1<EntitlementStatus>::FromResult(EntitlementStatus::Owned);
     }
     return BeatmapLevelsEntitlementModel_GetPackEntitlementStatusAsync(self, levelPackID, token);
 }
 
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
+MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapLevelsModel_ReloadCustomLevelPackCollectionAsync, &BeatmapLevelsModel::ReloadCustomLevelPackCollectionAsync, Task_1<GlobalNamespace::BeatmapLevelsRepository*>*, BeatmapLevelsModel* self, CancellationToken cancellationToken) {
     // if songs are loaded and not refreshing, return the repo with fromresult
     if (SongCore::API::Loading::AreSongsLoaded() && !SongCore::API::Loading::AreSongsRefreshing()) {
         return Task_1<GlobalNamespace::BeatmapLevelsRepository*>::FromResult(static_cast<GlobalNamespace::BeatmapLevelsRepository*>(SongCore::API::Loading::GetCustomBeatmapLevelsRepository()));
@@ -185,7 +185,7 @@ std::u16string escape(std::u16string_view url) {
 }
 
 // reading files sucks for file paths
-MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
+MAKE_AUTO_ORIG_HOOK_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::GetEscapedURLForFilePath, StringW, StringW filePath) {
     std::u16string_view view(filePath);
     if (view.find(u"://") != std::string::npos) { // check if it's already a URL
         return filePath;
@@ -195,7 +195,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
 
 // get the level data async
 // TODO: rip out this level data loading from the SongLoader/LevelLoader.cpp and implement it async here to improve level loading speed and not do redundant things here
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
+MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
             auto errorType = System::Nullable_1(true, LoadBeatmapLevelDataResult_ErrorType::BeatmapLevelNotFoundInRepository);
@@ -212,7 +212,7 @@ MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &Beatmap
 
 // get the level data async
 // TODO: rip out this level data loading from the SongLoader/LevelLoader.cpp and implement it async here to improve level loading speed and not do redundant things here
-MAKE_AUTO_HOOK_ORIG_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
+MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapLevelsModel_CheckBeatmapLevelDataExistsAsync, &BeatmapLevelsModel::CheckBeatmapLevelDataExistsAsync, Task_1<bool>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
         return SongCore::StartTask<bool>([=](SongCore::CancellationToken token){
             auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
@@ -256,7 +256,7 @@ MAKE_AUTO_HOOK_MATCH(BeatmapLevelPack_CreateLevelPackForFiltering, &BeatmapLevel
 }
 
 // fix error message on custom levels, as the game doesn't correctly display the error message here on quest due to an ifd out check
-MAKE_AUTO_HOOK_ORIG_MATCH(
+MAKE_AUTO_ORIG_HOOK_MATCH(
     PlatformLeaderboardViewController_Refresh,
     &PlatformLeaderboardViewController::Refresh,
     void,
@@ -296,7 +296,7 @@ MAKE_AUTO_HOOK_MATCH(
 
     LevelFilteringNavigationController_UpdateSecondChildControllerContent(self, levelCategory);
 
-    if (searchFilter) self->_levelSearchViewController->Refresh(byref(*searchFilter));
+    if (searchFilter) self->_levelSearchViewController->Refresh(by_ref(*searchFilter));
 }
 
 

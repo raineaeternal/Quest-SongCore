@@ -28,7 +28,7 @@ namespace SongCore {
         return SongCore::API::Capabilities::GetRegisteredCapabilities();
     }
 
-    UnorderedEventCallback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind>& Capabilities::GetCapabilitiesUpdatedEvent() {
+    unordered_event_callback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind>& Capabilities::GetCapabilitiesUpdatedEvent() {
         return _capabilitiesUpdated;
     }
     void Capabilities::CapabilitiesUpdated(std::string_view capability, SongCore::API::Capabilities::CapabilityEventKind eventKind) {

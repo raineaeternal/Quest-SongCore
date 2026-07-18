@@ -9,13 +9,15 @@
 #include "UnityEngine/Texture2D.hpp"
 #include "UnityEngine/TextureWrapMode.hpp"
 
+#include "beatsaber-hook/shared/safeptr.hpp"
+
 static inline UnityEngine::HideFlags operator |(UnityEngine::HideFlags a, UnityEngine::HideFlags b) {
     return UnityEngine::HideFlags(a.value__ | b.value__);
 }
 
 namespace SongCore::API {
     namespace Capabilities {
-        static UnorderedEventCallback<std::string_view, Capabilities::CapabilityEventKind> _capabilitiesUpdated;
+        static unordered_event_callback<std::string_view, Capabilities::CapabilityEventKind> _capabilitiesUpdated;
         std::mutex _registeredCapabilitiesMutex;
         static std::vector<std::string> _registeredCapabilities;
 
@@ -83,14 +85,14 @@ namespace SongCore::API {
             return _registeredCapabilities;
         }
 
-        UnorderedEventCallback<std::string_view, Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent() {
+        unordered_event_callback<std::string_view, Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent() {
             return _capabilitiesUpdated;
         }
     }
 
     namespace PlayButton {
         static std::vector<PlayButtonDisablingModInfo> _disablingModInfos;
-        static UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>> _playButtonDisablingModsChangedEvent;
+        static unordered_event_callback<std::span<PlayButtonDisablingModInfo const>> _playButtonDisablingModsChangedEvent;
 
         void DisablePlayButton(std::string modID, std::string reason) {
             auto itr = std::find_if(_disablingModInfos.begin(), _disablingModInfos.end(), [&modID](auto& x){ return x.modID == modID; });
@@ -112,7 +114,7 @@ namespace SongCore::API {
             }
         }
 
-        UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>>& GetPlayButtonDisablingModsChangedEvent() {
+        unordered_event_callback<std::span<PlayButtonDisablingModInfo const>>& GetPlayButtonDisablingModsChangedEvent() {
             return _playButtonDisablingModsChangedEvent;
         }
 
@@ -122,12 +124,12 @@ namespace SongCore::API {
     }
 
     namespace Characteristics {
-        static SafePtr<System::Collections::Generic::List_1<GlobalNamespace::BeatmapCharacteristicSO*>> _registeredCharacteristics;
-        static UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind> _characteristicsUpdatedEvent;
+        static safe_ptr<ListW<GlobalNamespace::BeatmapCharacteristicSO*>> _registeredCharacteristics;
+        static unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind> _characteristicsUpdatedEvent;
 
         ListW<GlobalNamespace::BeatmapCharacteristicSO*> get_registeredCharacteristics() {
             if (_registeredCharacteristics) return _registeredCharacteristics.ptr();
-            _registeredCharacteristics = System::Collections::Generic::List_1<GlobalNamespace::BeatmapCharacteristicSO*>::New_ctor();
+            _registeredCharacteristics = ListW<GlobalNamespace::BeatmapCharacteristicSO*>::New();
             return _registeredCharacteristics.ptr();
         }
 
@@ -171,7 +173,7 @@ namespace SongCore::API {
             }
         }
 
-        UnorderedEventCallback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent() {
+        unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent() {
             return _characteristicsUpdatedEvent;
         }
 
@@ -194,12 +196,12 @@ namespace SongCore::API {
     }
 
     namespace Loading {
-        static UnorderedEventCallback<std::span<SongCore::SongLoader::CustomBeatmapLevel* const>> _songsLoadedEvent;
-        static UnorderedEventCallback<> _songsWillRefreshEvent;
-        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> _customLevelPacksWillRefreshEvent;
-        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> _customLevelPacksRefreshedEvent;
-        static UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevel*> _songWillBeDeletedEvent;
-        static UnorderedEventCallback<> _songDeletedEvent;
+        static unordered_event_callback<std::span<SongCore::SongLoader::CustomBeatmapLevel* const>> _songsLoadedEvent;
+        static unordered_event_callback<> _songsWillRefreshEvent;
+        static unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> _customLevelPacksWillRefreshEvent;
+        static unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevelsRepository*> _customLevelPacksRefreshedEvent;
+        static unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevel*> _songWillBeDeletedEvent;
+        static unordered_event_callback<> _songDeletedEvent;
 
         std::shared_future<void> RefreshSongs(bool fullRefresh) {
             auto instance = SongLoader::RuntimeSongLoader::get_instance();
@@ -225,27 +227,27 @@ namespace SongCore::API {
             return instance->DeleteSong(beatmapLevel);
         }
 
-        UnorderedEventCallback<std::span<SongCore::SongLoader::CustomBeatmapLevel* const>>& GetSongsLoadedEvent() {
+        unordered_event_callback<std::span<SongCore::SongLoader::CustomBeatmapLevel* const>>& GetSongsLoadedEvent() {
             return _songsLoadedEvent;
         }
 
-        UnorderedEventCallback<>& GetSongsWillRefreshEvent() {
+        unordered_event_callback<>& GetSongsWillRefreshEvent() {
             return _songsWillRefreshEvent;
         }
 
-        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksWillRefreshEvent() {
+        unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksWillRefreshEvent() {
             return _customLevelPacksWillRefreshEvent;
         }
 
-        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksRefreshedEvent() {
+        unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevelsRepository*>& GetCustomLevelPacksRefreshedEvent() {
             return _customLevelPacksRefreshedEvent;
         }
 
-        UnorderedEventCallback<SongCore::SongLoader::CustomBeatmapLevel*>& GetSongWillBeDeletedEvent() {
+        unordered_event_callback<SongCore::SongLoader::CustomBeatmapLevel*>& GetSongWillBeDeletedEvent() {
             return _songWillBeDeletedEvent;
         }
 
-        UnorderedEventCallback<>& GetSongDeletedEvent() {
+        unordered_event_callback<>& GetSongDeletedEvent() {
             return _songDeletedEvent;
         }
 
@@ -358,8 +360,8 @@ namespace SongCore::API {
     }
 
     namespace LevelSelect {
-        UnorderedEventCallback<LevelWasSelectedEventArgs const&> _levelWasSelectedEvent;
-        UnorderedEventCallback<LevelWasSelectedEventArgs const&>& GetLevelWasSelectedEvent() {
+        unordered_event_callback<LevelWasSelectedEventArgs const&> _levelWasSelectedEvent;
+        unordered_event_callback<LevelWasSelectedEventArgs const&>& GetLevelWasSelectedEvent() {
             return _levelWasSelectedEvent;
         }
     }

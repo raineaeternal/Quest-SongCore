@@ -1,4 +1,4 @@
-#include "include/UI/DeleteLevelButton.hpp"
+#include "UI/DeleteLevelButton.hpp"
 #include "logging.hpp"
 #include "assets.hpp"
 
@@ -42,12 +42,12 @@ namespace SongCore::UI {
         buttonImg->SetIcon(_iconCache->DeleteIcon);
         float scale = 1.7f;
         buttonImg->image->transform->localScale = {scale, scale, scale};
-        auto imageView = il2cpp_utils::try_cast<HMUI::ImageView>(buttonImg->image).value_or(nullptr);
+        auto imageView = i2c::try_cast<HMUI::ImageView*>(buttonImg->image);
         if (imageView) {
             imageView->_skew = 0.18f;
         }
 
-        BSML::parse_and_construct(Assets::deletemodal_bsml, parent, this);
+        BSML::parse_and_construct(IncludedAssets::deletemodal_bsml, parent, this);
     }
 
     void DeleteLevelButton::Dispose() {

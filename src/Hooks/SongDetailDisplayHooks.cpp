@@ -7,6 +7,7 @@
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/RectTransform.hpp"
 #include "TMPro/TMP_Text.hpp"
+#include "System/String.hpp"
 #include <algorithm>
 
 MAKE_AUTO_HOOK_MATCH(
@@ -24,12 +25,12 @@ MAKE_AUTO_HOOK_MATCH(
     if (!level) return;
 
     self->_songBpmText->text = std::to_string((int)level->beatsPerMinute);
-    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level);
+    auto customLevel = i2c::try_cast<SongCore::SongLoader::CustomBeatmapLevel*>(level);
     self->_songAuthorText->richText = true;
 
     std::vector<StringW> allAuthors;
-    allAuthors.insert(allAuthors.begin(), level->allMappers->begin(), level->allMappers.end());
-    allAuthors.insert(allAuthors.begin(), level->allLighters->begin(), level->allLighters.end());
+    allAuthors.insert(allAuthors.begin(), level->allMappers.begin(), level->allMappers.end());
+    allAuthors.insert(allAuthors.begin(), level->allLighters.begin(), level->allLighters.end());
 
     allAuthors.erase( unique( allAuthors.begin(), allAuthors.end() ), allAuthors.end() );
 
@@ -54,7 +55,7 @@ MAKE_AUTO_HOOK_MATCH(
         static auto favoriteSize = UnityEngine::Vector3(1.4,1.4,1.4);
 
         UnityEngine::Color color = {1, 1, 1, 1};
-        if (customLevel.has_value()) color = {1, 0.4, 0.7, 0.7};
+        if (customLevel) color = {1, 0.4, 0.7, 0.7};
         self->_favoritesBadgeImage->color = color;
         self->_favoritesBadgeImage->transform->localScale = favoriteSize;
     }

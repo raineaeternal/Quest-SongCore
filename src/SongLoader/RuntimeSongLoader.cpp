@@ -10,6 +10,7 @@
 #include "assets.hpp"
 
 #include "paper2_scotland2/shared/utfcpp/source/utf8.h"
+#include "beatsaber-hook/shared/threading.hpp"
 #include "bsml/shared/BSML/MainThreadScheduler.hpp"
 #include "bsml/shared/Helpers/utilities.hpp"
 
@@ -53,8 +54,8 @@ namespace SongCore::SongLoader {
         auto evilTime = (localTime.tm_mday == 1 && localTime.tm_mon == 3);
         bool doEvil = evilTime || ((rand() % 20) == 0);
 
-        _customLevelPack = CustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", BSML::Utilities::LoadSpriteRaw(doEvil ? Assets::Resources::CustomLevelsCoverEvil_png : Assets::Resources::CustomLevelsCover_png));
-        _customWIPLevelPack = CustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", BSML::Utilities::LoadSpriteRaw(Assets::Resources::CustomWIPLevelsCover_png));
+        _customLevelPack = CustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", BSML::Utilities::LoadSpriteRaw(doEvil ? IncludedAssets::Resources::CustomLevelsCoverEvil_png : IncludedAssets::Resources::CustomLevelsCover_png));
+        _customWIPLevelPack = CustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", BSML::Utilities::LoadSpriteRaw(IncludedAssets::Resources::CustomWIPLevelsCover_png));
         _customBeatmapLevelsRepository = CustomBeatmapLevelsRepository::New_ctor();
 
         _customLevels = SongDict::New_ctor();
@@ -123,7 +124,7 @@ namespace SongCore::SongLoader {
                 std::unique_lock<std::shared_mutex> writingLock(_doubleRefreshMutex);
                 // if it wasn't marked as a full refresh, mark it as such
                 _doubleRefreshIsFull = fullRefresh;
-                _doubleRefreshRequestedFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshRequestedWhileRefreshing, this);
+                _doubleRefreshRequestedFuture = il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshRequestedWhileRefreshing, this);
             } else {
                 // if the double refresh isn't full, update it
                 if (!_doubleRefreshIsFull) {
@@ -137,7 +138,7 @@ namespace SongCore::SongLoader {
         }
 
         std::unique_lock<std::shared_mutex> writingLock(_currentRefreshMutex);
-        _currentlyLoadingFuture = il2cpp_utils::il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshSongs_internal, this, std::forward<bool>(fullRefresh));
+        _currentlyLoadingFuture = il2cpp_async(std::launch::async, &RuntimeSongLoader::RefreshSongs_internal, this, std::forward<bool>(fullRefresh));
         return _currentlyLoadingFuture;
     }
 
@@ -198,7 +199,7 @@ namespace SongCore::SongLoader {
         INFO("Now going to load {} levels on {} threads", (int)_totalSongs, workerThreadCount);
         for (int i = 0; i < workerThreadCount; i++) {
             songLoadFutures.emplace_back(
-                il2cpp_utils::il2cpp_async(
+                il2cpp_async(
                     &RuntimeSongLoader::RefreshSongWorkerThread,
                     this,
                     &levelsItrMutex,
@@ -376,7 +377,7 @@ namespace SongCore::SongLoader {
     }
 
     void RuntimeSongLoader::RefreshLevelPacks() {
-        auto allLoaded = il2cpp_utils::cast<SongLoader::CustomBeatmapLevelsRepository>(_beatmapLevelsModel->_allLoadedBeatmapLevelsRepository);
+        auto allLoaded = i2c::cast<SongLoader::CustomBeatmapLevelsRepository*>(_beatmapLevelsModel->_allLoadedBeatmapLevelsRepository);
         for (auto pack : _customBeatmapLevelsRepository->BeatmapLevelPacks) {
             allLoaded->RemoveLevelPack(pack);
         }
@@ -440,7 +441,7 @@ namespace SongCore::SongLoader {
     }
 
     std::future<void> RuntimeSongLoader::DeleteSong(std::filesystem::path const& levelPath) {
-        return il2cpp_utils::il2cpp_async(&RuntimeSongLoader::DeleteSong_internal, this, levelPath);
+        return il2cpp_async(&RuntimeSongLoader::DeleteSong_internal, this, levelPath);
     }
 
     std::future<void> RuntimeSongLoader::DeleteSong(CustomBeatmapLevel* beatmapLevel) {
@@ -452,8 +453,8 @@ namespace SongCore::SongLoader {
         auto csPath = StringW(levelPath.string());
 
         CustomBeatmapLevel* level = nullptr;
-        if (CustomLevels->TryGetValue(csPath, byref(level))) return level;
-        else if (CustomWIPLevels->TryGetValue(csPath, byref(level))) return level;
+        if (CustomLevels->TryGetValue(csPath, by_ref(level))) return level;
+        else if (CustomWIPLevels->TryGetValue(csPath, by_ref(level))) return level;
 
         return GetLevelByFunction([path = levelPath.string()](auto level){ return level->customLevelPath == path; });
     }

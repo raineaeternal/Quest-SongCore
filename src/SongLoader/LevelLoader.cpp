@@ -48,7 +48,7 @@ namespace SongCore::SongLoader {
         INVOKE_CTOR();
         _spriteAsyncLoader = spriteAsyncLoader;
         _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
-        _additionalContentModel = il2cpp_utils::try_cast<GlobalNamespace::AdditionalContentModel>(additionalContentModel).value_or(nullptr);
+        _additionalContentModel = i2c::try_cast<GlobalNamespace::AdditionalContentModel*>(additionalContentModel);
         _environmentsListModel = environmentsListModel;
         _clipLoader = GlobalNamespace::AudioClipAsyncLoader::CreateDefault();
     }
@@ -81,13 +81,11 @@ namespace SongCore::SongLoader {
                 return nullptr;
             }
 
-            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveDataV2>(standardSaveData);
-            if (!opt.has_value()) {
+            auto opt = i2c::try_cast<SongCore::CustomJSONData::CustomLevelInfoSaveDataV2*>(standardSaveData);
+            if (!opt) {
                 ERROR("Cannot load file {} as CustomLevelInfoSaveDataV2!", path.string());
-                return nullptr;
             }
-
-            return opt.value();
+            return opt;
         } catch(std::runtime_error& e) {
             ERROR("GetSaveDataFromV3 can't Load File {}: {}!", path.string(), e.what());
         } catch (...) {
@@ -122,13 +120,11 @@ namespace SongCore::SongLoader {
                 return nullptr;
             }
 
-            auto opt = il2cpp_utils::try_cast<SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4>(beatmapLevelSaveData);
-            if (!opt.has_value()) {
+            auto opt = i2c::try_cast<SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4*>(beatmapLevelSaveData);
+            if (!opt) {
                 ERROR("Cannot load file {} as CustomBeatmapLevelSaveDataV4!", path.string());
-                return nullptr;
             }
-
-            return opt.value();
+            return opt;
         } catch(std::runtime_error& e) {
             ERROR("GetSaveDataFromV4 can't Load File {}: {}!", path.string(), e.what());
         } catch (...) {
@@ -191,11 +187,11 @@ namespace SongCore::SongLoader {
         auto environmentInfo = GetEnvironmentInfo(saveData->environmentName, false);
         if (!saveData->allDirectionsEnvironmentName) saveData->_allDirectionsEnvironmentName = EmptyString();
         auto allDirectionsEnvironmentInfo = GetEnvironmentInfo(saveData->allDirectionsEnvironmentName, true);
-        if (!saveData->environmentNames) saveData->_environmentNames = ArrayW<StringW>::Empty();
+        if (!saveData->environmentNames) saveData->_environmentNames = ArrayW<StringW>::New();
         auto environmentInfos = GetEnvironmentInfos(saveData->environmentNames);
-        if (!saveData->colorSchemes) saveData->_colorSchemes = ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*>::Empty();
+        if (!saveData->colorSchemes) saveData->_colorSchemes = ArrayW<GlobalNamespace::BeatmapLevelColorSchemeSaveData*>::New();
         auto colorSchemes = GetColorSchemes(saveData->colorSchemes);
-        if (!saveData->difficultyBeatmapSets) saveData->_difficultyBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>::Empty();
+        if (!saveData->difficultyBeatmapSets) saveData->_difficultyBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>::New();
 
         float songDuration = GetLengthForLevel(levelPath, saveData);
 
@@ -216,11 +212,11 @@ namespace SongCore::SongLoader {
         }
 
         auto allMappers = ArrayW<StringW>({ levelAuthorName });
-        auto allLighters = ArrayW<StringW>::Empty();
+        auto allLighters = ArrayW<StringW>::New();
 
         auto previewMediaData = GetPreviewMediaData(levelPath, saveData->coverImageFilename, saveData->songFilename);
         auto [beatmapLevelData, beatmapBasicData] = GetBeatmapLevelAndBasicData(levelPath, levelId, environmentNameList, colorSchemes, saveData);
-        
+
         if(beatmapBasicData->Count == 0) {
             return nullptr;
         }
@@ -355,7 +351,7 @@ namespace SongCore::SongLoader {
                 GlobalNamespace::BeatmapDifficulty difficulty;
                 auto parseSuccess = GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
                     difficultyBeatmap->difficulty,
-                    byref(difficulty)
+                    by_ref(difficulty)
                 );
 
                 if (!parseSuccess) {
@@ -416,8 +412,8 @@ namespace SongCore::SongLoader {
                         0,
                         0,
                         0,
-                        ArrayW<StringW>::Empty(),
-                        ArrayW<StringW>::Empty()
+                        ArrayW<StringW>::New(),
+                        ArrayW<StringW>::New()
                     )
                 );
             }
@@ -515,7 +511,7 @@ namespace SongCore::SongLoader {
             GlobalNamespace::BeatmapDifficulty difficulty;
             auto parseSuccess = GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
                 diffBeatmap->difficulty,
-                byref(difficulty)
+                by_ref(difficulty)
             );
 
             if (!parseSuccess) {
@@ -629,7 +625,7 @@ namespace SongCore::SongLoader {
     }
 
     ArrayW<GlobalNamespace::EnvironmentInfoSO*> LevelLoader::GetEnvironmentInfos(std::span<StringW const> environmentsNames) {
-        if (environmentsNames.empty()) return ArrayW<GlobalNamespace::EnvironmentInfoSO*>::Empty();
+        if (environmentsNames.empty()) return ArrayW<GlobalNamespace::EnvironmentInfoSO*>::New();
         auto envs = ListW<GlobalNamespace::EnvironmentInfoSO*>::New();
 
         for (auto environmentName : environmentsNames) {
@@ -641,7 +637,7 @@ namespace SongCore::SongLoader {
     }
 
     ArrayW<GlobalNamespace::ColorScheme*> LevelLoader::GetColorSchemes(std::span<GlobalNamespace::BeatmapLevelColorSchemeSaveData* const> colorSchemeDatas) {
-        if (colorSchemeDatas.empty()) return ArrayW<GlobalNamespace::ColorScheme*>::Empty();
+        if (colorSchemeDatas.empty()) return ArrayW<GlobalNamespace::ColorScheme*>::New();
 
         auto colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
         for (auto saveData : colorSchemeDatas) {
@@ -837,15 +833,15 @@ namespace SongCore::SongLoader {
             }
 
             float highestBeat = 0.0f;
-            if (beatmapSaveData->colorNotes && beatmapSaveData->colorNotes->get_Length() > 0) {
-                for (auto note : ListW<::BeatmapSaveDataVersion4::BeatmapBeatIndex*>(beatmapSaveData->colorNotes)) {
+            if (beatmapSaveData->colorNotes && !beatmapSaveData->colorNotes.empty()) {
+                for (auto note : ListW<::BeatmapSaveDataVersion4::BeatmapBeatIndex*>(beatmapSaveData->colorNotes.ref_to())) {
                   auto beat = note->beat;
                   highestBeat = std::max(beat, highestBeat);
-                  
+
                 }
             }
-            if (lightshowSaveData->basicEvents && lightshowSaveData->basicEvents->get_Length() > 0) {
-                for (auto event : ListW<::BeatmapSaveDataVersion4::BeatIndex*>(lightshowSaveData->basicEvents)) {
+            if (lightshowSaveData->basicEvents && !lightshowSaveData->basicEvents.empty()) {
+                for (auto event : ListW<::BeatmapSaveDataVersion4::BeatIndex*>(lightshowSaveData->basicEvents.ref_to())) {
                     auto beat = event->beat;
                     highestBeat = std::max(beat, highestBeat);
                 }
@@ -916,8 +912,8 @@ namespace SongCore::SongLoader {
             WARNING("Save Data has no difficulty beatmaps!");
             return nullptr;
         }
-        
-        auto customBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>(il2cpp_array_size_t(saveData->difficultyBeatmapSets.size()));
+
+        auto customBeatmapSets = ArrayW<GlobalNamespace::StandardLevelInfoSaveData::DifficultyBeatmapSet*>(saveData->difficultyBeatmapSets.size());
 
         SongCore::CustomJSONData::CustomLevelInfoSaveDataV2 *customSaveData =
                 SongCore::CustomJSONData::CustomLevelInfoSaveDataV2::New_ctor(
@@ -1016,7 +1012,7 @@ namespace SongCore::SongLoader {
             return nullptr;
         }
 
-        auto customDiffBeatmaps = ArrayW<BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap*>(il2cpp_array_size_t(saveData->difficultyBeatmaps.size()));
+        auto customDiffBeatmaps = ArrayW<BeatmapLevelSaveDataVersion4::BeatmapLevelSaveData::DifficultyBeatmap*>(saveData->difficultyBeatmaps.size());
 
         SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4 *customSaveData =
                 SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4::New_ctor();

@@ -3,7 +3,7 @@
 #include <optional>
 #include <string>
 #include <filesystem>
-#include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
+#include "beatsaber-hook/shared/rapidjson.hpp"
 
 namespace SongCore::Utils {
     struct CachedSongData {

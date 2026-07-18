@@ -35,7 +35,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, PlayButtonInteractable, System::Objec
         using PlayButtonDisablingModInfo = SongCore::API::PlayButton::PlayButtonDisablingModInfo;
 
         /// @brief event ran when the disabling mod infos change, like when Disable or Enable Play button is called from any mod, provides a span of the disabling mod ids and reasons
-        UnorderedEventCallback<std::span<PlayButtonDisablingModInfo const>> PlayButtonDisablingModsChanged;
+        unordered_event_callback<std::span<PlayButtonDisablingModInfo const>> PlayButtonDisablingModsChanged;
 
         /// @brief provides a span of the disabling mod infos
         std::span<PlayButtonDisablingModInfo const> GetPlayButtonDisablingModInfos();

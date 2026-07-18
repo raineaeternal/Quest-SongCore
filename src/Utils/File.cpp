@@ -1,7 +1,7 @@
 #include "Utils/File.hpp"
 #include "logging.hpp"
 
-#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+#include "beatsaber-hook/shared/utils.hpp"
 #include <filesystem>
 #include <iterator>
 #include <string>

@@ -22,6 +22,8 @@
 #include "SongLoader/CustomBeatmapLevel.hpp"
 #include "CustomJSONData.hpp"
 
+#include "beatsaber-hook/shared/listw.hpp"
+
 struct TemporaryCharacteristicSegmentedControlData {
     int sortingOrder;
     UnityEngine::Sprite* icon;
@@ -63,7 +65,7 @@ MAKE_AUTO_HOOK_MATCH(
         playerData
     );
 
-    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(level).value_or(nullptr);
+    auto customLevel = i2c::try_cast<SongCore::SongLoader::CustomBeatmapLevel*>(level);
     if (!customLevel) return;
 
     SetCustomCharacteristicLabels(self->_beatmapCharacteristicSegmentedControlController, customLevel);
@@ -85,7 +87,7 @@ MAKE_AUTO_HOOK_MATCH(
         beatmapCharacteristic
     );
 
-    auto customLevel = il2cpp_utils::try_cast<SongCore::SongLoader::CustomBeatmapLevel>(self->_beatmapLevel).value_or(nullptr);
+    auto customLevel = i2c::try_cast<SongCore::SongLoader::CustomBeatmapLevel*>(self->_beatmapLevel);
     if (!customLevel) return;
 
     SetCustomDifficultyLabels(self->_beatmapDifficultySegmentedControlController, customLevel, self->beatmapKey);
@@ -118,7 +120,7 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
 
         cellData.emplace_back(
             characteristic->sortingOrder,
-            icon ? icon : characteristic->icon.unsafePtr(),
+            icon ? icon : characteristic->icon.unsafe_ptr(),
             label
         );
     }

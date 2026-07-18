@@ -32,14 +32,14 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Capabilities, System::Object, Zenject
         __declspec(property(get=GetRegisteredCapabilities)) std::span<const std::string> RegisteredCapabilities;
 
         /// @brief provides access to an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! cleared on soft restart.
-        UnorderedEventCallback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent();
+        unordered_event_callback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind>& GetCapabilitiesUpdatedEvent();
 
         /// @brief an event that gets invoked when the capabilities are updated. not guaranteed to run on main thread! cleared on soft restart. Invoked after the particular capability is added to the list.
-        __declspec(property(get=GetCapabilitiesUpdatedEvent)) UnorderedEventCallback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind>& CapabilitiesUpdatedEvent;
+        __declspec(property(get=GetCapabilitiesUpdatedEvent)) unordered_event_callback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind>& CapabilitiesUpdatedEvent;
 
         DECLARE_DEFAULT_CTOR();
     private:
         /// @brief method to register to the general API one
         void CapabilitiesUpdated(std::string_view capability, SongCore::API::Capabilities::CapabilityEventKind eventKind);
-        UnorderedEventCallback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind> _capabilitiesUpdated;
+        unordered_event_callback<std::string_view, SongCore::API::Capabilities::CapabilityEventKind> _capabilitiesUpdated;
 };
