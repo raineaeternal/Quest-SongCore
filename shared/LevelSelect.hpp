@@ -35,7 +35,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, LevelSelect, System::Object, Zenject:
         GlobalNamespace::BeatmapKey GetSelectedBeatmapKey();
         __declspec(property(get=GetSelectedBeatmapKey)) GlobalNamespace::BeatmapKey SelectedBeatmapKey;
 
-        GlobalNamespace::BeatmapCharacteristicSO* GetSelectedCharacteristic();
+        GlobalNamespace::BeatmapCharacteristic GetSelectedCharacteristic();
         __declspec(property(get=GetSelectedCharacteristic)) GlobalNamespace::BeatmapCharacteristicSO* SelectedCharacteristic;
 
         GlobalNamespace::BeatmapDifficulty GetSelectedDifficulty();

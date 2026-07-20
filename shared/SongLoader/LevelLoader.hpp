@@ -62,7 +62,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object) {
         /// @brief does basic verification on a map to catch any problems before they actually occur
         bool BasicVerifyMap(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData);
 
-        using CharacteristicDifficultyPair = System::ValueTuple_2<UnityW<GlobalNamespace::BeatmapCharacteristicSO>, GlobalNamespace::BeatmapDifficulty>;
+        using CharacteristicDifficultyPair = System::ValueTuple_2<GlobalNamespace::BeatmapCharacteristic, GlobalNamespace::BeatmapDifficulty>;
         using BeatmapBasicDataDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::BeatmapBasicData*>;
         using BeatmapLevelDataDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>;
 

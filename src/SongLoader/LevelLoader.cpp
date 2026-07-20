@@ -498,7 +498,7 @@ namespace SongCore::SongLoader {
         }
 
         for (auto diffBeatmap : saveData->difficultyBeatmaps) {
-            auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(diffBeatmap->characteristic);
+            GlobalNamespace::BeatmapCharacteristicSO* characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(diffBeatmap->characteristic);
             if (!characteristic) {
                 WARNING("Got null characteristic for characteristic name {}, skipping...", diffBeatmap->characteristic);
                 #ifdef THROW_ON_MISSING_DATA

@@ -56,7 +56,7 @@
       },
       {
         "id": "bs-cordl",
-        "versionRange": "^4401.1.0",
+        "versionRange": "^4402.0.0",
         "additionalData": {}
       },
       {
@@ -100,7 +100,7 @@
       },
       {
         "id": "metacore",
-        "versionRange": "^2.0.1",
+        "versionRange": "^2.2.0",
         "additionalData": {}
       },
       {
@@ -116,10 +116,10 @@
     {
       "dependency": {
         "id": "bs-cordl",
-        "versionRange": "=4401.1.0",
+        "versionRange": "=4402.0.0",
         "additionalData": {
           "headersOnly": true,
-          "branchName": "version/v4401_1_0",
+          "branchName": "version/v4402_0_0",
           "compileOptions": {
             "includePaths": [
               "include"
@@ -134,21 +134,18 @@
           }
         }
       },
-      "version": "4401.1.0"
+      "version": "4402.0.0"
     },
     {
       "dependency": {
         "id": "metacore",
-        "versionRange": "=2.0.1",
+        "versionRange": "=2.2.0",
         "additionalData": {
-          "soLink": "https://github.com/Metalit/MetaCore/releases/download/v2.0.1/libmetacore.so",
           "overrideSoName": "libmetacore.so",
-          "modLink": "https://github.com/Metalit/MetaCore/releases/download/v2.0.1/MetaCore.qmod",
-          "branchName": "version/v2_0_1",
           "cmake": true
         }
       },
-      "version": "2.0.1"
+      "version": "2.2.0"
     },
     {
       "dependency": {
@@ -170,11 +167,7 @@
         "id": "lapiz",
         "versionRange": "=0.3.2",
         "additionalData": {
-          "soLink": "https://github.com/raineaeternal/Lapiz/releases/download/v0.3.2/liblapiz.so",
-          "debugSoLink": "https://github.com/raineaeternal/Lapiz/releases/download/v0.3.2/debug_liblapiz.so",
           "overrideSoName": "liblapiz.so",
-          "modLink": "https://github.com/raineaeternal/Lapiz/releases/download/v0.3.2/Lapiz.qmod",
-          "branchName": "version/v0_3_2",
           "cmake": true
         }
       },
@@ -329,17 +322,13 @@
     {
       "dependency": {
         "id": "bsml",
-        "versionRange": "=0.5.2",
+        "versionRange": "=0.5.3",
         "additionalData": {
-          "soLink": "https://github.com/bsq-ports/Quest-BSML/releases/download/v0.5.2/libbsml.so",
-          "debugSoLink": "https://github.com/bsq-ports/Quest-BSML/releases/download/v0.5.2/debug_libbsml.so",
           "overrideSoName": "libbsml.so",
-          "modLink": "https://github.com/bsq-ports/Quest-BSML/releases/download/v0.5.2/BSML.qmod",
-          "branchName": "version/v0_5_2",
           "cmake": true
         }
       },
-      "version": "0.5.2"
+      "version": "0.5.3"
     }
   ]
 }

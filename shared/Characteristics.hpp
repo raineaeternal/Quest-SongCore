@@ -55,3 +55,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Characteristics, System::Object, Zenj
         unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind> _characteristicsUpdated;
         std::mutex _collectionMutex;
 };
+
+namespace SongCore::API::Characteristics {
+    std::string_view SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic);
+}

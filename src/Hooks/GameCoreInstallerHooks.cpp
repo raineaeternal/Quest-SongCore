@@ -1,5 +1,6 @@
 #include <GlobalNamespace/VariableMovementDataProvider.hpp>
 
+#include "Characteristics.hpp"
 #include "hooking.hpp"
 #include "logging.hpp"
 #include "config.hpp"
@@ -40,9 +41,10 @@ MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::Ga
 
     // get difficulty data
     auto beatmapKey = sceneSetupData->beatmapKey;
-    auto characteristic = beatmapKey.beatmapCharacteristic;
+    // TODO: Get CharacteristicSO from somewhere
+    auto characteristic = beatmapKey.characteristic;
     auto difficulty = beatmapKey.difficulty;
-    auto difficultyDataOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
+    auto difficultyDataOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(SongCore::API::Characteristics::SerializedName(characteristic), difficulty);
     if (!difficultyDataOpt.has_value()) return PostInstallBindings(GameplayCoreInstaller_InstallBindings, self);
     // get if one saber set
     auto& difficultyData = difficultyDataOpt->get();

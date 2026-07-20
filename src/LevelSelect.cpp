@@ -1,4 +1,5 @@
 #include "LevelSelect.hpp"
+#include "Characteristics.hpp"
 #include "logging.hpp"
 
 #include "CustomJSONData.hpp"
@@ -59,7 +60,7 @@ namespace SongCore {
         eventArgs.isCustom = false;
 
         // if no beatmap level selected, return
-        if (!eventArgs.beatmapKey.beatmapCharacteristic) return;
+        // if (!eventArgs.beatmapKey.characteristic) return;
         if (!eventArgs.beatmapLevel) return;
 
         eventArgs.levelID = static_cast<std::string>(eventArgs.beatmapKey.levelId);
@@ -97,7 +98,8 @@ namespace SongCore {
         auto levelDetails = saveData->get().TryGetBasicLevelDetails();
         if (!levelDetails.has_value()) return;
 
-        auto characteristicDetails = levelDetails->get().TryGetCharacteristic(eventArgs.beatmapKey.beatmapCharacteristic->serializedName);
+        std::string serializedName(API::Characteristics::SerializedName(eventArgs.beatmapKey.characteristic));
+        auto characteristicDetails = levelDetails->get().TryGetCharacteristic(serializedName);
         if (!characteristicDetails.has_value()) return;
 
         auto diffDetails = characteristicDetails->get().TryGetDifficulty(eventArgs.beatmapKey.difficulty);
@@ -127,8 +129,8 @@ namespace SongCore {
         return _levelDetailViewController->beatmapKey;
     }
 
-    GlobalNamespace::BeatmapCharacteristicSO* LevelSelect::GetSelectedCharacteristic() {
-        return _levelDetailViewController->beatmapKey.beatmapCharacteristic;
+    GlobalNamespace::BeatmapCharacteristic LevelSelect::GetSelectedCharacteristic() {
+        return _levelDetailViewController->beatmapKey.characteristic;
     }
 
     GlobalNamespace::BeatmapDifficulty LevelSelect::GetSelectedDifficulty() {

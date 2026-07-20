@@ -55,7 +55,7 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^4401.1.0",
+      "versionRange": "^4402.0.0",
       "additionalData": {}
     },
     {
@@ -99,7 +99,7 @@
     },
     {
       "id": "metacore",
-      "versionRange": "^2.0.1",
+      "versionRange": "^2.2.0",
       "additionalData": {}
     },
     {

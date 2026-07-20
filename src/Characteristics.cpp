@@ -100,3 +100,8 @@ namespace SongCore {
         }
     }
 }
+namespace SongCore::API::Characteristics {
+    std::string_view SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic) {
+        throw i2c::trace_exception("TODO");
+    }
+}

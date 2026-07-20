@@ -20,6 +20,7 @@
 #include "System/IDisposable.hpp"
 
 #include "SongLoader/CustomBeatmapLevel.hpp"
+#include "Characteristics.hpp"
 #include "CustomJSONData.hpp"
 
 #include "beatsaber-hook/shared/listw.hpp"
@@ -37,39 +38,39 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
 
 MAKE_AUTO_HOOK_MATCH(
     StandardLevelDetailView_SetContent,
-    static_cast<
-    void(GlobalNamespace::StandardLevelDetailView::*)(
-        ::GlobalNamespace::BeatmapLevel* level,
+    static_cast<void (GlobalNamespace::StandardLevelDetailView::*)(
+        ::GlobalNamespace::BeatmapLevel *level,
         ::GlobalNamespace::BeatmapDifficultyMask allowedBeatmapDifficultyMask,
-        ::System::Collections::Generic::HashSet_1<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>>* notAllowedCharacteristics,
+        ::System::Collections::Generic::HashSet_1<
+            ::GlobalNamespace::BeatmapCharacteristic>
+            *notAllowedCharacteristics,
         ::GlobalNamespace::BeatmapDifficulty defaultDifficulty,
-        ::GlobalNamespace::BeatmapCharacteristicSO* defaultBeatmapCharacteristic,
-        ::GlobalNamespace::PlayerData* playerData
-    )>(&GlobalNamespace::StandardLevelDetailView::SetContent),
-    void,
-    GlobalNamespace::StandardLevelDetailView* self,
-    ::GlobalNamespace::BeatmapLevel* level,
+        ::System::Nullable_1<::GlobalNamespace::BeatmapCharacteristic>
+            defaultBeatmapCharacteristic,
+        ::GlobalNamespace::PlayerData *playerData)>(
+        &GlobalNamespace::StandardLevelDetailView::SetContent),
+    void, GlobalNamespace::StandardLevelDetailView *self,
+    ::GlobalNamespace::BeatmapLevel *level,
     ::GlobalNamespace::BeatmapDifficultyMask allowedBeatmapDifficultyMask,
-    ::System::Collections::Generic::HashSet_1<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>>* notAllowedCharacteristics,
+    ::System::Collections::Generic::HashSet_1<
+        ::GlobalNamespace::BeatmapCharacteristic> *notAllowedCharacteristics,
     ::GlobalNamespace::BeatmapDifficulty defaultDifficulty,
-    ::GlobalNamespace::BeatmapCharacteristicSO* defaultBeatmapCharacteristic,
-    ::GlobalNamespace::PlayerData* playerData
-) {
-    StandardLevelDetailView_SetContent(
-        self,
-        level,
-        allowedBeatmapDifficultyMask,
-        notAllowedCharacteristics,
-        defaultDifficulty,
+    ::System::Nullable_1<::GlobalNamespace::BeatmapCharacteristic>
         defaultBeatmapCharacteristic,
-        playerData
-    );
+    ::GlobalNamespace::PlayerData *playerData) {
+  StandardLevelDetailView_SetContent(
+      self, level, allowedBeatmapDifficultyMask, notAllowedCharacteristics,
+      defaultDifficulty, defaultBeatmapCharacteristic, playerData);
 
-    auto customLevel = i2c::try_cast<SongCore::SongLoader::CustomBeatmapLevel*>(level);
-    if (!customLevel) return;
+  auto customLevel =
+      i2c::try_cast<SongCore::SongLoader::CustomBeatmapLevel *>(level);
+  if (!customLevel)
+    return;
 
-    SetCustomCharacteristicLabels(self->_beatmapCharacteristicSegmentedControlController, customLevel);
-    SetCustomDifficultyLabels(self->_beatmapDifficultySegmentedControlController, customLevel, self->beatmapKey);
+  SetCustomCharacteristicLabels(
+      self->_beatmapCharacteristicSegmentedControlController, customLevel);
+  SetCustomDifficultyLabels(self->_beatmapDifficultySegmentedControlController,
+                            customLevel, self->beatmapKey);
 }
 
 // after characteristic is selected, we need to update the diff labels again
@@ -78,8 +79,8 @@ MAKE_AUTO_HOOK_MATCH(
     &GlobalNamespace::StandardLevelDetailView::HandleBeatmapCharacteristicSegmentedControlControllerDidSelectBeatmapCharacteristic,
     void,
     GlobalNamespace::StandardLevelDetailView* self,
-    GlobalNamespace::BeatmapCharacteristicSegmentedControlController* controller,
-    GlobalNamespace::BeatmapCharacteristicSO* beatmapCharacteristic
+::GlobalNamespace::BeatmapCharacteristicSegmentedControlController* controller,
+::GlobalNamespace::BeatmapCharacteristic beatmapCharacteristic
 ) {
     StandardLevelDetailView_HandleBeatmapCharacteristicSegmentedControlControllerDidSelectBeatmapCharacteristic(
         self,
@@ -143,7 +144,7 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     if (!customSaveDataInfoOpt) return;
     auto& customSaveDataInfo = customSaveDataInfoOpt->get();
 
-    auto characteristic = beatmapKey.beatmapCharacteristic;
+    auto characteristic = beatmapKey.characteristic;
     auto difficulties = ListW<GlobalNamespace::BeatmapDifficulty>(self->_difficulties);
     auto labels = ListW<StringW>::New();
 
@@ -151,7 +152,9 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     int selectedCellIdx = self->_difficultySegmentedControl->selectedCellNumber;
 
     for (auto difficulty : difficulties) {
-        auto difficultyDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
+      std::string serializedName(SongCore::API::Characteristics::SerializedName(characteristic));
+      
+        auto difficultyDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(serializedName, difficulty);
         if (!difficultyDetailsOpt.has_value()) { success = false; break; }
 
         auto& difficultyDetails = difficultyDetailsOpt->get();
