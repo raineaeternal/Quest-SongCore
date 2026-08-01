@@ -62,7 +62,7 @@ MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::Ga
 void NegativeNJSPatch(Zenject::DiContainer* container, GlobalNamespace::GameplayCoreInstaller* installer) {
     auto beatmapKey = installer->_sceneSetupData->beatmapKey;
     auto beatmapLevel = installer->_sceneSetupData->beatmapLevel;
-    auto difficultyBeatmapData = beatmapLevel->GetDifficultyBeatmapData(beatmapKey.beatmapCharacteristic, beatmapKey.difficulty);
+    auto difficultyBeatmapData = beatmapLevel->GetDifficultyBeatmapData(beatmapKey.characteristic, beatmapKey.difficulty);
     auto noteJumpMovementSpeed = difficultyBeatmapData->noteJumpMovementSpeed;
     auto data = container->Resolve<GlobalNamespace::BeatmapObjectSpawnController::InitData*>();
 
@@ -76,5 +76,8 @@ void PostInstallBindings(void(*GameplayCoreInstaller_InstallBindings)(GlobalName
 
     GameplayCoreInstaller_InstallBindings(instance);
     NegativeNJSPatch(instance->Container, instance);
+
+    // https://github.com/Kylemc1413/SongCore/blob/cd026d48171bb7fdee1a9d9646970b134f55228d/source/SongCore/Hooks/BindBeatmapLevelHook.cs#L24
+    instance->Container->Bind<GlobalNamespace::BeatmapLevel*>()->FromInstance(instance->_sceneSetupData->beatmapLevel)->AsSingle();
 }
 
