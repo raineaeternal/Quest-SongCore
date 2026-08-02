@@ -104,22 +104,21 @@ namespace SongCore {
     
 namespace SongCore::API::Characteristics {
 
-    GlobalNamespace::BeatmapCharacteristic GetCharacteristic2BySerializedName(StringW serializedName) {
+    GlobalNamespace::BeatmapCharacteristic GetCharacteristic2BySerializedName(std::string_view serializedName) {
       GlobalNamespace::BeatmapCharacteristic characteristic{};
 
       // TODO: do we need to hook this?
         if (!GlobalNamespace::BeatmapCharacteristicExtensions::
                 BeatmapCharacteristicFromSerializedName(
-                    serializedName, by_ref(characteristic))) {
+                    StringW(serializedName), by_ref(characteristic))) {
         //   return GetCharacteristicBySerializedName(serializedName)
         }
-                
-        
+
+
         return characteristic;
     }
 
-    StringW
-    SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic) {
+    std::string SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic) {
         for (auto registeredCharacteristic : SongCore::API::Characteristics::GetRegisteredCharacteristics()) {
             if (registeredCharacteristic->sortingOrder == (int)characteristic) {
                 return registeredCharacteristic->serializedName;

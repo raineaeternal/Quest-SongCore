@@ -338,7 +338,7 @@ namespace SongCore::SongLoader {
         bool saveDataHadEnvNames = saveData->environmentNames.size() > 0;
 
         for (auto beatmapSet : saveData->difficultyBeatmapSets) {
-            auto characteristic = SongCore::API::Characteristics::GetCharacteristic2BySerializedName(beatmapSet->beatmapCharacteristicName);
+            auto characteristic = SongCore::API::Characteristics::GetCharacteristic2BySerializedName(static_cast<std::string>(beatmapSet->beatmapCharacteristicName));
             // if (!characteristic) {
             //     #ifdef THROW_ON_MISSING_DATA
             //         throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", beatmapSet->beatmapCharacteristicName));
@@ -499,7 +499,7 @@ namespace SongCore::SongLoader {
         }
 
         for (auto diffBeatmap : saveData->difficultyBeatmaps) {
-            auto characteristic = SongCore::API::Characteristics::GetCharacteristic2BySerializedName(diffBeatmap->characteristic);
+            auto characteristic = SongCore::API::Characteristics::GetCharacteristic2BySerializedName(static_cast<std::string>(diffBeatmap->characteristic));
             // if (!characteristic) {
             //     WARNING("Got null characteristic for characteristic name {}, skipping...", diffBeatmap->characteristic);
             //     #ifdef THROW_ON_MISSING_DATA

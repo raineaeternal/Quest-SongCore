@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <string_view>
+
 #include "custom-types/shared/macros.hpp"
 #include "./SongCore.hpp"
 
@@ -57,10 +60,8 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Characteristics, System::Object, Zenj
 };
 
 namespace SongCore::API::Characteristics {
-    // TODO: switch to string?
-    GlobalNamespace::BeatmapCharacteristic GetCharacteristic2BySerializedName(StringW serializedName);
-    StringW
-    SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic);
+    GlobalNamespace::BeatmapCharacteristic GetCharacteristic2BySerializedName(std::string_view serializedName);
+    std::string SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic);
 
     bool CharacteristicRequires360Movement(GlobalNamespace::BeatmapCharacteristic characteristic);
     bool CharacteristicContainsRotationEvents(GlobalNamespace::BeatmapCharacteristic characteristic);
