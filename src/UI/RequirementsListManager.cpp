@@ -214,7 +214,7 @@ namespace SongCore::UI {
             auto cell = GetCellInfo();
             cell->text = EnvironmentInfo;
             cell->subText = eventArgs.customBeatmapLevel
-                ->GetEnvironmentName(const_cast<LevelSelect::LevelWasSelectedEventArgs&>(eventArgs).beatmapKey.beatmapCharacteristic, eventArgs.beatmapKey.difficulty)
+                ->GetEnvironmentName(const_cast<LevelSelect::LevelWasSelectedEventArgs&>(eventArgs).beatmapKey.characteristic, eventArgs.beatmapKey.difficulty)
                 ._environmentName;
             cell->icon = _iconCache->EnvironmentIcon;
             _levelInfoCells.push_back(cell);

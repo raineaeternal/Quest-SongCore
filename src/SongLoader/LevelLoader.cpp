@@ -1,6 +1,7 @@
 #include "SongLoader/LevelLoader.hpp"
 #include "BeatmapLevelSaveDataVersion4/AudioSaveData.hpp"
 #include "BeatmapLevelSaveDataVersion4/BeatmapLevelSaveData.hpp"
+#include "Characteristics.hpp"
 #include "CustomJSONData.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
@@ -337,15 +338,15 @@ namespace SongCore::SongLoader {
         bool saveDataHadEnvNames = saveData->environmentNames.size() > 0;
 
         for (auto beatmapSet : saveData->difficultyBeatmapSets) {
-            auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(beatmapSet->beatmapCharacteristicName);
-            if (!characteristic) {
-                #ifdef THROW_ON_MISSING_DATA
-                    throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", beatmapSet->beatmapCharacteristicName));
-                #else
-                    WARNING("Got null characteristic for characteristic name {}, skipping...", beatmapSet->beatmapCharacteristicName);
-                    continue;
-                #endif
-            }
+            auto characteristic = SongCore::API::Characteristics::GetCharacteristic2BySerializedName(beatmapSet->beatmapCharacteristicName);
+            // if (!characteristic) {
+            //     #ifdef THROW_ON_MISSING_DATA
+            //         throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", beatmapSet->beatmapCharacteristicName));
+            //     #else
+            //         WARNING("Got null characteristic for characteristic name {}, skipping...", beatmapSet->beatmapCharacteristicName);
+            //         continue;
+            //     #endif
+            // }
 
             for (auto difficultyBeatmap : beatmapSet->difficultyBeatmaps) {
                 GlobalNamespace::BeatmapDifficulty difficulty;
@@ -379,9 +380,9 @@ namespace SongCore::SongLoader {
                 );
                 if (fileDifficultyBeatmapsDict->ContainsKey(dictKey)) {
                     #ifdef THROW_ON_MISSING_DATA
-                        throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty));
+                        throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", SongCore::API::Characteristics::SerializedName(characteristic), (int) difficulty));
                     #else
-                        WARNING("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty);
+                        WARNING("Duplicate characteristic/difficulty: {}/{}", SongCore::API::Characteristics::SerializedName(characteristic), (int) difficulty);
                         continue;
                     #endif
                 }
@@ -396,7 +397,7 @@ namespace SongCore::SongLoader {
                 );
 
                 // if we have env names, use the idx, otherwise use whether the char had rotation (no rot means use default env, otherwise use rotation env)
-                int envNameIndex = saveDataHadEnvNames ? difficultyBeatmap->environmentNameIdx : characteristic->containsRotationEvents ? 1 : 0;
+                int envNameIndex = saveDataHadEnvNames ? difficultyBeatmap->environmentNameIdx : SongCore::API::Characteristics::CharacteristicContainsRotationEvents(characteristic) ? 1 : 0;
                 envNameIndex = std::clamp<int>(envNameIndex, 0, environmentNames.size());
                 int colorSchemeIndex = difficultyBeatmap->beatmapColorSchemeIdx;
                 auto colorScheme = (colorSchemeIndex >= 0 && colorSchemeIndex < colorSchemes.size()) ? colorSchemes[colorSchemeIndex] : nullptr;
@@ -498,15 +499,15 @@ namespace SongCore::SongLoader {
         }
 
         for (auto diffBeatmap : saveData->difficultyBeatmaps) {
-            GlobalNamespace::BeatmapCharacteristicSO* characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(diffBeatmap->characteristic);
-            if (!characteristic) {
-                WARNING("Got null characteristic for characteristic name {}, skipping...", diffBeatmap->characteristic);
-                #ifdef THROW_ON_MISSING_DATA
-                    throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", diffBeatmap->characteristic));
-                #else
-                    continue;
-                #endif
-            }
+            auto characteristic = SongCore::API::Characteristics::GetCharacteristic2BySerializedName(diffBeatmap->characteristic);
+            // if (!characteristic) {
+            //     WARNING("Got null characteristic for characteristic name {}, skipping...", diffBeatmap->characteristic);
+            //     #ifdef THROW_ON_MISSING_DATA
+            //         throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", diffBeatmap->characteristic));
+            //     #else
+            //         continue;
+            //     #endif
+            // }
 
             GlobalNamespace::BeatmapDifficulty difficulty;
             auto parseSuccess = GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
@@ -549,9 +550,9 @@ namespace SongCore::SongLoader {
             );
             if (fileDifficultyBeatmapsDict->ContainsKey(dictKey)) {
                 #ifdef THROW_ON_MISSING_DATA
-                    throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty));
+                    throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", SongCore::API::Characteristics::SerializedName(characteristic), (int) difficulty));
                 #else
-                    WARNING("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty);
+                    WARNING("Duplicate characteristic/difficulty: {}/{}", SongCore::API::Characteristics::SerializedName(characteristic), (int) difficulty);
                     continue;
                 #endif
             }

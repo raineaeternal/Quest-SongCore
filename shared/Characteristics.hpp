@@ -57,5 +57,11 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Characteristics, System::Object, Zenj
 };
 
 namespace SongCore::API::Characteristics {
-    std::string_view SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic);
+    // TODO: switch to string?
+    GlobalNamespace::BeatmapCharacteristic GetCharacteristic2BySerializedName(StringW serializedName);
+    StringW
+    SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic);
+
+    bool CharacteristicRequires360Movement(GlobalNamespace::BeatmapCharacteristic characteristic);
+    bool CharacteristicContainsRotationEvents(GlobalNamespace::BeatmapCharacteristic characteristic);
 }

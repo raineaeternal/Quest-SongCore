@@ -1,6 +1,7 @@
 #include "Characteristics.hpp"
 #include "SongCore.hpp"
 
+#include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
 #include <mutex>
 
@@ -99,9 +100,57 @@ namespace SongCore {
             _beatmapCharacteristicCollection->_beatmapCharacteristicsBySerializedName->Remove(characteristic->serializedName);
         }
     }
-}
+    } // namespace SongCore
+    
 namespace SongCore::API::Characteristics {
-    std::string_view SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic) {
-        throw i2c::trace_exception("TODO");
+
+    GlobalNamespace::BeatmapCharacteristic GetCharacteristic2BySerializedName(StringW serializedName) {
+      GlobalNamespace::BeatmapCharacteristic characteristic{};
+
+      // TODO: do we need to hook this?
+        if (!GlobalNamespace::BeatmapCharacteristicExtensions::
+                BeatmapCharacteristicFromSerializedName(
+                    serializedName, by_ref(characteristic))) {
+        //   return GetCharacteristicBySerializedName(serializedName)
+        }
+                
+        
+        return characteristic;
+    }
+
+    StringW
+    SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic) {
+        for (auto registeredCharacteristic : SongCore::API::Characteristics::GetRegisteredCharacteristics()) {
+            if (registeredCharacteristic->sortingOrder == (int)characteristic) {
+                return registeredCharacteristic->serializedName;
+            }
+        }
+
+        // TODO: do we need to hook this?
+        return GlobalNamespace::BeatmapCharacteristicExtensions::SerializedName(characteristic);
+    }
+
+    bool CharacteristicRequires360Movement(
+        GlobalNamespace::BeatmapCharacteristic characteristic) {
+        for (auto registeredCharacteristic : SongCore::API::Characteristics::GetRegisteredCharacteristics()) {
+            if (registeredCharacteristic->sortingOrder == (int)characteristic) {
+                return registeredCharacteristic->requires360Movement;
+            }
+        }
+
+        // TODO: do we need to hook this?
+        return GlobalNamespace::BeatmapCharacteristicExtensions::Requires360Movement(characteristic);
+    }
+
+    bool CharacteristicContainsRotationEvents(
+        GlobalNamespace::BeatmapCharacteristic characteristic) {
+        for (auto registeredCharacteristic : SongCore::API::Characteristics::GetRegisteredCharacteristics()) {
+            if (registeredCharacteristic->sortingOrder == (int)characteristic) {
+                return registeredCharacteristic->containsRotationEvents;
+            }
+        }
+
+        // TODO: do we need to hook this?
+        return GlobalNamespace::BeatmapCharacteristicExtensions::ContainsRotationEvents(characteristic);
     }
 }

@@ -4,6 +4,7 @@
 #include "CustomJSONData.hpp"
 #include "SongLoader/CustomBeatmapLevel.hpp"
 #include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
+#include "Characteristics.hpp"
 
 DEFINE_TYPE(SongCore::Overrides, RotationSpawnLinesOverride);
 
@@ -28,10 +29,9 @@ namespace SongCore::Overrides {
         auto& customSaveDataInfo = customSaveDataInfoOpt->get();
 
         auto& beatmapKey = sceneSetupData->beatmapKey;
-        auto characteristic = beatmapKey.beatmapCharacteristic;
         auto difficulty = beatmapKey.difficulty;
 
-        auto levelDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristic->serializedName, difficulty);
+        auto levelDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(SongCore::API::Characteristics::SerializedName(beatmapKey.characteristic), difficulty);
         if (!levelDetailsOpt.has_value()) return;
 
         auto& levelDetails = levelDetailsOpt->get();

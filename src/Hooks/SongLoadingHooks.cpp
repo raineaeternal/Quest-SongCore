@@ -35,11 +35,12 @@
 #include "System/Version.hpp"
 #include "System/GC.hpp"
 
-#include "UnityEngine/Object.hpp"
-#include "UnityEngine/Networking/UnityWebRequest.hpp"
-#include "UnityEngine/Sprite.hpp"
-#include "UnityEngine/Resources.hpp"
+#include "UnityEngine/AudioConfiguration.hpp"
 #include "UnityEngine/AudioSettings.hpp"
+#include "UnityEngine/Networking/UnityWebRequest.hpp"
+#include "UnityEngine/Object.hpp"
+#include "UnityEngine/Resources.hpp"
+#include "UnityEngine/Sprite.hpp"
 
 #include "BGLib/Polyglot/Localization.hpp"
 #include "BGLib/DotnetExtension/Collections/LRUCache_2.hpp"
@@ -76,12 +77,24 @@ MAKE_AUTO_HOOK_MATCH(
     ::System::Action *afterMinDurationCallback,
     ::System::Action_1<::Zenject::DiContainer *> *extraBindingsCallback,
     ::System::Action_1<::Zenject::DiContainer *> *finishCallback) {
-  resetAudio = false;
+//   resetAudio = false;
   return GameScenesManager_ScenesTransitionCoroutine(
       self, newScenesTransitionSetupData, scenesToPresent, presentType,
       scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector,
       afterMinDurationCallback, extraBindingsCallback, finishCallback);
 }
+static void AudioSettings_Reset() {
+  static auto UnityEngine_AudioSettings_GetConfiguration = i2c::resolve_icall<::UnityEngine::AudioConfiguration>("AudioSettings::GetConfiguration");
+  static auto UnityEngine_AudioSettings_SetConfiguration =
+      i2c::resolve_icall<bool, ::UnityEngine::AudioConfiguration>(
+          "AudioSettings::SetConfiguration");
+  //   UnityEngine::AudioSettings::Reset(
+  //       UnityEngine::AudioSettings::GetConfiguration());
+
+  auto config = UnityEngine_AudioSettings_GetConfiguration();
+  UnityEngine_AudioSettings_SetConfiguration(config);
+}
+
 // Reset AudioSettings
 // This is to ensure audio is intact between scenes, and custom audio gets loaded after audio settings is reset.
 // Without this patch, one can get the game to have no audio after restarting the map several times.
@@ -90,8 +103,7 @@ MAKE_AUTO_HOOK_MATCH(
     &LevelScenesTransitionSetupData::BeforeScenesWillBeActivatedAsync,
     ::System::Threading::Tasks::Task *, LevelScenesTransitionSetupData *self) {
   // TODO: Call unstripped libunity
-  UnityEngine::AudioSettings::Reset(
-      UnityEngine::AudioSettings::GetConfiguration());
+  AudioSettings_Reset();
 
   auto sceneSetupData = self->gameplayCoreSceneSetupData;
   AudioClipAsyncLoader *audioClipLoader = sceneSetupData->_audioClipAsyncLoader;

@@ -5,58 +5,28 @@
 #include "logging.hpp"
 #include "config.hpp"
 
-#include "GlobalNamespace/GameplayCoreInstaller.hpp"
-#include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
+#include "CustomJSONData.hpp"
+#include "GlobalNamespace/BeatmapBasicData.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicCollection.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
-#include "GlobalNamespace/BeatmapBasicData.hpp"
 #include "GlobalNamespace/BeatmapObjectSpawnController.hpp"
+#include "GlobalNamespace/GameplayCoreInstaller.hpp"
+#include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
 #include "SongLoader/CustomBeatmapLevel.hpp"
-#include "CustomJSONData.hpp"
 #include "Zenject/DiContainer.hpp"
-
+#include "Zenject/FromBinderGeneric_1.hpp"
 
 void PostInstallBindings(void(*GameplayCoreInstaller_InstallBindings)(GlobalNamespace::GameplayCoreInstaller* self), GlobalNamespace::GameplayCoreInstaller* instance);
 
 // GameplayCoreInstaller::InstallBindings
-// PREFIX
-    // OneSaberOverride
-    // sets characteristic->_numberOfColors to saberCount
 // POSTFIX
    // NegativeNJS patch
    // Fetches negative NJS from difficultyBeatmapData and updates to BeatmapObjectSpawnController::InitData
+// NOTE: the one saber override used to live here, mutating characteristic->_numberOfColors. That field no longer
+// exists (NumberOfColors is now a computed static BeatmapCharacteristicExtensions method), so it's handled instead
+// by SongCore::Overrides::OneSaberOverride + the SaberManager::Start hook in src/Hooks/OneSaberHooks.cpp.
 MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::GameplayCoreInstaller::InstallBindings, void, GlobalNamespace::GameplayCoreInstaller* self) {
-    // if override is disabledl, just run orig and nothing else
-    if (config.disableOneSaberOverride) return PostInstallBindings(GameplayCoreInstaller_InstallBindings, self);
-
-    auto sceneSetupData = self->_sceneSetupData;
-    // get custom preview level
-    auto level = i2c::try_cast<SongCore::SongLoader::CustomBeatmapLevel*>(sceneSetupData->beatmapLevel);
-    if (!level) return GameplayCoreInstaller_InstallBindings(self);
-
-    // get custom level save data if possible
-    auto customSaveDataInfoOpt = level->CustomSaveDataInfo;
-    if (!customSaveDataInfoOpt) return PostInstallBindings(GameplayCoreInstaller_InstallBindings, self);
-    auto& customSaveDataInfo = customSaveDataInfoOpt->get();
-
-    // get difficulty data
-    auto beatmapKey = sceneSetupData->beatmapKey;
-    // TODO: Get CharacteristicSO from somewhere
-    auto characteristic = beatmapKey.characteristic;
-    auto difficulty = beatmapKey.difficulty;
-    auto difficultyDataOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(SongCore::API::Characteristics::SerializedName(characteristic), difficulty);
-    if (!difficultyDataOpt.has_value()) return PostInstallBindings(GameplayCoreInstaller_InstallBindings, self);
-    // get if one saber set
-    auto& difficultyData = difficultyDataOpt->get();
-    if (!difficultyData.oneSaber.has_value()) return PostInstallBindings(GameplayCoreInstaller_InstallBindings, self);
-
-    int saberCount = difficultyData.oneSaber.value() ? 1 : 2;
-    int origCount = characteristic->_numberOfColors;
-
-    // override the color number during the invoke of orig, restore afterwards
-    characteristic->_numberOfColors = saberCount;
     PostInstallBindings(GameplayCoreInstaller_InstallBindings, self);
-    characteristic->_numberOfColors = origCount;
 }
 
 void NegativeNJSPatch(Zenject::DiContainer* container, GlobalNamespace::GameplayCoreInstaller* installer) {
