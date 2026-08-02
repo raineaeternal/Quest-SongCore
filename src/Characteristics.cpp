@@ -3,6 +3,7 @@
 
 #include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
+#include "logging.hpp"
 #include <mutex>
 
 DEFINE_TYPE(SongCore, Characteristics);
@@ -13,14 +14,43 @@ static ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> ToList(System::Co
 
 namespace SongCore {
     void Characteristics::ctor(GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::AppStaticSettingsSO* appStaticSettings) {
-        _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
-        _appStaticSettings = appStaticSettings;
+      _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
+      _appStaticSettings = appStaticSettings;
 
-        auto characteristics = i2c::cast<System::Collections::Generic::List_1<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>*>(_beatmapCharacteristicCollection->beatmapCharacteristics);
-        _beatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(characteristics);
+      if (!_beatmapCharacteristicCollection->beatmapCharacteristics) {
+        ERROR("BeatmapCharacteristicCollection is null!");
+      } else {
+        DEBUG("_beatmapCharacteristicCollection->beatmapCharacteristics => {}",
+              i2c::class_standard_name(
+                  reinterpret_cast<Il2CppObject *>(
+                      _beatmapCharacteristicCollection->beatmapCharacteristics)
+                      ->klass));
+        auto characteristics = i2c::cast<System::Collections::Generic::List_1<
+            UnityW<GlobalNamespace::BeatmapCharacteristicSO>> *>(
+            _beatmapCharacteristicCollection->beatmapCharacteristics);
+        _beatmapCharacteristics =
+            ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(
+                characteristics);
+      }
 
-        auto disabledCharacteristics = i2c::cast<System::Collections::Generic::List_1<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>*>(_beatmapCharacteristicCollection->disabledBeatmapCharacteristics);
-        _disabledBeatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(disabledCharacteristics);
+      if (!_beatmapCharacteristicCollection->disabledBeatmapCharacteristics) {
+        ERROR("Disabled BeatmapCharacteristicCollection is null!");
+      } else {
+        DEBUG("_beatmapCharacteristicCollection->"
+              "disabledBeatmapCharacteristics => {}",
+              i2c::class_standard_name(reinterpret_cast<Il2CppObject *>(
+                                           _beatmapCharacteristicCollection
+                                               ->disabledBeatmapCharacteristics)
+                                           ->klass));
+        auto disabledCharacteristics =
+            i2c::cast<System::Collections::Generic::List_1<
+                UnityW<GlobalNamespace::BeatmapCharacteristicSO>> *>(
+                _beatmapCharacteristicCollection
+                    ->disabledBeatmapCharacteristics);
+        _disabledBeatmapCharacteristics =
+            ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(
+                disabledCharacteristics);
+      }
     }
 
     void Characteristics::Initialize() {
