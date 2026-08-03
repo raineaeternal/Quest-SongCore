@@ -105,7 +105,13 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
     auto characteristics = SongCore::Characteristics::get_instance();
 
     for (auto characteristic : beatmapCharacteristics) {
-        auto characteristicInfo = characteristics->GetCharacteristic(characteristic);
+        auto characteristicInfoOpt = characteristics->GetCharacteristic(characteristic);
+        if (!characteristicInfoOpt.has_value()) {
+          success = false;
+          break;
+        }
+        auto& characteristicInfo = *characteristicInfoOpt;
+
         INFO("Setting custom label for characteristic: {}", characteristicInfo.serializedName);
         
         auto characteristicDetailsOpt = customSaveDataInfo.TryGetCharacteristic(characteristicInfo.serializedName);
@@ -116,7 +122,7 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
         auto& characteristicDetails = characteristicDetailsOpt->get();
 
         auto label = characteristicDetails.characteristicLabel.value_or(characteristicDetails.characteristicName);
-        UnityEngine::Sprite* icon = nullptr;
+        UnityEngine::Sprite* icon = characteristicInfo.icon.unchecked_ptr();
         if (characteristicDetails.characteristicIconImageFileName.has_value() && !characteristicDetails.characteristicIconImageFileName->empty()) {
             auto iconCache = SongCore::UI::IconCache::get_instance();
             if (iconCache) { // if iconcache instance exists, use it
@@ -127,7 +133,7 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
 
         cellData.emplace_back(
             characteristicInfo.sortingOrder,
-            icon ? icon : characteristicInfo.icon.unchecked_ptr(),
+            icon,
             label
         );
     }
@@ -164,7 +170,7 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     int selectedCellIdx = self->_difficultySegmentedControl->selectedCellNumber;
 
     auto characteristicInfo = characteristics->GetCharacteristic(characteristic);
-    auto const &serializedName = characteristicInfo.serializedName;
+    auto const &serializedName = characteristicInfo->serializedName;
     for (auto difficulty : difficulties) {
         auto difficultyDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(serializedName, difficulty);
         if (!difficultyDetailsOpt.has_value()) { success = false; break; }

@@ -31,7 +31,7 @@ namespace SongCore::Overrides {
         auto& beatmapKey = sceneSetupData->beatmapKey;
         auto difficulty = beatmapKey.difficulty;
 
-        auto levelDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristics->GetCharacteristic(beatmapKey.characteristic).serializedName, difficulty);
+        auto levelDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristics->GetCharacteristic(beatmapKey.characteristic)->serializedName, difficulty);
         if (!levelDetailsOpt.has_value()) return;
 
         auto& levelDetails = levelDetailsOpt->get();

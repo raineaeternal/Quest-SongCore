@@ -225,7 +225,7 @@ GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorSchem
         return nullptr;
     };
 
-    auto diffDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristics->GetCharacteristic(beatmapKey.characteristic).serializedName, beatmapKey.difficulty);
+    auto diffDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristics->GetCharacteristic(beatmapKey.characteristic)->serializedName, beatmapKey.difficulty);
     if (!diffDetailsOpt.has_value()) return nullptr;
     auto& diffDetails = diffDetailsOpt->get();
 

@@ -47,7 +47,7 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Characteristics, System::Object, Zenj
         std::optional<API::Characteristics::CharacteristicInfo> GetCharacteristicBySerializedName(std::string_view serializedName);
 
         /// @brief looks up info for one of the base game's built-in characteristics
-        API::Characteristics::CharacteristicInfo GetCharacteristic(GlobalNamespace::BeatmapCharacteristic characteristic);
+        std::optional<API::Characteristics::CharacteristicInfo> GetCharacteristic(GlobalNamespace::BeatmapCharacteristic characteristic);
 
         /// @brief provides access to the registered characteristics without allowing edits
         std::vector<API::Characteristics::CharacteristicInfo> GetRegisteredCharacteristics();

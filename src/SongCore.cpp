@@ -212,15 +212,28 @@ namespace SongCore::API {
           return CharacteristicInfo(characteristic);
         }
 
-
-        CharacteristicInfo::CharacteristicInfo(GlobalNamespace::BeatmapCharacteristic characteristic)
-            : serializedName(static_cast<std::string>(GlobalNamespace::BeatmapCharacteristicExtensions::SerializedName(characteristic))),
-            compoundIdPartName(static_cast<std::string>(GlobalNamespace::BeatmapCharacteristicExtensions::CompoundIdPartName(characteristic))),
-            characteristicNameLocalizationKey(static_cast<std::string>(GlobalNamespace::BeatmapCharacteristicExtensions::NameLocalizationKey(characteristic))),
-            descriptionLocalizationKey(static_cast<std::string>(GlobalNamespace::BeatmapCharacteristicExtensions::HintLocalizationKey(characteristic))),
-            sortingOrder(static_cast<int>(characteristic)),
-            requires360Movement(GlobalNamespace::BeatmapCharacteristicExtensions::Requires360Movement(characteristic)),
-            containsRotationEvents(GlobalNamespace::BeatmapCharacteristicExtensions::ContainsRotationEvents(characteristic)) {}
+        CharacteristicInfo::CharacteristicInfo(
+            GlobalNamespace::BeatmapCharacteristic characteristic, UnityEngine::Sprite* icon)
+            : serializedName(static_cast<std::string>(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      SerializedName(characteristic))),
+              compoundIdPartName(static_cast<std::string>(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      CompoundIdPartName(characteristic))),
+              characteristicNameLocalizationKey(static_cast<std::string>(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      NameLocalizationKey(characteristic))),
+              descriptionLocalizationKey(static_cast<std::string>(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      HintLocalizationKey(characteristic))),
+              sortingOrder(static_cast<int>(characteristic)),
+              requires360Movement(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      Requires360Movement(characteristic)),
+              containsRotationEvents(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                        ContainsRotationEvents(characteristic)),
+                icon(icon) {}
 
         CharacteristicInfo::CharacteristicInfo(GlobalNamespace::BeatmapCharacteristicSO* characteristic)
             : serializedName(characteristic->serializedName),

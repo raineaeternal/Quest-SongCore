@@ -101,7 +101,7 @@ namespace SongCore {
 
         auto characteristicInfo = _characteristics->GetCharacteristic(
             eventArgs.beatmapKey.characteristic);
-        std::string const& serializedName = characteristicInfo.serializedName;
+        std::string const& serializedName = characteristicInfo->serializedName;
         auto characteristicDetails = levelDetails->get().TryGetCharacteristic(serializedName);
         if (!characteristicDetails.has_value()) return;
 
@@ -133,7 +133,11 @@ namespace SongCore {
     }
 
     API::Characteristics::CharacteristicInfo LevelSelect::GetSelectedCharacteristic() {
-        return _characteristics->GetCharacteristic(_levelDetailViewController->beatmapKey.characteristic);
+        auto characteristicInfoOpt = _characteristics->GetCharacteristic(_levelDetailViewController->beatmapKey.characteristic);
+        if (!characteristicInfoOpt.has_value()) {
+            throw std::runtime_error("Failed to get selected characteristic");
+        }
+        return *characteristicInfoOpt;
     }
 
     GlobalNamespace::BeatmapDifficulty LevelSelect::GetSelectedDifficulty() {

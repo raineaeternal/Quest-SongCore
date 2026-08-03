@@ -30,7 +30,8 @@ namespace SongCore {
             auto characteristicsList = ListW<GlobalNamespace::BeatmapCharacteristic>(characteristics);
             _beatmapCharacteristics.reserve(characteristicsList.size());
             for (auto characteristic : characteristicsList) {
-                _beatmapCharacteristics.emplace_back(characteristic);
+              _beatmapCharacteristics.emplace_back(
+                  characteristic, _beatmapCharacteristicCollection->GetBeatmapCharacteristicIcon(characteristic));
             }
         }
 
@@ -43,7 +44,7 @@ namespace SongCore {
             auto disabledCharacteristicsList = ListW<GlobalNamespace::BeatmapCharacteristic>(disabledCharacteristics);
             _disabledBeatmapCharacteristics.reserve(disabledCharacteristicsList.size());
             for (auto characteristic : disabledCharacteristicsList) {
-                _disabledBeatmapCharacteristics.emplace_back(characteristic);
+                _disabledBeatmapCharacteristics.emplace_back(characteristic, _beatmapCharacteristicCollection->GetBeatmapCharacteristicIcon(characteristic));
             }
         }
     }
@@ -86,7 +87,7 @@ namespace SongCore {
         return std::nullopt;
     }
 
-    API::Characteristics::CharacteristicInfo Characteristics::GetCharacteristic(GlobalNamespace::BeatmapCharacteristic characteristic) {
+    std::optional<API::Characteristics::CharacteristicInfo> Characteristics::GetCharacteristic(GlobalNamespace::BeatmapCharacteristic characteristic) {
         auto itr = std::find_if(_beatmapCharacteristics.begin(), _beatmapCharacteristics.end(), [&](auto const& info) {
             return info.sortingOrder == (int)characteristic;
         });
@@ -97,7 +98,7 @@ namespace SongCore {
         });
         if (disabledItr != _disabledBeatmapCharacteristics.end()) return *disabledItr;
 
-        return API::Characteristics::CharacteristicInfo(characteristic);
+        return std::nullopt;
     }
 
     std::vector<API::Characteristics::CharacteristicInfo> Characteristics::GetRegisteredCharacteristics() {

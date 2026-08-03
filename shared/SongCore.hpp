@@ -110,7 +110,7 @@ namespace SongCore::API {
           /// @brief builds info for one of the base game's built-in
           /// characteristics
           CharacteristicInfo(
-              GlobalNamespace::BeatmapCharacteristic characteristic);
+              GlobalNamespace::BeatmapCharacteristic characteristic, UnityEngine::Sprite* icon);
           /// @brief builds info from a live characteristic SO, e.g. one created
           /// through CreateCharacteristic
           CharacteristicInfo(
