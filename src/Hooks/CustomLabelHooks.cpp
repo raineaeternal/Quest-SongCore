@@ -2,7 +2,6 @@
 #include "logging.hpp"
 
 #include "UI/IconCache.hpp"
-#include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicCollection.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSegmentedControlController.hpp"
 #include "GlobalNamespace/BeatmapDifficultySegmentedControlController.hpp"
@@ -99,14 +98,20 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
     if (!customSaveDataInfoOpt) return;
     auto& customSaveDataInfo = customSaveDataInfoOpt->get();
 
-    auto beatmapCharacteristics = ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(self->_currentlyAvailableBeatmapCharacteristics);
+    auto beatmapCharacteristics = ListW<GlobalNamespace::BeatmapCharacteristic>(self->_currentlyAvailableBeatmapCharacteristics);
     std::vector<TemporaryCharacteristicSegmentedControlData> cellData;
     auto success = !beatmapCharacteristics.empty();
     int selectedCellIdx = self->_segmentedControl->selectedCellNumber;
+    auto characteristics = SongCore::Characteristics::get_instance();
 
     for (auto characteristic : beatmapCharacteristics) {
-        auto characteristicDetailsOpt = customSaveDataInfo.TryGetCharacteristic(characteristic->serializedName);
-        if (!characteristicDetailsOpt.has_value()) { success = false; break; }
+        auto characteristicInfo = characteristics->GetCharacteristic(characteristic);
+
+        auto characteristicDetailsOpt = customSaveDataInfo.TryGetCharacteristic(characteristicInfo.serializedName);
+        if (!characteristicDetailsOpt.has_value()) {
+          success = false;
+          break;
+        }
         auto& characteristicDetails = characteristicDetailsOpt->get();
 
         auto label = characteristicDetails.characteristicLabel.value_or(characteristicDetails.characteristicName);
@@ -120,8 +125,8 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
         }
 
         cellData.emplace_back(
-            characteristic->sortingOrder,
-            icon ? icon : characteristic->icon.unsafe_ptr(),
+            characteristicInfo.sortingOrder,
+            icon ? icon : characteristicInfo.icon.ptr(),
             label
         );
     }
