@@ -51,7 +51,7 @@
       },
       {
         "id": "paper2_scotland2",
-        "versionRange": "^4.7.0",
+        "versionRange": "^4.8.0",
         "additionalData": {}
       },
       {
@@ -269,19 +269,6 @@
     },
     {
       "dependency": {
-        "id": "libcryptopp",
-        "versionRange": "=8.5.0",
-        "additionalData": {
-          "staticLinking": true,
-          "soLink": "https://github.com/darknight1050/cryptopp-qpm/releases/download/v8.5.0/libcryptopp.a",
-          "overrideSoName": "libcryptopp.a",
-          "branchName": "version-v8.5.0"
-        }
-      },
-      "version": "8.5.0"
-    },
-    {
-      "dependency": {
         "id": "paper2_scotland2",
         "versionRange": "=4.8.0",
         "additionalData": {
@@ -301,14 +288,27 @@
     },
     {
       "dependency": {
-        "id": "beatsaber-hook",
-        "versionRange": "=8.0.6",
+        "id": "libcryptopp",
+        "versionRange": "=8.5.0",
         "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v8.0.6/libbeatsaber-hook.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v8.0.6/debug_libbeatsaber-hook.so",
+          "staticLinking": true,
+          "soLink": "https://github.com/darknight1050/cryptopp-qpm/releases/download/v8.5.0/libcryptopp.a",
+          "overrideSoName": "libcryptopp.a",
+          "branchName": "version-v8.5.0"
+        }
+      },
+      "version": "8.5.0"
+    },
+    {
+      "dependency": {
+        "id": "beatsaber-hook",
+        "versionRange": "=8.0.7",
+        "additionalData": {
+          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v8.0.7/libbeatsaber-hook.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v8.0.7/debug_libbeatsaber-hook.so",
           "overrideSoName": "libbeatsaber-hook.so",
-          "modLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v8.0.6/beatsaber-hook.qmod",
-          "branchName": "version/v8_0_6",
+          "modLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v8.0.7/beatsaber-hook.qmod",
+          "branchName": "version/v8_0_7",
           "compileOptions": {
             "cppFlags": [
               "-Wno-extra-qualification"
@@ -317,7 +317,7 @@
           "cmake": true
         }
       },
-      "version": "8.0.6"
+      "version": "8.0.7"
     },
     {
       "dependency": {
