@@ -84,15 +84,23 @@ MAKE_AUTO_HOOK_MATCH(
       afterMinDurationCallback, extraBindingsCallback, finishCallback);
 }
 static void AudioSettings_Reset() {
-  static auto UnityEngine_AudioSettings_GetConfiguration = i2c::resolve_icall<::UnityEngine::AudioConfiguration>("AudioSettings::GetConfiguration");
-  static auto UnityEngine_AudioSettings_SetConfiguration =
+  static i2c::result<function_ptr_t<::UnityEngine::AudioConfiguration>>
+      UnityEngine_AudioSettings_GetConfiguration =
+          i2c::resolve_icall <
+          UnityEngine::AudioConfiguration>("AudioSettings::GetConfiguration");
+  static i2c::result<function_ptr_t<bool, ::UnityEngine::AudioConfiguration>> UnityEngine_AudioSettings_SetConfiguration =
       i2c::resolve_icall<bool, ::UnityEngine::AudioConfiguration>(
           "AudioSettings::SetConfiguration");
   //   UnityEngine::AudioSettings::Reset(
   //       UnityEngine::AudioSettings::GetConfiguration());
 
-  auto config = UnityEngine_AudioSettings_GetConfiguration();
-  UnityEngine_AudioSettings_SetConfiguration(config);
+  if (!UnityEngine_AudioSettings_GetConfiguration || !UnityEngine_AudioSettings_SetConfiguration) {
+    ERROR("Failed to resolve AudioSettings::GetConfiguration or AudioSettings::SetConfiguration");
+    return;
+  }
+
+  auto config = UnityEngine_AudioSettings_GetConfiguration.value()();
+  UnityEngine_AudioSettings_SetConfiguration.value()(config);
 }
 
 // Reset AudioSettings
