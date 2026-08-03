@@ -1,6 +1,7 @@
 #include "Characteristics.hpp"
 #include "SongCore.hpp"
 
+#include "System/Collections/Generic/Dictionary_2.hpp"
 #include "logging.hpp"
 #include <algorithm>
 #include <mutex>
@@ -17,10 +18,9 @@ namespace SongCore {
     }
 
     void Characteristics::ctor(GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::AppStaticSettingsSO* appStaticSettings) {
+        _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
         _appStaticSettings = appStaticSettings;
 
-        // beatmapCharacteristicCollection is only needed transiently here to seed the initial
-        // enabled/disabled lists; nothing after construction needs to touch it again.
         if (!beatmapCharacteristicCollection->beatmapCharacteristics) {
             ERROR("BeatmapCharacteristicCollection is null!");
         } else {
@@ -147,6 +147,13 @@ namespace SongCore {
             });
             if (itr == _beatmapCharacteristics.end()) {
                 _beatmapCharacteristics.emplace_back(characteristic);
+
+                // custom characteristics carry their own live BeatmapCharacteristicSO; keep the
+                // game's lookup dictionary in sync so it can still be found by serialized name
+                auto so = characteristic.characteristicSO.ptr();
+                if (so) {
+                    _beatmapCharacteristicCollection->_beatmapCharacteristicsBySerializedName->Add(StringW(serializedName), so);
+                }
             }
         }
     }
@@ -166,6 +173,10 @@ namespace SongCore {
             return info.serializedName == serializedName;
         });
         if (itr2 != _beatmapCharacteristics.end()) {
+            // if the characteristic carries a live SO, it was also added to the dictionary
+            if (itr2->characteristicSO.ptr()) {
+                _beatmapCharacteristicCollection->_beatmapCharacteristicsBySerializedName->Remove(StringW(serializedName));
+            }
             _beatmapCharacteristics.erase(itr2);
         }
     }

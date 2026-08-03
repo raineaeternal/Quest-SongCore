@@ -27,6 +27,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES(SongCore, Characteristics, System::Object, Zenj
 
         std::vector<API::Characteristics::CharacteristicInfo> _beatmapCharacteristics;
         std::vector<API::Characteristics::CharacteristicInfo> _disabledBeatmapCharacteristics;
+
+        /// @brief kept around so Add/RemoveCharacteristicToCollection can keep _beatmapCharacteristicsBySerializedName in sync for custom characteristics
+        DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapCharacteristicCollection*, _beatmapCharacteristicCollection);
         DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::AppStaticSettingsSO*, _appStaticSettings);
 
         DECLARE_CTOR(ctor, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::AppStaticSettingsSO* appStaticSettings);
