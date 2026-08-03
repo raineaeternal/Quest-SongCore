@@ -144,6 +144,12 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     if (!customSaveDataInfoOpt) return;
     auto& customSaveDataInfo = customSaveDataInfoOpt->get();
 
+    auto characteristics = SongCore::Characteristics::get_instance();
+    if (!characteristics) {
+      ERROR("Characteristics instance is null, cannot set custom difficulty labels");
+      return;
+    };
+
     auto characteristic = beatmapKey.characteristic;
     auto difficulties = ListW<GlobalNamespace::BeatmapDifficulty>(self->_difficulties);
     auto labels = ListW<StringW>::New();
@@ -151,9 +157,9 @@ void SetCustomDifficultyLabels(GlobalNamespace::BeatmapDifficultySegmentedContro
     auto success = !difficulties.empty();
     int selectedCellIdx = self->_difficultySegmentedControl->selectedCellNumber;
 
+    auto characteristicInfo = characteristics->GetCharacteristic(characteristic);
+    auto const &serializedName = characteristicInfo.serializedName;
     for (auto difficulty : difficulties) {
-      std::string serializedName(SongCore::API::Characteristics::SerializedName(characteristic));
-      
         auto difficultyDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(serializedName, difficulty);
         if (!difficultyDetailsOpt.has_value()) { success = false; break; }
 

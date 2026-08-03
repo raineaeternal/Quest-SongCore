@@ -1,95 +1,122 @@
 #include "Characteristics.hpp"
 #include "SongCore.hpp"
 
-#include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
-#include "System/Collections/Generic/Dictionary_2.hpp"
 #include "logging.hpp"
+#include <algorithm>
 #include <mutex>
 
 DEFINE_TYPE(SongCore, Characteristics);
 
-static ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> ToList(System::Collections::Generic::Dictionary_2<StringW, UnityW<GlobalNamespace::BeatmapCharacteristicSO>>::ValueCollection* col) {
-    return {};
+namespace {
+    SongCore::Characteristics* _instance = nullptr;
 }
 
 namespace SongCore {
+    Characteristics* Characteristics::get_instance() {
+        return _instance;
+    }
+
     void Characteristics::ctor(GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::AppStaticSettingsSO* appStaticSettings) {
-      _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
-      _appStaticSettings = appStaticSettings;
+        _appStaticSettings = appStaticSettings;
 
-      if (!_beatmapCharacteristicCollection->beatmapCharacteristics) {
-        ERROR("BeatmapCharacteristicCollection is null!");
-      } else {
-        DEBUG("_beatmapCharacteristicCollection->beatmapCharacteristics => {}",
-              i2c::class_standard_name(
-                  reinterpret_cast<Il2CppObject *>(
-                      _beatmapCharacteristicCollection->beatmapCharacteristics)
-                      ->klass));
-        auto characteristics = i2c::cast<System::Collections::Generic::List_1<
-            UnityW<GlobalNamespace::BeatmapCharacteristicSO>> *>(
-            _beatmapCharacteristicCollection->beatmapCharacteristics);
-        _beatmapCharacteristics =
-            ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(
-                characteristics);
-      }
+        // beatmapCharacteristicCollection is only needed transiently here to seed the initial
+        // enabled/disabled lists; nothing after construction needs to touch it again.
+        if (!beatmapCharacteristicCollection->beatmapCharacteristics) {
+            ERROR("BeatmapCharacteristicCollection is null!");
+        } else {
+            auto characteristics = i2c::cast<System::Collections::Generic::List_1<
+                GlobalNamespace::BeatmapCharacteristic> *>(
+                beatmapCharacteristicCollection->beatmapCharacteristics);
+            auto characteristicsList = ListW<GlobalNamespace::BeatmapCharacteristic>(characteristics);
+            _beatmapCharacteristics.reserve(characteristicsList.size());
+            for (auto characteristic : characteristicsList) {
+                _beatmapCharacteristics.emplace_back(characteristic);
+            }
+        }
 
-      if (!_beatmapCharacteristicCollection->disabledBeatmapCharacteristics) {
-        ERROR("Disabled BeatmapCharacteristicCollection is null!");
-      } else {
-        DEBUG("_beatmapCharacteristicCollection->"
-              "disabledBeatmapCharacteristics => {}",
-              i2c::class_standard_name(reinterpret_cast<Il2CppObject *>(
-                                           _beatmapCharacteristicCollection
-                                               ->disabledBeatmapCharacteristics)
-                                           ->klass));
-        auto disabledCharacteristics =
-            i2c::cast<System::Collections::Generic::List_1<
-                UnityW<GlobalNamespace::BeatmapCharacteristicSO>> *>(
-                _beatmapCharacteristicCollection
-                    ->disabledBeatmapCharacteristics);
-        _disabledBeatmapCharacteristics =
-            ListW<UnityW<GlobalNamespace::BeatmapCharacteristicSO>>(
-                disabledCharacteristics);
-      }
+        if (!beatmapCharacteristicCollection->disabledBeatmapCharacteristics) {
+            ERROR("Disabled BeatmapCharacteristicCollection is null!");
+        } else {
+            auto disabledCharacteristics = i2c::cast<System::Collections::Generic::List_1<
+                GlobalNamespace::BeatmapCharacteristic> *>(
+                beatmapCharacteristicCollection->disabledBeatmapCharacteristics);
+            auto disabledCharacteristicsList = ListW<GlobalNamespace::BeatmapCharacteristic>(disabledCharacteristics);
+            _disabledBeatmapCharacteristics.reserve(disabledCharacteristicsList.size());
+            for (auto characteristic : disabledCharacteristicsList) {
+                _disabledBeatmapCharacteristics.emplace_back(characteristic);
+            }
+        }
     }
 
     void Characteristics::Initialize() {
+        if (!_instance) _instance = this;
+
         SongCore::API::Characteristics::GetCharacteristicsUpdatedEvent() += {&Characteristics::CharacteristicsUpdated, this};
         // on initialization, add any already registered characteristics to the collection
-        for (auto characteristics : RegisteredCharacteristics) {
-            AddCharacteristicToCollection(characteristics);
+        for (auto const& characteristic : RegisteredCharacteristics) {
+            AddCharacteristicToCollection(characteristic);
         }
     }
 
     void Characteristics::Dispose() {
+        if (_instance == this) _instance = nullptr;
+
         SongCore::API::Characteristics::GetCharacteristicsUpdatedEvent() -= {&Characteristics::CharacteristicsUpdated, this};
     }
 
-    void Characteristics::RegisterCustomCharacteristic(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
+    void Characteristics::RegisterCustomCharacteristic(API::Characteristics::CharacteristicInfo characteristic) {
         return SongCore::API::Characteristics::RegisterCustomCharacteristic(characteristic);
     }
 
-    void Characteristics::UnregisterCustomCharacteristic(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
+    void Characteristics::UnregisterCustomCharacteristic(API::Characteristics::CharacteristicInfo characteristic) {
         return SongCore::API::Characteristics::UnregisterCustomCharacteristic(characteristic);
     }
 
-    std::span<GlobalNamespace::BeatmapCharacteristicSO*> Characteristics::GetRegisteredCharacteristics() {
+    std::optional<API::Characteristics::CharacteristicInfo> Characteristics::GetCharacteristicBySerializedName(std::string_view serializedName) {
+        auto itr = std::find_if(_beatmapCharacteristics.begin(), _beatmapCharacteristics.end(), [&](auto const& info) {
+            return info.serializedName == serializedName;
+        });
+        if (itr != _beatmapCharacteristics.end()) return *itr;
+
+        auto disabledItr = std::find_if(_disabledBeatmapCharacteristics.begin(), _disabledBeatmapCharacteristics.end(), [&](auto const& info) {
+            return info.serializedName == serializedName;
+        });
+        if (disabledItr != _disabledBeatmapCharacteristics.end()) return *disabledItr;
+
+        return std::nullopt;
+    }
+
+    API::Characteristics::CharacteristicInfo Characteristics::GetCharacteristic(GlobalNamespace::BeatmapCharacteristic characteristic) {
+        auto itr = std::find_if(_beatmapCharacteristics.begin(), _beatmapCharacteristics.end(), [&](auto const& info) {
+            return info.sortingOrder == (int)characteristic;
+        });
+        if (itr != _beatmapCharacteristics.end()) return *itr;
+
+        auto disabledItr = std::find_if(_disabledBeatmapCharacteristics.begin(), _disabledBeatmapCharacteristics.end(), [&](auto const& info) {
+            return info.sortingOrder == (int)characteristic;
+        });
+        if (disabledItr != _disabledBeatmapCharacteristics.end()) return *disabledItr;
+
+        return API::Characteristics::CharacteristicInfo(characteristic);
+    }
+
+    std::vector<API::Characteristics::CharacteristicInfo> Characteristics::GetRegisteredCharacteristics() {
         return SongCore::API::Characteristics::GetRegisteredCharacteristics();
     }
 
-    std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> Characteristics::GetEnabledCharacteristics() {
-        return _beatmapCharacteristics.ref_to();
+    std::span<API::Characteristics::CharacteristicInfo> Characteristics::GetEnabledCharacteristics() {
+        return _beatmapCharacteristics;
     }
 
-    std::span<UnityW<GlobalNamespace::BeatmapCharacteristicSO>> Characteristics::GetDisabledCharacteristics() {
-        return _disabledBeatmapCharacteristics.ref_to();
+    std::span<API::Characteristics::CharacteristicInfo> Characteristics::GetDisabledCharacteristics() {
+        return _disabledBeatmapCharacteristics;
     }
 
-    unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, SongCore::API::Characteristics::CharacteristicEventKind>& Characteristics::GetCharacteristicsUpdatedEvent() {
+    unordered_event_callback<API::Characteristics::CharacteristicInfo, SongCore::API::Characteristics::CharacteristicEventKind>& Characteristics::GetCharacteristicsUpdatedEvent() {
         return _characteristicsUpdated;
     }
 
-    void Characteristics::CharacteristicsUpdated(GlobalNamespace::BeatmapCharacteristicSO* characteristic, SongCore::API::Characteristics::CharacteristicEventKind eventKind) {
+    void Characteristics::CharacteristicsUpdated(API::Characteristics::CharacteristicInfo characteristic, SongCore::API::Characteristics::CharacteristicEventKind eventKind) {
         switch (eventKind) {
             using enum SongCore::API::Characteristics::CharacteristicEventKind;
             case Registered:
@@ -103,83 +130,43 @@ namespace SongCore {
         _characteristicsUpdated.invoke(characteristic, eventKind);
     }
 
-    void Characteristics::AddCharacteristicToCollection(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
+    void Characteristics::AddCharacteristicToCollection(API::Characteristics::CharacteristicInfo characteristic) {
         std::lock_guard<std::mutex> lock(_collectionMutex);
-        auto serializedName = characteristic->serializedName;
-        if (characteristic->requires360Movement && !_appStaticSettings->enable360DegreeLevels) {
-            _disabledBeatmapCharacteristics->Add(characteristic);
+
+        auto const& serializedName = characteristic.serializedName;
+        if (characteristic.requires360Movement && !_appStaticSettings->enable360DegreeLevels) {
+            auto itr = std::find_if(_disabledBeatmapCharacteristics.begin(), _disabledBeatmapCharacteristics.end(), [&](auto const& info) {
+                return info.serializedName == serializedName;
+            });
+            if (itr == _disabledBeatmapCharacteristics.end()) {
+                _disabledBeatmapCharacteristics.emplace_back(characteristic);
+            }
         } else {
-            _beatmapCharacteristicCollection->_beatmapCharacteristicsBySerializedName->Add(serializedName, characteristic);
-            _beatmapCharacteristics->Add(characteristic);
+            auto itr = std::find_if(_beatmapCharacteristics.begin(), _beatmapCharacteristics.end(), [&](auto const& info) {
+                return info.serializedName == serializedName;
+            });
+            if (itr == _beatmapCharacteristics.end()) {
+                _beatmapCharacteristics.emplace_back(characteristic);
+            }
         }
     }
 
-    void Characteristics::RemoveCharacteristicFromCollection(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
+    void Characteristics::RemoveCharacteristicFromCollection(API::Characteristics::CharacteristicInfo characteristic) {
         std::lock_guard<std::mutex> lock(_collectionMutex);
 
-        auto disabledCharacteristicsIdx = _disabledBeatmapCharacteristics->IndexOf(characteristic);
-        if (disabledCharacteristicsIdx >= 0) {
-            _disabledBeatmapCharacteristics->RemoveAt(disabledCharacteristicsIdx);
+        auto const& serializedName = characteristic.serializedName;
+        auto itr = std::find_if(_disabledBeatmapCharacteristics.begin(), _disabledBeatmapCharacteristics.end(), [&](auto const& info) {
+            return info.serializedName == serializedName;
+        });
+        if (itr != _disabledBeatmapCharacteristics.end()) {
+            _disabledBeatmapCharacteristics.erase(itr);
         }
 
-        auto characteristicsIdx = _beatmapCharacteristics->IndexOf(characteristic);
-        if (characteristicsIdx >= 0) {
-            _beatmapCharacteristics->RemoveAt(disabledCharacteristicsIdx);
-
-            // if the characteristic appears in the regular list, it was also added to the dictionary
-            _beatmapCharacteristicCollection->_beatmapCharacteristicsBySerializedName->Remove(characteristic->serializedName);
+        auto itr2 = std::find_if(_beatmapCharacteristics.begin(), _beatmapCharacteristics.end(), [&](auto const& info) {
+            return info.serializedName == serializedName;
+        });
+        if (itr2 != _beatmapCharacteristics.end()) {
+            _beatmapCharacteristics.erase(itr2);
         }
-    }
-    } // namespace SongCore
-    
-namespace SongCore::API::Characteristics {
-
-    GlobalNamespace::BeatmapCharacteristic GetCharacteristic2BySerializedName(std::string_view serializedName) {
-      GlobalNamespace::BeatmapCharacteristic characteristic{};
-
-      // TODO: do we need to hook this?
-        if (!GlobalNamespace::BeatmapCharacteristicExtensions::
-                BeatmapCharacteristicFromSerializedName(
-                    StringW(serializedName), by_ref(characteristic))) {
-        //   return GetCharacteristicBySerializedName(serializedName)
-        }
-
-
-        return characteristic;
-    }
-
-    std::string SerializedName(GlobalNamespace::BeatmapCharacteristic characteristic) {
-        for (auto registeredCharacteristic : SongCore::API::Characteristics::GetRegisteredCharacteristics()) {
-            if (registeredCharacteristic->sortingOrder == (int)characteristic) {
-                return registeredCharacteristic->serializedName;
-            }
-        }
-
-        // TODO: do we need to hook this?
-        return GlobalNamespace::BeatmapCharacteristicExtensions::SerializedName(characteristic);
-    }
-
-    bool CharacteristicRequires360Movement(
-        GlobalNamespace::BeatmapCharacteristic characteristic) {
-        for (auto registeredCharacteristic : SongCore::API::Characteristics::GetRegisteredCharacteristics()) {
-            if (registeredCharacteristic->sortingOrder == (int)characteristic) {
-                return registeredCharacteristic->requires360Movement;
-            }
-        }
-
-        // TODO: do we need to hook this?
-        return GlobalNamespace::BeatmapCharacteristicExtensions::Requires360Movement(characteristic);
-    }
-
-    bool CharacteristicContainsRotationEvents(
-        GlobalNamespace::BeatmapCharacteristic characteristic) {
-        for (auto registeredCharacteristic : SongCore::API::Characteristics::GetRegisteredCharacteristics()) {
-            if (registeredCharacteristic->sortingOrder == (int)characteristic) {
-                return registeredCharacteristic->containsRotationEvents;
-            }
-        }
-
-        // TODO: do we need to hook this?
-        return GlobalNamespace::BeatmapCharacteristicExtensions::ContainsRotationEvents(characteristic);
     }
 }

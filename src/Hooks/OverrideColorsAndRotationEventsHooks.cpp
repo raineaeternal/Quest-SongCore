@@ -81,7 +81,7 @@ MAKE_AUTO_HOOK_MATCH(
     auto customSaveDataInfoOpt = customLevel->CustomSaveDataInfo;
     if (customSaveDataInfoOpt) {
         auto& customSaveDataInfo = customSaveDataInfoOpt->get();
-        auto diffDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(SongCore::API::Characteristics::SerializedName(characteristic), diff);
+        auto diffDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(SongCore::API::Characteristics::GetCharacteristic(characteristic).serializedName, diff);
         if (diffDetailsOpt) {
             auto& diffDetails = diffDetailsOpt->get();
             // map requests rotation events to be enabled or not, so we do that here
@@ -218,7 +218,14 @@ GlobalNamespace::ColorScheme* GetOverrideColorScheme(GlobalNamespace::ColorSchem
     if (!customSaveDataInfoOpt) return nullptr;
     auto& customSaveDataInfo = customSaveDataInfoOpt->get();
 
-    auto diffDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(SongCore::API::Characteristics::SerializedName(beatmapKey.characteristic), beatmapKey.difficulty);
+    auto characteristics = SongCore::Characteristics::get_instance();
+    if (!characteristics) {
+      WARNING(
+          "Characteristics instance is null, cannot get override color scheme");
+        return nullptr;
+    };
+
+    auto diffDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristics->GetCharacteristic(beatmapKey.characteristic).serializedName, beatmapKey.difficulty);
     if (!diffDetailsOpt.has_value()) return nullptr;
     auto& diffDetails = diffDetailsOpt->get();
 

@@ -12,7 +12,7 @@ extern bool OneSaberOverrideForceOneSaber;
 
 namespace SongCore::Overrides {
 
-    void OneSaberOverride::ctor(Zenject::DiContainer* container) {
+    void OneSaberOverride::ctor(Zenject::DiContainer* container, SongCore::Characteristics* characteristics) {
         OneSaberOverrideActive = false;
 
         if (config.disableOneSaberOverride) return;
@@ -28,7 +28,7 @@ namespace SongCore::Overrides {
         auto& customSaveDataInfo = customSaveDataInfoOpt->get();
 
         auto& beatmapKey = sceneSetupData->beatmapKey;
-        auto difficultyDataOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(SongCore::API::Characteristics::SerializedName(beatmapKey.characteristic), beatmapKey.difficulty);
+        auto difficultyDataOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristics->GetCharacteristic(beatmapKey.characteristic).serializedName, beatmapKey.difficulty);
         if (!difficultyDataOpt.has_value()) return;
 
         auto& difficultyData = difficultyDataOpt->get();

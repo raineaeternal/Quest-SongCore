@@ -13,7 +13,7 @@ extern bool NoteSpawnLinesOverrideShowLines;
 
 namespace SongCore::Overrides {
 
-    void RotationSpawnLinesOverride::ctor(Zenject::DiContainer* container) {
+    void RotationSpawnLinesOverride::ctor(Zenject::DiContainer* container, SongCore::Characteristics* characteristics) {
         NoteSpawnLinesOverrideLevelIsCustom = false;
         NoteSpawnLinesOverrideShowLines = true;
 
@@ -31,7 +31,7 @@ namespace SongCore::Overrides {
         auto& beatmapKey = sceneSetupData->beatmapKey;
         auto difficulty = beatmapKey.difficulty;
 
-        auto levelDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(SongCore::API::Characteristics::SerializedName(beatmapKey.characteristic), difficulty);
+        auto levelDetailsOpt = customSaveDataInfo.TryGetCharacteristicAndDifficulty(characteristics->GetCharacteristic(beatmapKey.characteristic).serializedName, difficulty);
         if (!levelDetailsOpt.has_value()) return;
 
         auto& levelDetails = levelDetailsOpt->get();

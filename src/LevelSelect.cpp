@@ -13,9 +13,10 @@
 DEFINE_TYPE(SongCore, LevelSelect);
 
 namespace SongCore {
-    void LevelSelect::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController) {
+    void LevelSelect::ctor(GlobalNamespace::StandardLevelDetailViewController* levelDetailViewController, SongCore::Characteristics* characteristics) {
         INVOKE_CTOR();
         _levelDetailViewController = levelDetailViewController;
+        _characteristics = characteristics;
     }
 
     void LevelSelect::Initialize() {
@@ -98,7 +99,9 @@ namespace SongCore {
         auto levelDetails = saveData->get().TryGetBasicLevelDetails();
         if (!levelDetails.has_value()) return;
 
-        std::string serializedName(API::Characteristics::SerializedName(eventArgs.beatmapKey.characteristic));
+        auto characteristicInfo = _characteristics->GetCharacteristic(
+            eventArgs.beatmapKey.characteristic);
+        std::string const& serializedName = characteristicInfo.serializedName;
         auto characteristicDetails = levelDetails->get().TryGetCharacteristic(serializedName);
         if (!characteristicDetails.has_value()) return;
 
@@ -129,8 +132,8 @@ namespace SongCore {
         return _levelDetailViewController->beatmapKey;
     }
 
-    GlobalNamespace::BeatmapCharacteristic LevelSelect::GetSelectedCharacteristic() {
-        return _levelDetailViewController->beatmapKey.characteristic;
+    API::Characteristics::CharacteristicInfo LevelSelect::GetSelectedCharacteristic() {
+        return _characteristics->GetCharacteristic(_levelDetailViewController->beatmapKey.characteristic);
     }
 
     GlobalNamespace::BeatmapDifficulty LevelSelect::GetSelectedDifficulty() {
