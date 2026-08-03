@@ -106,7 +106,8 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
 
     for (auto characteristic : beatmapCharacteristics) {
         auto characteristicInfo = characteristics->GetCharacteristic(characteristic);
-
+        INFO("Setting custom label for characteristic: {}", characteristicInfo.serializedName);
+        
         auto characteristicDetailsOpt = customSaveDataInfo.TryGetCharacteristic(characteristicInfo.serializedName);
         if (!characteristicDetailsOpt.has_value()) {
           success = false;
@@ -126,7 +127,7 @@ void SetCustomCharacteristicLabels(GlobalNamespace::BeatmapCharacteristicSegment
 
         cellData.emplace_back(
             characteristicInfo.sortingOrder,
-            icon ? icon : characteristicInfo.icon.ptr(),
+            icon ? icon : characteristicInfo.icon.unchecked_ptr(),
             label
         );
     }
