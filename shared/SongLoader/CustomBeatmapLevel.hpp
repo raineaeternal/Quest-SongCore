@@ -3,27 +3,23 @@
 #include "custom-types/shared/macros.hpp"
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/IBeatmapLevelData.hpp"
+#include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
 #include "../CustomJSONData.hpp"
 
 // type which is basically a beatmaplevel but one made by songcore, helps with identification
 DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace::BeatmapLevel) {
     DECLARE_CTOR(ctor,
-        bool hasPrecalculatedData,
-        ::StringW levelID,
-        ::StringW songName,
-        ::StringW songSubName,
-        ::StringW songAuthorName,
-        ::ArrayW<::StringW> allMappers,
-        ::ArrayW<::StringW> allLighters,
-        float_t beatsPerMinute,
-        float_t integratedLufs,
-        float_t songTimeOffset,
-        float_t previewStartTime,
-        float_t previewDuration,
-        float_t songDuration,
-        ::GlobalNamespace::PlayerSensitivityFlag contentRating,
-        ::GlobalNamespace::IPreviewMediaData* previewMediaData,
-        ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
+    bool hasPrecalculatedData, ::StringW levelID, ::StringW songName,
+    ::StringW songSubName, ::StringW songAuthorName,
+    ::ArrayW<::StringW> allMappers, ::ArrayW<::StringW> allLighters,
+    float_t beatsPerMinute, float_t integratedLufs, float_t songTimeOffset,
+    float_t previewStartTime, float_t previewDuration, float_t songDuration,
+    ::GlobalNamespace::PlayerSensitivityFlag contentRating,
+    ::GlobalNamespace::IPreviewMediaData *previewMediaData,
+    ::System::Collections::Generic::Dictionary_2<
+        ::System::ValueTuple_2<::GlobalNamespace::BeatmapCharacteristic,
+                               ::GlobalNamespace::BeatmapDifficulty>,
+        ::GlobalNamespace::BeatmapBasicData *> *beatmapBasicData
     );
 
     public:
@@ -72,7 +68,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
             float_t songDuration,
             ::GlobalNamespace::PlayerSensitivityFlag contentRating,
             ::GlobalNamespace::IPreviewMediaData* previewMediaData,
-            ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_2<::UnityW<::GlobalNamespace::BeatmapCharacteristicSO>, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
+            ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_2<GlobalNamespace::BeatmapCharacteristic, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
         );
     private:
         CustomJSONData::CustomLevelInfoSaveDataV2* _customLevelSaveDataV2;

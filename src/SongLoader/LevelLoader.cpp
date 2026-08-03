@@ -1,6 +1,7 @@
 #include "SongLoader/LevelLoader.hpp"
 #include "BeatmapLevelSaveDataVersion4/AudioSaveData.hpp"
 #include "BeatmapLevelSaveDataVersion4/BeatmapLevelSaveData.hpp"
+#include "Characteristics.hpp"
 #include "CustomJSONData.hpp"
 #include "GlobalNamespace/ColorScheme.hpp"
 #include "SongLoader/RuntimeSongLoader.hpp"
@@ -17,6 +18,7 @@
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
+#include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
 #include "GlobalNamespace/BeatmapLevelColorSchemeSaveData.hpp"
 #include "GlobalNamespace/PlayerSaveData.hpp"
 #include "GlobalNamespace/EnvironmentName.hpp"
@@ -44,13 +46,14 @@
 DEFINE_TYPE(SongCore::SongLoader, LevelLoader);
 
 namespace SongCore::SongLoader {
-    void LevelLoader::ctor(GlobalNamespace::SpriteAsyncLoader* spriteAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel, GlobalNamespace::EnvironmentsListModel* environmentsListModel) {
+    void LevelLoader::ctor(GlobalNamespace::SpriteAsyncLoader* spriteAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel, GlobalNamespace::EnvironmentsListModel* environmentsListModel, SongCore::Characteristics* characteristics) {
         INVOKE_CTOR();
         _spriteAsyncLoader = spriteAsyncLoader;
         _beatmapCharacteristicCollection = beatmapCharacteristicCollection;
         _additionalContentModel = i2c::try_cast<GlobalNamespace::AdditionalContentModel*>(additionalContentModel);
         _environmentsListModel = environmentsListModel;
         _clipLoader = GlobalNamespace::AudioClipAsyncLoader::CreateDefault();
+        _characteristics = characteristics;
     }
 
     SongCore::CustomJSONData::CustomLevelInfoSaveDataV2* LevelLoader::GetStandardSaveData(std::filesystem::path const& path) {
@@ -337,8 +340,8 @@ namespace SongCore::SongLoader {
         bool saveDataHadEnvNames = saveData->environmentNames.size() > 0;
 
         for (auto beatmapSet : saveData->difficultyBeatmapSets) {
-            auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(beatmapSet->beatmapCharacteristicName);
-            if (!characteristic) {
+            auto characteristicInfoOpt = _characteristics->GetCharacteristicBySerializedName(static_cast<std::string>(beatmapSet->beatmapCharacteristicName));
+            if (!characteristicInfoOpt) {
                 #ifdef THROW_ON_MISSING_DATA
                     throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", beatmapSet->beatmapCharacteristicName));
                 #else
@@ -346,6 +349,7 @@ namespace SongCore::SongLoader {
                     continue;
                 #endif
             }
+            auto const& characteristicInfo = *characteristicInfoOpt;
 
             for (auto difficultyBeatmap : beatmapSet->difficultyBeatmaps) {
                 GlobalNamespace::BeatmapDifficulty difficulty;
@@ -374,14 +378,14 @@ namespace SongCore::SongLoader {
                 }
 
                 auto const dictKey = CharacteristicDifficultyPair(
-                    characteristic,
+                    GlobalNamespace::BeatmapCharacteristic(characteristicInfo.sortingOrder),
                     difficulty
                 );
                 if (fileDifficultyBeatmapsDict->ContainsKey(dictKey)) {
                     #ifdef THROW_ON_MISSING_DATA
-                        throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty));
+                        throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", characteristicInfo.serializedName, (int) difficulty));
                     #else
-                        WARNING("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty);
+                        WARNING("Duplicate characteristic/difficulty: {}/{}", characteristicInfo.serializedName, (int) difficulty);
                         continue;
                     #endif
                 }
@@ -396,7 +400,7 @@ namespace SongCore::SongLoader {
                 );
 
                 // if we have env names, use the idx, otherwise use whether the char had rotation (no rot means use default env, otherwise use rotation env)
-                int envNameIndex = saveDataHadEnvNames ? difficultyBeatmap->environmentNameIdx : characteristic->containsRotationEvents ? 1 : 0;
+                int envNameIndex = saveDataHadEnvNames ? difficultyBeatmap->environmentNameIdx : characteristicInfo.containsRotationEvents ? 1 : 0;
                 envNameIndex = std::clamp<int>(envNameIndex, 0, environmentNames.size());
                 int colorSchemeIndex = difficultyBeatmap->beatmapColorSchemeIdx;
                 auto colorScheme = (colorSchemeIndex >= 0 && colorSchemeIndex < colorSchemes.size()) ? colorSchemes[colorSchemeIndex] : nullptr;
@@ -498,8 +502,8 @@ namespace SongCore::SongLoader {
         }
 
         for (auto diffBeatmap : saveData->difficultyBeatmaps) {
-            auto characteristic = _beatmapCharacteristicCollection->GetBeatmapCharacteristicBySerializedName(diffBeatmap->characteristic);
-            if (!characteristic) {
+            auto characteristicInfoOpt = _characteristics->GetCharacteristicBySerializedName(static_cast<std::string>(diffBeatmap->characteristic));
+            if (!characteristicInfoOpt) {
                 WARNING("Got null characteristic for characteristic name {}, skipping...", diffBeatmap->characteristic);
                 #ifdef THROW_ON_MISSING_DATA
                     throw std::runtime_error(fmt::format("Got null characteristic for characteristic name {}", diffBeatmap->characteristic));
@@ -507,6 +511,7 @@ namespace SongCore::SongLoader {
                     continue;
                 #endif
             }
+            auto const& characteristicInfo = *characteristicInfoOpt;
 
             GlobalNamespace::BeatmapDifficulty difficulty;
             auto parseSuccess = GlobalNamespace::BeatmapDifficultySerializedMethods::BeatmapDifficultyFromSerializedName(
@@ -544,14 +549,14 @@ namespace SongCore::SongLoader {
             }
 
             auto const dictKey = CharacteristicDifficultyPair(
-                characteristic,
+                GlobalNamespace::BeatmapCharacteristic(characteristicInfo.sortingOrder),
                 difficulty
             );
             if (fileDifficultyBeatmapsDict->ContainsKey(dictKey)) {
                 #ifdef THROW_ON_MISSING_DATA
-                    throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty));
+                    throw std::runtime_error(fmt::format("Duplicate characteristic/difficulty: {}/{}", characteristicInfo.serializedName, (int) difficulty));
                 #else
-                    WARNING("Duplicate characteristic/difficulty: {}/{}", characteristic->_serializedName, (int) difficulty);
+                    WARNING("Duplicate characteristic/difficulty: {}/{}", characteristicInfo.serializedName, (int) difficulty);
                     continue;
                 #endif
             }
