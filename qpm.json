@@ -55,7 +55,7 @@
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^4402.0.0",
+      "versionRange": "^4403.0.0",
       "additionalData": {}
     },
     {
@@ -67,7 +67,7 @@
     },
     {
       "id": "lapiz",
-      "versionRange": "^0.3.0",
+      "versionRange": "^0.3.3",
       "additionalData": {
         "private": true
       }
@@ -99,7 +99,7 @@
     },
     {
       "id": "metacore",
-      "versionRange": "^2.2.0",
+      "versionRange": "^2.0.2",
       "additionalData": {}
     },
     {
