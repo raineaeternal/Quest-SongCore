@@ -8,6 +8,7 @@
 #include "UI/RequirementsListManager.hpp"
 #include "UI/ColorsOptions.hpp"
 #include "Overrides/RotationSpawnLinesOverride.hpp"
+#include "Overrides/OneSaberOverride.hpp"
 #include "UI/DeleteLevelButton.hpp"
 #include "UI/RefreshSongButton.hpp"
 #include "Utils/Cache.hpp"
@@ -94,6 +95,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
 
     z->Install(Lapiz::Zenject::Location::GameCore, [](::Zenject::DiContainer* container) {
         container->BindInterfacesAndSelfTo<SongCore::Overrides::RotationSpawnLinesOverride*>()->AsSingle()->NonLazy();
+        container->BindInterfacesAndSelfTo<SongCore::Overrides::OneSaberOverride*>()->AsSingle()->NonLazy();
     });
 
 
@@ -103,7 +105,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
 }
 
 void RegisterDefaultCharacteristics() {
-    static safe_ptr<GlobalNamespace::BeatmapCharacteristicSO*> missingCharacteristic = SongCore::API::Characteristics::CreateCharacteristic(
+    SongCore::API::Characteristics::CharacteristicInfo missingCharacteristic(
         BSML::Lite::ArrayToSprite(IncludedAssets::Resources::MissingChar_png),
         "Missing Characteristic",
         "Missing Characteristic",
@@ -114,7 +116,7 @@ void RegisterDefaultCharacteristics() {
         1000
     );
 
-    static safe_ptr<GlobalNamespace::BeatmapCharacteristicSO*> lightshow = SongCore::API::Characteristics::CreateCharacteristic(
+    SongCore::API::Characteristics::CharacteristicInfo lightshow(
         BSML::Lite::ArrayToSprite(IncludedAssets::Resources::Lightshow_png),
         "Lightshow",
         "Lightshow",
@@ -125,7 +127,7 @@ void RegisterDefaultCharacteristics() {
         100
     );
 
-    static safe_ptr<GlobalNamespace::BeatmapCharacteristicSO*> lawless = SongCore::API::Characteristics::CreateCharacteristic(
+    SongCore::API::Characteristics::CharacteristicInfo lawless(
         BSML::Lite::ArrayToSprite(IncludedAssets::Resources::Lawless_png),
         "Lawless",
         "Lawless - Anything Goes",
@@ -136,9 +138,9 @@ void RegisterDefaultCharacteristics() {
         101
     );
 
-    SongCore::API::Characteristics::RegisterCustomCharacteristic(missingCharacteristic.ptr());
-    SongCore::API::Characteristics::RegisterCustomCharacteristic(lightshow.ptr());
-    SongCore::API::Characteristics::RegisterCustomCharacteristic(lawless.ptr());
+    SongCore::API::Characteristics::RegisterCustomCharacteristic(missingCharacteristic);
+    SongCore::API::Characteristics::RegisterCustomCharacteristic(lightshow);
+    SongCore::API::Characteristics::RegisterCustomCharacteristic(lawless);
 }
 
 void EnsureNoMedia() {

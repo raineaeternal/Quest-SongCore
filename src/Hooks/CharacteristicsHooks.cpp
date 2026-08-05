@@ -12,10 +12,14 @@ MAKE_AUTO_HOOK_MATCH(BeatmapCharacteristicCollection_GetBeatmapCharacteristicByS
     if (!result) {
         std::string cppSerializedName(serializedName);
         INFO("GetBeatmapCharacteristicBySerializedName failed to find characteristic with serialized name '{}'", cppSerializedName);
-        result = SongCore::API::Characteristics::GetCharacteristicBySerializedName(cppSerializedName);
+        if (auto info = SongCore::API::Characteristics::GetCharacteristicBySerializedName(cppSerializedName)) {
+            result = info->characteristicSO.ptr();
+        }
         if (!result) {
             WARNING("GetBeatmapCharacteristicBySerializedName STILL failed to find characteristic with serialized name '{}', returning '{}' instead!", cppSerializedName, MISSING_CHARACTERISTIC);
-            result = SongCore::API::Characteristics::GetCharacteristicBySerializedName(MISSING_CHARACTERISTIC);
+            if (auto info = SongCore::API::Characteristics::GetCharacteristicBySerializedName(MISSING_CHARACTERISTIC)) {
+                result = info->characteristicSO.ptr();
+            }
         }
     }
 

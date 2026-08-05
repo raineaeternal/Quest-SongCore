@@ -2,6 +2,7 @@
 
 #include "custom-types/shared/macros.hpp"
 #include "../CustomJSONData.hpp"
+#include "../Characteristics.hpp"
 #include "CustomBeatmapLevel.hpp"
 
 #include "GlobalNamespace/EnvironmentInfoSO.hpp"
@@ -22,12 +23,13 @@
 #include <filesystem>
 
 DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object) {
-    DECLARE_CTOR(ctor, GlobalNamespace::SpriteAsyncLoader* spriteAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel, GlobalNamespace::EnvironmentsListModel* environmentsListModel);
+    DECLARE_CTOR(ctor, GlobalNamespace::SpriteAsyncLoader* spriteAsyncLoader, GlobalNamespace::BeatmapCharacteristicCollection* beatmapCharacteristicCollection, GlobalNamespace::IAdditionalContentModel* additionalContentModel, GlobalNamespace::EnvironmentsListModel* environmentsListModel, SongCore::Characteristics* characteristics);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::SpriteAsyncLoader*, _spriteAsyncLoader);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::BeatmapCharacteristicCollection*, _beatmapCharacteristicCollection);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::AdditionalContentModel*, _additionalContentModel);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::EnvironmentsListModel*, _environmentsListModel);
     DECLARE_INSTANCE_FIELD_PRIVATE(GlobalNamespace::AudioClipAsyncLoader*, _clipLoader);
+    DECLARE_INSTANCE_FIELD_PRIVATE(SongCore::Characteristics*, _characteristics);
 
     public:
         /// @brief gets the v3 savedata from the path
@@ -62,7 +64,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object) {
         /// @brief does basic verification on a map to catch any problems before they actually occur
         bool BasicVerifyMap(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData);
 
-        using CharacteristicDifficultyPair = System::ValueTuple_2<UnityW<GlobalNamespace::BeatmapCharacteristicSO>, GlobalNamespace::BeatmapDifficulty>;
+        using CharacteristicDifficultyPair = System::ValueTuple_2<GlobalNamespace::BeatmapCharacteristic, GlobalNamespace::BeatmapDifficulty>;
         using BeatmapBasicDataDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::BeatmapBasicData*>;
         using BeatmapLevelDataDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>;
 

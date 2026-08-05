@@ -5,6 +5,7 @@
 #include "SongLoader/CustomBeatmapLevel.hpp"
 #include "SongLoader/CustomBeatmapLevelsRepository.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
+#include "GlobalNamespace/BeatmapCharacteristic.hpp"
 
 #include "SongLoader/CustomLevelPack.hpp"
 #include "SongLoader/CustomBeatmapLevel.hpp"
@@ -12,9 +13,14 @@
 #include "CustomJSONData.hpp"
 
 #include "beatsaber-hook/shared/callback.hpp"
+#include "beatsaber-hook/shared/safeptr.hpp"
 
 #include <span>
 #include <future>
+#include <string>
+#include <string_view>
+#include <optional>
+#include <vector>
 
 namespace SongCore::API {
     namespace Capabilities {
@@ -84,27 +90,67 @@ namespace SongCore::API {
             Unregistered = 1,
         };
 
-        /// @brief method to register a custom characteristic. This has to be ran at late_load at the latest to work correctly. Unregistering is not possible.
-        /// @param characteristic the characteristic to register
-        SONGCORE_EXPORT void RegisterCustomCharacteristic(GlobalNamespace::BeatmapCharacteristicSO* characteristic);
+        /// @brief metadata for a characteristic. For custom characteristics, also owns the backing
+        /// BeatmapCharacteristicSO (auto-created when built via the icon/name/etc constructor), keeping
+        /// it alive via a safe_ptr so it doesn't need to be looked up again separately.
+        struct SONGCORE_EXPORT CharacteristicInfo {
+          std::string serializedName;
+          std::string compoundIdPartName;
 
-        /// @brief method to register a custom characteristic. This has to be ran at late_load at the latest to work correctly. Unregistering is not possible.
+          std::string characteristicNameLocalizationKey;
+          std::string descriptionLocalizationKey;
+
+          int sortingOrder = 0;
+          bool requires360Movement = false;
+          bool containsRotationEvents = false;
+          safe_ptr<UnityEngine::Sprite *> icon;
+          /// @brief the live BeatmapCharacteristicSO backing this info, if any. Not populated for built-in characteristics (constructed from a BeatmapCharacteristic).
+          safe_ptr<GlobalNamespace::BeatmapCharacteristicSO *> characteristicSO;
+
+          /// @brief builds info for one of the base game's built-in
+          /// characteristics
+          CharacteristicInfo(
+              GlobalNamespace::BeatmapCharacteristic characteristic, UnityEngine::Sprite* icon);
+          /// @brief builds info from a live characteristic SO, e.g. one created
+          /// through CreateCharacteristic
+          CharacteristicInfo(
+              GlobalNamespace::BeatmapCharacteristicSO *characteristic);
+          /// @brief builds a brand new custom characteristic, automatically creating and owning its backing BeatmapCharacteristicSO
+          CharacteristicInfo(UnityEngine::Sprite* icon, std::string characteristicNameLocalizationKey, std::string descriptionLocalizationKey, std::string serializedName, std::string compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder);
+        };
+
+        /// @brief method to register a custom characteristic. Creates and owns the underlying BeatmapCharacteristicSO internally from the given info. This has to be ran at late_load at the latest to work correctly.
         /// @param characteristic the characteristic to register
-        SONGCORE_EXPORT void UnregisterCustomCharacteristic(GlobalNamespace::BeatmapCharacteristicSO* characteristic);
+        SONGCORE_EXPORT void RegisterCustomCharacteristic(CharacteristicInfo characteristic);
+
+        /// @brief method to unregister a previously registered custom characteristic, identified by serializedName.
+        /// @param characteristic the characteristic to unregister
+        SONGCORE_EXPORT void UnregisterCustomCharacteristic(CharacteristicInfo characteristic);
 
         /// @brief gets a characteristic by serialized name. Only valid to be called after the first zenject install has happened
         /// @param serializedName the name to look for
-        /// @return the found characteristic, or nullptr if not found. not guaranteed to still be a valid unity object!
-        SONGCORE_EXPORT GlobalNamespace::BeatmapCharacteristicSO* GetCharacteristicBySerializedName(std::string_view serializedName);
+        /// @return the found characteristic info, or a default constructed one with an empty serializedName if not found
+        SONGCORE_EXPORT std::optional<CharacteristicInfo> GetCharacteristicBySerializedName(std::string_view serializedName);
+
+        /// @brief looks up a registered custom characteristic by sortingOrder. Only knows about
+        /// custom-registered characteristics - not base game built-ins. See SongCore::Characteristics
+        /// (the Zenject class) for combined built-in + custom lookups.
+        /// @return the found characteristic info, or nullopt if no registered characteristic has this sortingOrder
+        SONGCORE_EXPORT std::optional<CharacteristicInfo> GetCharacteristic(GlobalNamespace::BeatmapCharacteristic characteristic);
 
         /// @brief provides access to the registered characteristics without allowing edits
-        SONGCORE_EXPORT std::span<GlobalNamespace::BeatmapCharacteristicSO*> GetRegisteredCharacteristics();
+        SONGCORE_EXPORT std::vector<CharacteristicInfo> GetRegisteredCharacteristics();
 
         /// @brief provides access to an event that gets invoked when the custom characteristics are updated. not guaranteed to run on main thread! not cleared on soft restart. Invoked after the particular characteristic is added to the list.
-        SONGCORE_EXPORT unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent();
+        SONGCORE_EXPORT unordered_event_callback<CharacteristicInfo, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent();
 
-        /// @brief creates a characteristic to register, it's your responsibility to manage the lifetime of it
-        SONGCORE_EXPORT GlobalNamespace::BeatmapCharacteristicSO* CreateCharacteristic(UnityEngine::Sprite* icon, StringW characteristicName, StringW hintText, StringW serializedName, StringW compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder);
+        /// @brief creates a characteristic and registers it internally so it
+        /// can be looked up again by serializedName (through
+        /// RegisterCustomCharacteristic/GetCharacteristicBySerializedName).
+        /// SongCore manages the underlying BeatmapCharacteristicSO's lifetime
+        /// from here on.
+        [[deprecated("Construct a CharacteristicInfo and call RegisterCustomCharacteristic instead")]]
+        SONGCORE_EXPORT CharacteristicInfo CreateCharacteristic(UnityEngine::Sprite* icon, StringW characteristicName, StringW hintText, StringW serializedName, StringW compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder);
     }
 
     namespace Loading {

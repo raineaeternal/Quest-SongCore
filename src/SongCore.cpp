@@ -9,7 +9,11 @@
 #include "UnityEngine/Texture2D.hpp"
 #include "UnityEngine/TextureWrapMode.hpp"
 
+#include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
+
 #include "beatsaber-hook/shared/safeptr.hpp"
+
+#include <unordered_map>
 
 static inline UnityEngine::HideFlags operator |(UnityEngine::HideFlags a, UnityEngine::HideFlags b) {
     return UnityEngine::HideFlags(a.value__ | b.value__);
@@ -123,75 +127,147 @@ namespace SongCore::API {
         }
     }
 
+    // registry for custom characteristics
     namespace Characteristics {
-        static safe_ptr<ListW<GlobalNamespace::BeatmapCharacteristicSO*>> _registeredCharacteristics;
-        static unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind> _characteristicsUpdatedEvent;
+        static std::unordered_map<std::string, CharacteristicInfo> _registeredCharacteristics;
+        static unordered_event_callback<CharacteristicInfo, Characteristics::CharacteristicEventKind> _characteristicsUpdatedEvent;
 
-        ListW<GlobalNamespace::BeatmapCharacteristicSO*> get_registeredCharacteristics() {
-            if (_registeredCharacteristics) return _registeredCharacteristics.ptr();
-            _registeredCharacteristics = ListW<GlobalNamespace::BeatmapCharacteristicSO*>::New();
-            return _registeredCharacteristics.ptr();
-        }
-
-        void RegisterCustomCharacteristic(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
-            characteristic->hideFlags = characteristic->hideFlags | UnityEngine::HideFlags::DontUnloadUnusedAsset;
-            auto serializedName = static_cast<std::string>(characteristic->serializedName);
-            if (!GetCharacteristicBySerializedName(serializedName)) {
-                INFO("Registering characteristic with serialized name {}", serializedName);
-                get_registeredCharacteristics()->Add(characteristic);
-                _characteristicsUpdatedEvent.invoke(characteristic, CharacteristicEventKind::Registered);
-            } else {
-                WARNING("Characteristic '{}' was registered more than once! not registering again", serializedName);
+        std::optional<CharacteristicInfo> GetCharacteristicBySerializedName(std::string_view serializedName) {
+            auto itr = _registeredCharacteristics.find(std::string(serializedName));
+            if (itr != _registeredCharacteristics.end()) {
+                return itr->second;
             }
+
+            // do we want the fallback
+            // GlobalNamespace::BeatmapCharacteristic characteristic{};
+            // if (GlobalNamespace::BeatmapCharacteristicExtensions::BeatmapCharacteristicFromSerializedName(
+            //         StringW(serializedName), by_ref(characteristic))) {
+            //     return CharacteristicInfo(characteristic);
+            // }
+
+            DEBUG("Failed to find characteristic with serializedName: {}", serializedName);
+            return std::nullopt;
         }
 
-        void UnregisterCustomCharacteristic(GlobalNamespace::BeatmapCharacteristicSO* characteristic) {
-            auto idx = get_registeredCharacteristics()->IndexOf(characteristic);
-            if (idx >= 0) {
-                get_registeredCharacteristics()->RemoveAt(idx);
-                _characteristicsUpdatedEvent.invoke(characteristic, CharacteristicEventKind::Unregistered);
-            } else {
-                WARNING("Characteristic '{}' was unregistered more than once! not unregistering again", characteristic->serializedName);
+        std::optional<CharacteristicInfo> GetCharacteristic(GlobalNamespace::BeatmapCharacteristic characteristic) {
+            for (auto const& [name, info] : _registeredCharacteristics) {
+                if (info.sortingOrder == (int)characteristic) {
+                    return info;
+                }
             }
+
+            return std::nullopt;
         }
 
-        std::span<GlobalNamespace::BeatmapCharacteristicSO*> GetRegisteredCharacteristics() {
-            return get_registeredCharacteristics().ref_to();
-        }
-
-        GlobalNamespace::BeatmapCharacteristicSO* GetCharacteristicBySerializedName(std::string_view serializedName) {
-            auto characteristics = GetRegisteredCharacteristics();
-            auto itr = std::find_if(characteristics.begin(), characteristics.end(), [&serializedName](auto x) {
-                return x->serializedName == serializedName;
-            });
-
-            if (itr == characteristics.end()) {
-                DEBUG("Failed to find characteristic with serializedName: {}", serializedName);
-                return nullptr;
-            } else {
-                return *itr;
+        void RegisterCustomCharacteristic(CharacteristicInfo characteristic) {
+            auto itr = _registeredCharacteristics.find(characteristic.serializedName);
+            if (itr != _registeredCharacteristics.end()) {
+                WARNING("Characteristic '{}' was registered more than once! not registering again", characteristic.serializedName);
+                return;
             }
+
+            _registeredCharacteristics.emplace(characteristic.serializedName, characteristic);
+            _characteristicsUpdatedEvent.invoke(characteristic, CharacteristicEventKind::Registered);
         }
 
-        unordered_event_callback<GlobalNamespace::BeatmapCharacteristicSO*, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent() {
+        void UnregisterCustomCharacteristic(CharacteristicInfo characteristic) {
+            auto itr = _registeredCharacteristics.find(characteristic.serializedName);
+            if (itr == _registeredCharacteristics.end()) {
+                WARNING("Characteristic '{}' was unregistered more than once! not unregistering again", characteristic.serializedName);
+                return;
+            }
+
+            auto info = itr->second;
+            _registeredCharacteristics.erase(itr);
+            _characteristicsUpdatedEvent.invoke(info, CharacteristicEventKind::Unregistered);
+        }
+
+        std::vector<CharacteristicInfo> GetRegisteredCharacteristics() {
+            std::vector<CharacteristicInfo> result;
+            result.reserve(_registeredCharacteristics.size());
+            for (auto const& [name, info] : _registeredCharacteristics) {
+                result.push_back(info);
+            }
+            return result;
+        }
+
+        unordered_event_callback<CharacteristicInfo, Characteristics::CharacteristicEventKind>& GetCharacteristicsUpdatedEvent() {
             return _characteristicsUpdatedEvent;
         }
 
-        GlobalNamespace::BeatmapCharacteristicSO* CreateCharacteristic(UnityEngine::Sprite* icon, StringW characteristicName, StringW hintText, StringW serializedName, StringW compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder) {
-            icon->texture->wrapMode = UnityEngine::TextureWrapMode::Clamp;
+        CharacteristicInfo CreateCharacteristic(UnityEngine::Sprite* icon, StringW characteristicName, StringW hintText, StringW serializedName, StringW compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder) {
+          icon->texture->wrapMode = UnityEngine::TextureWrapMode::Clamp;
 
-            auto characteristic = UnityEngine::ScriptableObject::CreateInstance<GlobalNamespace::BeatmapCharacteristicSO*>();
-            characteristic->hideFlags = characteristic->hideFlags | UnityEngine::HideFlags::DontUnloadUnusedAsset;
-            characteristic->_icon = icon;
-            characteristic->_descriptionLocalizationKey = hintText;
-            characteristic->_serializedName = serializedName;
-            characteristic->_characteristicNameLocalizationKey = characteristicName;
-            characteristic->_compoundIdPartName = compoundIdPartName;
-            characteristic->_requires360Movement = requires360Movement;
-            characteristic->_containsRotationEvents = containsRotationEvents;
-            characteristic->_sortingOrder = sortingOrder;
+          auto characteristic = UnityEngine::ScriptableObject::CreateInstance<GlobalNamespace::BeatmapCharacteristicSO*>();
+          characteristic->hideFlags = characteristic->hideFlags | UnityEngine::HideFlags::DontUnloadUnusedAsset;
+          characteristic->_icon = icon;
+          characteristic->_descriptionLocalizationKey = hintText;
+          characteristic->_serializedName = serializedName;
+          characteristic->_characteristicNameLocalizationKey = characteristicName;
+          characteristic->_compoundIdPartName = compoundIdPartName;
+          characteristic->_requires360Movement = requires360Movement;
+          characteristic->_containsRotationEvents = containsRotationEvents;
+          characteristic->_sortingOrder = sortingOrder;
 
-            return characteristic;
+          return CharacteristicInfo(characteristic);
+        }
+
+        CharacteristicInfo::CharacteristicInfo(
+            GlobalNamespace::BeatmapCharacteristic characteristic, UnityEngine::Sprite* icon)
+            : serializedName(static_cast<std::string>(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      SerializedName(characteristic))),
+              compoundIdPartName(static_cast<std::string>(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      CompoundIdPartName(characteristic))),
+              characteristicNameLocalizationKey(static_cast<std::string>(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      NameLocalizationKey(characteristic))),
+              descriptionLocalizationKey(static_cast<std::string>(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      HintLocalizationKey(characteristic))),
+              sortingOrder(static_cast<int>(characteristic)),
+              requires360Movement(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                      Requires360Movement(characteristic)),
+              containsRotationEvents(
+                  GlobalNamespace::BeatmapCharacteristicExtensions::
+                        ContainsRotationEvents(characteristic)),
+                icon(icon) {}
+
+        CharacteristicInfo::CharacteristicInfo(GlobalNamespace::BeatmapCharacteristicSO* characteristic)
+            : serializedName(characteristic->serializedName),
+            compoundIdPartName(characteristic->compoundIdPartName),
+            characteristicNameLocalizationKey(characteristic->characteristicNameLocalizationKey),
+            descriptionLocalizationKey(characteristic->descriptionLocalizationKey),
+            sortingOrder(characteristic->sortingOrder),
+            requires360Movement(characteristic->requires360Movement),
+            containsRotationEvents(characteristic->containsRotationEvents),
+            icon(characteristic->icon.ptr()),
+            characteristicSO(characteristic) {}
+
+        CharacteristicInfo::CharacteristicInfo(UnityEngine::Sprite* icon, std::string characteristicNameLocalizationKey, std::string descriptionLocalizationKey, std::string serializedName, std::string compoundIdPartName, bool requires360Movement, bool containsRotationEvents, int sortingOrder)
+            : serializedName(std::move(serializedName)),
+            compoundIdPartName(std::move(compoundIdPartName)),
+            characteristicNameLocalizationKey(std::move(characteristicNameLocalizationKey)),
+            descriptionLocalizationKey(std::move(descriptionLocalizationKey)),
+            sortingOrder(sortingOrder),
+            requires360Movement(requires360Movement),
+            containsRotationEvents(containsRotationEvents),
+            icon(icon) {
+            if (icon) icon->texture->wrapMode = UnityEngine::TextureWrapMode::Clamp;
+
+            auto so = UnityEngine::ScriptableObject::CreateInstance<GlobalNamespace::BeatmapCharacteristicSO*>();
+            so->hideFlags = so->hideFlags | UnityEngine::HideFlags::DontUnloadUnusedAsset;
+            so->_icon = icon;
+            so->_descriptionLocalizationKey = this->descriptionLocalizationKey;
+            so->_serializedName = this->serializedName;
+            so->_characteristicNameLocalizationKey = this->characteristicNameLocalizationKey;
+            so->_compoundIdPartName = this->compoundIdPartName;
+            so->_requires360Movement = this->requires360Movement;
+            so->_containsRotationEvents = this->containsRotationEvents;
+            so->_sortingOrder = this->sortingOrder;
+            characteristicSO = so;
         }
     }
 
