@@ -2,6 +2,7 @@
 #include "logging.hpp"
 
 #include "GlobalNamespace/BeatmapCharacteristicCollection.hpp"
+#include "GlobalNamespace/BeatmapCharacteristicExtensions.hpp"
 #include "SongCore.hpp"
 
 // characteristic used if none is found
@@ -24,4 +25,33 @@ MAKE_AUTO_HOOK_MATCH(BeatmapCharacteristicCollection_GetBeatmapCharacteristicByS
     }
 
     return result;
+}
+
+// PlayerDataFileModel uses these enum conversions directly, bypassing the
+// characteristic collection. Keep custom save keys distinct from Standard and
+// recognize them again when loading; leave every native fallback unchanged.
+MAKE_AUTO_HOOK_MATCH(BeatmapCharacteristicExtensions_SerializedName,
+    static_cast<StringW (*)(GlobalNamespace::BeatmapCharacteristic)>(
+        &GlobalNamespace::BeatmapCharacteristicExtensions::SerializedName),
+    StringW, GlobalNamespace::BeatmapCharacteristic characteristic) {
+    if (auto info = SongCore::API::Characteristics::GetCharacteristic(characteristic)) {
+        return StringW(info->serializedName);
+    }
+    return BeatmapCharacteristicExtensions_SerializedName(characteristic);
+}
+
+MAKE_AUTO_HOOK_MATCH(BeatmapCharacteristicExtensions_FromSerializedName,
+    &GlobalNamespace::BeatmapCharacteristicExtensions::BeatmapCharacteristicFromSerializedName,
+    bool, StringW serializedName, by_ref<GlobalNamespace::BeatmapCharacteristic> characteristic) {
+    if (BeatmapCharacteristicExtensions_FromSerializedName(serializedName, characteristic)) {
+        return true;
+    }
+    if (serializedName) {
+        if (auto info = SongCore::API::Characteristics::GetCharacteristicBySerializedName(
+                std::string(serializedName))) {
+            *characteristic = GlobalNamespace::BeatmapCharacteristic(info->sortingOrder);
+            return true;
+        }
+    }
+    return false;
 }
