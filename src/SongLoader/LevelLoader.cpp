@@ -684,10 +684,10 @@ namespace SongCore::SongLoader {
             std::string songFilePath = levelPath / static_cast<std::string>(saveData->songFilename);
             if (std::filesystem::exists(songFilePath)) {
                 float songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
-                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
+                if (songDuration) { // found duration was valid
                     // update cache with new duration
                     auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-                    info.songDuration = songDuration;
+                    info.songDuration = *songDuration;
                     Utils::SetCachedInfo(levelPath, info);
                     return songDuration;
                 }
@@ -720,10 +720,10 @@ namespace SongCore::SongLoader {
             std::string songFilePath = levelPath / static_cast<std::string>(saveData->audio.songFilename);
             if (std::filesystem::exists(songFilePath)) {
                 float songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
-                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
+                if (songDuration) { // found duration was valid
                     // update cache with new duration
                     auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-                    info.songDuration = songDuration;
+                    info.songDuration = *songDuration;
                     Utils::SetCachedInfo(levelPath, info);
                     return songDuration;
                 }
