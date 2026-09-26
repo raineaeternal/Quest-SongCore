@@ -9,7 +9,7 @@
 #include "Utils/File.hpp"
 
 namespace SongCore::Utils {
-    static std::expected<OggPageHeader, ScanError> OggPageHeader::parse(std::span<std::byte> buffer) {
+    std::expected<OggPageHeader, ScanError> OggPageHeader::parse(std::span<std::byte> buffer) {
 
         if (buffer.size() < header_byte_size) return std::unexpected(ScanError::InvalidOggPageMagic);
 
@@ -45,7 +45,7 @@ namespace SongCore::Utils {
         };
     }
 
-    static std::expected<VorbisIdHeader, ScanError> VorbisIdHeader::parse(std::span<const std::byte> payload) {
+    std::expected<VorbisIdHeader, ScanError> VorbisIdHeader::parse(std::span<const std::byte> payload) {
         // Minimum identification packet is 30 bytes
         if (payload.size() < 30) return std::unexpected(ScanError::InvalidIdentificationHeader);
         
