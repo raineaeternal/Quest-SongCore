@@ -52,7 +52,7 @@ namespace SongCore::Utils {
         SetCachedInfo(levelPath, *cacheData);
 
         std::chrono::milliseconds duration = duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-        DEBUG("GetCustomLevelHash Stop Result {} Time {}", cacheData->sha1, duration.count());
+        DEBUG("GetCustomLevelHash Stop Result {} Time {}", *cacheData->sha1, duration.count());
         return cacheData->sha1;
     }
 
@@ -105,7 +105,7 @@ namespace SongCore::Utils {
         SetCachedInfo(levelPath, *cacheData);
 
         std::chrono::milliseconds duration = duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-        DEBUG("GetCustomLevelHash Stop Result {} Time {}", cacheData->sha1, duration.count());
+        DEBUG("GetCustomLevelHash Stop Result {} Time {}", *cacheData->sha1, duration.count());
         return cacheData->sha1;
     }
 
