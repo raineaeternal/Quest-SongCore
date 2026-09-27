@@ -683,15 +683,15 @@ namespace SongCore::SongLoader {
             // try to get the info from the ogg file
             std::string songFilePath = levelPath / static_cast<std::string>(saveData->songFilename);
             if (std::filesystem::exists(songFilePath)) {
-                float songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
-                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
+                auto oggDuration = Utils::GetLengthFromOggVorbis(songFilePath);
+                if (oggDuration.has_value()) { // found duration was valid
                     // update cache with new duration
                     auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-                    info.songDuration = songDuration;
+                    info.songDuration = *oggDuration;
                     Utils::SetCachedInfo(levelPath, info);
-                    return songDuration;
+                    return *oggDuration;
                 }
-                songDuration = Utils::GetLengthFromWavRiff(songFilePath);
+                float songDuration = Utils::GetLengthFromWavRiff(songFilePath);
                 if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
                     // update cache with new duration
                     auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
@@ -719,15 +719,15 @@ namespace SongCore::SongLoader {
             // try to get the info from the ogg file
             std::string songFilePath = levelPath / static_cast<std::string>(saveData->audio.songFilename);
             if (std::filesystem::exists(songFilePath)) {
-                float songDuration = Utils::GetLengthFromOggVorbis(songFilePath);
-                if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
+                auto oggDuration = Utils::GetLengthFromOggVorbis(songFilePath);
+                if (oggDuration.has_value()) { // found duration was valid
                     // update cache with new duration
                     auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
-                    info.songDuration = songDuration;
+                    info.songDuration = *oggDuration;
                     Utils::SetCachedInfo(levelPath, info);
-                    return songDuration;
+                    return *oggDuration;
                 }
-                songDuration = Utils::GetLengthFromWavRiff(songFilePath);
+                float songDuration = Utils::GetLengthFromWavRiff(songFilePath);
                 if (songDuration >= 0 && !std::isnan(songDuration)) { // found duration was valid
                     // update cache with new duration
                     auto info = cachedInfoOpt.value_or(Utils::CachedSongData());
