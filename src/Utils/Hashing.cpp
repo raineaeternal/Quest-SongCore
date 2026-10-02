@@ -5,12 +5,7 @@
 #include "logging.hpp"
 #include <filesystem>
 
-#include "libcryptopp/shared/sha.h"
-#include "libcryptopp/shared/hex.h"
-#include "libcryptopp/shared/files.h"
-
 using namespace GlobalNamespace;
-using namespace CryptoPP;
 
 namespace SongCore::Utils {
     std::optional<std::string> GetCustomLevelHash(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomLevelInfoSaveDataV2* saveData) {
@@ -32,7 +27,7 @@ namespace SongCore::Utils {
         }
 
         auto sha1Neon = SHA1_NEON();
-        sha1Neon.update(infoPath.string());
+        sha1Neon.updateFile(infoPath);
 
         for(auto val : saveData->difficultyBeatmapSets) {
             if (!val) continue;
@@ -44,7 +39,7 @@ namespace SongCore::Utils {
                     ERROR("GetCustomLevelHash File {} did not exist", diffPath.string());
                     continue;
                 }
-                sha1Neon.update(diffPath.string());
+                sha1Neon.updateFile(diffPath);
             }
         }
 
@@ -80,8 +75,8 @@ namespace SongCore::Utils {
         }
 
         auto sha1Neon = SHA1_NEON();
-        sha1Neon.update(infoPath.string());
-        sha1Neon.update(audioPath.string());
+        sha1Neon.updateFile(infoPath);
+        sha1Neon.updateFile(audioPath);
 
         for(auto val : saveData->difficultyBeatmaps) {
             if (!val) continue;
@@ -91,14 +86,14 @@ namespace SongCore::Utils {
                 ERROR("GetCustomLevelHash File {} did not exist", diffPath.string());
                 continue;
             }
-            sha1Neon.update(diffPath.string());
+            sha1Neon.updateFile(diffPath);
 
             auto lightPath = levelPath / static_cast<std::string>(val->lightshowDataFilename);
             if(!std::filesystem::exists(lightPath)) {
                 ERROR("GetCustomLevelHash Lighting File {} did not exist", diffPath.string());
                 continue;
             }
-            sha1Neon.update(lightPath.string());
+            sha1Neon.updateFile(lightPath);
         }
 
         cacheData->sha1 = sha1Neon.finalize();
