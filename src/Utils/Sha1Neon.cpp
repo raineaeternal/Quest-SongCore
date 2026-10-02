@@ -1,4 +1,5 @@
 #include "Utils/Sha1Neon.hpp"
+#include <fstream>
 
 #define SHA1_ROUND(func, w, k)                                        \
     do {                                                              \
@@ -57,6 +58,19 @@ namespace SongCore::Utils {
         }
     }
 
+    bool SHA1_NEON::updateFile(std::filesystem::path const& path) {
+        std::ifstream file(path, std::ios::binary);
+        if (!file) return false;
+
+        std::vector<uint8_t> chunk(64 * 1024);
+        while (file) {
+            file.read(reinterpret_cast<char*>(chunk.data()), chunk.size());
+            auto read = file.gcount();
+            if (read > 0) update(chunk.data(), static_cast<size_t>(read));
+        }
+        return file.eof();
+    }
+
     // Finalize padding and return the hex string
     std::string SHA1_NEON::finalize() {
         uint64_t bit_len = total_bytes * 8;
@@ -81,9 +95,9 @@ namespace SongCore::Utils {
 
         process_block(buffer);
 
-        // Format to Hex
+        // Format to uppercase hex, matching the CryptoPP HexEncoder output used previously
         char hex[41];
-        std::snprintf(hex, sizeof(hex), "%08x%08x%08x%08x%08x",
+        std::snprintf(hex, sizeof(hex), "%08X%08X%08X%08X%08X",
                     vgetq_lane_u32(state0, 0),
                     vgetq_lane_u32(state0, 1),
                     vgetq_lane_u32(state0, 2),

@@ -1,4 +1,6 @@
-#include <iostream>
+#pragma once
+
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -17,6 +19,9 @@ namespace SongCore::Utils {
 
         // Convenience overload for std::string
         void update(const std::string& str) { update(reinterpret_cast<const uint8_t*>(str.data()), str.size()); }
+
+        // Hashes the contents of the file at path, returns false if the file could not be read
+        bool updateFile(std::filesystem::path const& path);
 
         std::string finalize();
 
