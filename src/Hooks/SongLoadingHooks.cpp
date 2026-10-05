@@ -48,6 +48,7 @@
 
 #include "utf8.h"
 #include <string>
+#include <string_view>
 #include "Utils/SaveDataVersion.hpp"
 
 // custom songs tab is disabled by default on quest, reenable
@@ -373,6 +374,54 @@ MAKE_AUTO_HOOK_MATCH(
     return result;
 }
 
+// This patch reverses base game logic so it first looks for V3 format instead of V2.
+// Without this patch, maps that declare both <c>version</c> and <c>_version</c> will be empty.
+// It also makes it much faster than the original implementation.
+// Port of the original implementation from https://github.com/Kylemc1413/SongCore/commit/4e49cd34448dcbc1f2ea7e56bd4d5b55a5347977
+
+constexpr std::u16string_view VersionSearchString = u"version";
+
+System::Version* TryGetBeatmapVersion(std::u16string_view span) {
+    auto index = span.find(VersionSearchString);
+    if (index == std::u16string_view::npos) return nullptr;
+
+    auto afterKeyIndex = index + VersionSearchString.size() + 1;
+    if (afterKeyIndex > span.size()) return nullptr;
+    span.remove_prefix(afterKeyIndex);
+
+    auto openingQuoteIndex = span.find(u'"');
+    if (openingQuoteIndex == std::u16string_view::npos) return nullptr;
+    span.remove_prefix(openingQuoteIndex + 1);
+
+    auto closingQuoteIndex = span.find(u'"');
+    if (closingQuoteIndex == std::u16string_view::npos) return nullptr;
+
+    auto versionSpan = span.substr(0, closingQuoteIndex);
+
+    System::Version* version = nullptr;
+    if (System::Version::TryParse(StringW(versionSpan), byref(version))) {
+        return version;
+    }
+
+    return nullptr;
+}
+
+System::Version* GetBeatmapVersion(StringW data) {
+    if (!data) return nullptr;
+
+    std::u16string_view span(data);
+    auto firstPassLength = span.size() < 50 ? span.size() : 50;
+    if (auto version = TryGetBeatmapVersion(span.substr(0, firstPassLength))) {
+        return version;
+    }
+
+    return TryGetBeatmapVersion(span);
+}
+
+MAKE_AUTO_HOOK_MATCH(BeatmapSaveDataHelpers_GetVersion, &GlobalNamespace::BeatmapSaveDataHelpers::GetVersion, System::Version*, StringW data) {
+    auto version = GetBeatmapVersion(data);
+    return version ? version : GlobalNamespace::BeatmapSaveDataHelpers::getStaticF_noVersion();
+}
 
 // https://github.com/Kylemc1413/SongCore/pull/148/files
 // This partially fixes a bug that was introduced in v1.36.0, which saves null covers when the loading operation is canceled.
