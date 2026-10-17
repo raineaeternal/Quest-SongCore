@@ -32,7 +32,7 @@ MAKE_AUTO_HOOK_MATCH(GameplayCoreInstaller_InstallBindings, &GlobalNamespace::Ga
 void NegativeNJSPatch(Zenject::DiContainer* container, GlobalNamespace::GameplayCoreInstaller* installer) {
     auto beatmapKey = installer->_sceneSetupData->beatmapKey;
     auto beatmapLevel = installer->_sceneSetupData->beatmapLevel;
-    auto difficultyBeatmapData = beatmapLevel->GetDifficultyBeatmapData(beatmapKey.characteristic, beatmapKey.difficulty);
+    auto difficultyBeatmapData = beatmapLevel->GetDifficultyBeatmapData(beatmapKey.gameplayType, beatmapKey.characteristic, beatmapKey.difficulty);
     auto noteJumpMovementSpeed = difficultyBeatmapData->noteJumpMovementSpeed;
     auto data = container->Resolve<GlobalNamespace::BeatmapObjectSpawnController::InitData*>();
 

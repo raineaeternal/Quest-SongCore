@@ -406,7 +406,7 @@ namespace SongCore::SongLoader {
                 auto colorScheme = (colorSchemeIndex >= 0 && colorSchemeIndex < colorSchemes.size()) ? colorSchemes[colorSchemeIndex] : nullptr;
 
                 basicDataDict->Add(
-                    dictKey,
+                    BeatmapBasicDataKey(GlobalNamespace::GameplayType::BeatSaber, dictKey.Item1, dictKey.Item2),
                     GlobalNamespace::BeatmapBasicData::New_ctor(
                         difficultyBeatmap->noteJumpMovementSpeed,
                         difficultyBeatmap->noteJumpStartBeatOffset,
@@ -585,7 +585,7 @@ namespace SongCore::SongLoader {
             INFO("Creating basic data with env name {} and color scheme {}", environmentName._environmentName, colorScheme ? colorScheme->colorSchemeId : "null");
 
             basicDataDict->Add(
-                    dictKey,
+                    BeatmapBasicDataKey(GlobalNamespace::GameplayType::BeatSaber, dictKey.Item1, dictKey.Item2),
                     GlobalNamespace::BeatmapBasicData::New_ctor(
                         diffBeatmap->noteJumpMovementSpeed,
                         diffBeatmap->noteJumpStartBeatOffset,

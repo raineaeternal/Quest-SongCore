@@ -19,6 +19,7 @@
 #include "GlobalNamespace/AudioClipAsyncLoader.hpp"
 #include "BeatmapLevelSaveDataVersion4/BeatmapLevelSaveData.hpp"
 #include "System/ValueTuple_2.hpp"
+#include "System/ValueTuple_3.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
 #include <filesystem>
 
@@ -65,7 +66,8 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, LevelLoader, System::Object) {
         bool BasicVerifyMap(std::filesystem::path const& levelPath, SongCore::CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData);
 
         using CharacteristicDifficultyPair = System::ValueTuple_2<GlobalNamespace::BeatmapCharacteristic, GlobalNamespace::BeatmapDifficulty>;
-        using BeatmapBasicDataDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::BeatmapBasicData*>;
+        using BeatmapBasicDataKey = System::ValueTuple_3<GlobalNamespace::GameplayType, GlobalNamespace::BeatmapCharacteristic, GlobalNamespace::BeatmapDifficulty>;
+        using BeatmapBasicDataDict = System::Collections::Generic::Dictionary_2<BeatmapBasicDataKey, GlobalNamespace::BeatmapBasicData*>;
         using BeatmapLevelDataDict = System::Collections::Generic::Dictionary_2<CharacteristicDifficultyPair, GlobalNamespace::FileDifficultyBeatmap*>;
 
         /// @brief preview media data from filesystem
