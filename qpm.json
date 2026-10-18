@@ -6,7 +6,7 @@
   "info": {
     "name": "Quest-SongCore",
     "id": "songcore",
-    "version": "1.3.2",
+    "version": "1.3.5",
     "url": "https://github.com/raineio/quest-songcore",
     "additionalData": {
       "overrideSoName": "libsongcore.so",
@@ -37,7 +37,8 @@
     },
     "ndk": "^29.0.14206865",
     "qmodIncludeDirs": [
-      "./build"
+      "./build",
+      "./extern/libs"
     ],
     "qmodIncludeFiles": [],
     "qmodOutput": "SongCore"
@@ -45,36 +46,36 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^9.0.0",
+      "versionRange": "^9.3.0",
       "additionalData": {}
     },
     {
       "id": "paper2_scotland2",
-      "versionRange": "^4.7.0",
+      "versionRange": "^4.8.0",
       "additionalData": {}
     },
     {
       "id": "bs-cordl",
-      "versionRange": "^4502.1.0",
+      "versionRange": "^4503.0.0",
       "additionalData": {}
     },
     {
       "id": "bsml",
-      "versionRange": "^0.6.2",
+      "versionRange": "^0.6.5",
       "additionalData": {
         "private": true
       }
     },
     {
       "id": "lapiz",
-      "versionRange": "^0.3.6",
+      "versionRange": "^0.3.7",
       "additionalData": {
         "private": true
       }
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.21.1",
+      "versionRange": "^0.21.2",
       "additionalData": {}
     },
     {
@@ -94,17 +95,17 @@
     },
     {
       "id": "flamingo",
-      "versionRange": "^1.1.2",
+      "versionRange": "^1.2.1",
       "additionalData": {}
     },
     {
       "id": "metacore",
-      "versionRange": "^2.0.4",
+      "versionRange": "^2.0.6",
       "additionalData": {}
     },
     {
       "id": "mod-scripts",
-      "versionRange": "^1.0.1",
+      "versionRange": "^1.0.2",
       "additionalData": {
         "private": true
       }

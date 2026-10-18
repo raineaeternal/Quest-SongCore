@@ -4,6 +4,7 @@
 #include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/IBeatmapLevelData.hpp"
 #include "GlobalNamespace/BeatmapCharacteristicSO.hpp"
+#include "System/ValueTuple_3.hpp"
 #include "../CustomJSONData.hpp"
 
 // type which is basically a beatmaplevel but one made by songcore, helps with identification
@@ -17,7 +18,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
     ::GlobalNamespace::PlayerSensitivityFlag contentRating,
     ::GlobalNamespace::IPreviewMediaData *previewMediaData,
     ::System::Collections::Generic::Dictionary_2<
-        ::System::ValueTuple_2<::GlobalNamespace::BeatmapCharacteristic,
+        ::System::ValueTuple_3<::GlobalNamespace::GameplayType, ::GlobalNamespace::BeatmapCharacteristic,
                                ::GlobalNamespace::BeatmapDifficulty>,
         ::GlobalNamespace::BeatmapBasicData *> *beatmapBasicData
     );
@@ -68,7 +69,7 @@ DECLARE_CLASS_CODEGEN(SongCore::SongLoader, CustomBeatmapLevel, GlobalNamespace:
             float_t songDuration,
             ::GlobalNamespace::PlayerSensitivityFlag contentRating,
             ::GlobalNamespace::IPreviewMediaData* previewMediaData,
-            ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_2<GlobalNamespace::BeatmapCharacteristic, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
+            ::System::Collections::Generic::Dictionary_2<::System::ValueTuple_3<GlobalNamespace::GameplayType, GlobalNamespace::BeatmapCharacteristic, ::GlobalNamespace::BeatmapDifficulty>, ::GlobalNamespace::BeatmapBasicData*>* beatmapBasicData
         );
     private:
         CustomJSONData::CustomLevelInfoSaveDataV2* _customLevelSaveDataV2;

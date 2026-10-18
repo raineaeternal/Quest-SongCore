@@ -12,7 +12,7 @@ void CustomBeatmapLevel::ctor(
     ::GlobalNamespace::PlayerSensitivityFlag contentRating,
     ::GlobalNamespace::IPreviewMediaData *previewMediaData,
     ::System::Collections::Generic::Dictionary_2<
-        ::System::ValueTuple_2<::GlobalNamespace::BeatmapCharacteristic,
+        ::System::ValueTuple_3<::GlobalNamespace::GameplayType, ::GlobalNamespace::BeatmapCharacteristic,
                                ::GlobalNamespace::BeatmapDifficulty>,
         ::GlobalNamespace::BeatmapBasicData *> *beatmapBasicData) {
   INVOKE_CTOR();
@@ -35,7 +35,7 @@ CustomBeatmapLevel *CustomBeatmapLevel::New(
     ::GlobalNamespace::PlayerSensitivityFlag contentRating,
     ::GlobalNamespace::IPreviewMediaData *previewMediaData,
     ::System::Collections::Generic::Dictionary_2<
-        ::System::ValueTuple_2<GlobalNamespace::BeatmapCharacteristic,
+        ::System::ValueTuple_3<GlobalNamespace::GameplayType, GlobalNamespace::BeatmapCharacteristic,
                                ::GlobalNamespace::BeatmapDifficulty>,
         ::GlobalNamespace::BeatmapBasicData *> *beatmapBasicData) {
   auto level = CustomBeatmapLevel::New_ctor(
