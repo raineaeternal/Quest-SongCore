@@ -20,26 +20,20 @@
 #include "GlobalNamespace/BeatmapLevelLoader.hpp"
 #include "GlobalNamespace/BeatmapLevelDataLoader.hpp"
 #include "GlobalNamespace/FileHelpers.hpp"
-#include "GlobalNamespace/GameScenesManager.hpp"
 #include "GlobalNamespace/GameplayCoreSceneSetupData.hpp"
-#include "UnityEngine/AudioSettings.hpp"
-#include "GlobalNamespace/LevelScenesTransitionSetupData.hpp"
 #include "GlobalNamespace/ReferenceCountingCache_2.hpp"
+#include "GlobalNamespace/AudioClipAsyncLoaderExtensions.hpp"
+#include <unordered_map>
 
-#include "custom-types/shared/coroutine.hpp"
 
 #include "System/Threading/Tasks/Task_1.hpp"
 #include "System/Threading/Tasks/Task.hpp"
 #include "System/Collections/Generic/IReadOnlyCollection_1.hpp"
 #include "System/Collections/Generic/IReadOnlyList_1.hpp"
 #include "System/Version.hpp"
-#include "System/GC.hpp"
 
-#include "UnityEngine/AudioConfiguration.hpp"
-#include "UnityEngine/AudioSettings.hpp"
 #include "UnityEngine/Networking/UnityWebRequest.hpp"
 #include "UnityEngine/Object.hpp"
-#include "UnityEngine/Resources.hpp"
 #include "UnityEngine/Sprite.hpp"
 
 #include "BGLib/Polyglot/Localization.hpp"
@@ -61,86 +55,69 @@ using namespace System::Threading;
 using namespace System::Threading::Tasks;
 using namespace System::Collections::Generic;
 
-// If the garbage collector is enabled then the game resets the audio configuration, which invalidates the custom level AudioClip
-// reimplement without the audio configuration change and instead reset audio configuration
-// on LevelScenesTransitionSetupDataSO::BeforeScenesWillBeActivatedAsync
-MAKE_AUTO_HOOK_MATCH(
-    GameScenesManager_ScenesTransitionCoroutine,
-    &GameScenesManager::ScenesTransitionCoroutine,
-    System::Collections::IEnumerator *, GameScenesManager *self,
-    ::GlobalNamespace::ScenesTransitionSetupData *newScenesTransitionSetupData,
-    ::System::Collections::Generic::IReadOnlyList_1<::StringW> *scenesToPresent,
-    ::GlobalNamespace::GameScenesManager_ScenePresentType presentType,
-    ::System::Collections::Generic::IReadOnlyList_1<::StringW> *scenesToDismiss,
-    ::GlobalNamespace::GameScenesManager_SceneDismissType dismissType,
-    float_t minDuration, bool canTriggerGarbageCollector,
-    ::System::Action *afterMinDurationCallback,
-    ::System::Action_1<::Zenject::DiContainer *> *extraBindingsCallback,
-    ::System::Action_1<::Zenject::DiContainer *> *finishCallback) {
-//   resetAudio = false;
-  return GameScenesManager_ScenesTransitionCoroutine(
-      self, newScenesTransitionSetupData, scenesToPresent, presentType,
-      scenesToDismiss, dismissType, minDuration, canTriggerGarbageCollector,
-      afterMinDurationCallback, extraBindingsCallback, finishCallback);
-}
-static void AudioSettings_Reset() {
-  static i2c::result<function_ptr_t<::UnityEngine::AudioConfiguration>>
-      UnityEngine_AudioSettings_GetConfiguration =
-          i2c::resolve_icall <
-          UnityEngine::AudioConfiguration>("AudioSettings::GetConfiguration");
-  static i2c::result<function_ptr_t<bool, ::UnityEngine::AudioConfiguration>> UnityEngine_AudioSettings_SetConfiguration =
-      i2c::resolve_icall<bool, ::UnityEngine::AudioConfiguration>(
-          "AudioSettings::SetConfiguration");
-  //   UnityEngine::AudioSettings::Reset(
-  //       UnityEngine::AudioSettings::GetConfiguration());
-
-  if (!UnityEngine_AudioSettings_GetConfiguration || !UnityEngine_AudioSettings_SetConfiguration) {
-    ERROR("Failed to resolve AudioSettings::GetConfiguration or AudioSettings::SetConfiguration");
-    return;
-  }
-
-  auto config = UnityEngine_AudioSettings_GetConfiguration.value()();
-  UnityEngine_AudioSettings_SetConfiguration.value()(config);
+namespace {
+using SongAudioTask = Task_1<UnityW<UnityEngine::AudioClip>>;
+// Entries are erased with the level LRU. The LRU/cache owns the managed objects;
+// this table records identity only and never extends their lifetime.
+// A loader-cache hit may belong only to a menu request. Track this level's own
+// acquisition so revisits reuse its reference and level eviction releases it once.
+std::unordered_map<IBeatmapLevelData*, SongAudioTask*> levelAudioRequests;
+thread_local GameplayCoreSceneSetupData* gameplayAudioContext = nullptr;
+struct GameplayAudioScope {
+    GameplayCoreSceneSetupData* previous;
+    explicit GameplayAudioScope(GameplayCoreSceneSetupData* current) : previous(gameplayAudioContext) { gameplayAudioContext = current; }
+    ~GameplayAudioScope() { gameplayAudioContext = previous; }
+};
 }
 
-// Reset AudioSettings
-// This is to ensure audio is intact between scenes, and custom audio gets loaded after audio settings is reset.
-// Without this patch, one can get the game to have no audio after restarting the map several times.
-MAKE_AUTO_HOOK_MATCH(
-    LevelScenesTransitionSetupDataSO_BeforeScenesWillBeActivatedAsync,
-    &LevelScenesTransitionSetupData::BeforeScenesWillBeActivatedAsync,
-    ::System::Threading::Tasks::Task *, LevelScenesTransitionSetupData *self) {
-  // TODO: Call unstripped libunity
-  AudioSettings_Reset();
+// Let LoadSong identify the gameplay setup during this async resume.
+// Restore the previous context when MoveNext returns.
+MAKE_AUTO_ORIG_HOOK_MATCH(SongAudio_GameplayLoadMoveNext, &GameplayCoreSceneSetupData__LoadAndTransformBeatmapDataAsync_d__32::MoveNext,
+    void, GameplayCoreSceneSetupData__LoadAndTransformBeatmapDataAsync_d__32* self) {
+    GameplayAudioScope scope(self->__4__this);
+    SongAudio_GameplayLoadMoveNext(self);
+}
 
-  auto sceneSetupData = self->gameplayCoreSceneSetupData;
-  AudioClipAsyncLoader *audioClipLoader = sceneSetupData->_audioClipAsyncLoader;
+MAKE_AUTO_ORIG_HOOK_MATCH(SongAudio_LoadSong, &AudioClipAsyncLoaderExtensions::LoadSong,
+    SongAudioTask*, AudioClipAsyncLoader* loader, IBeatmapLevelData* data) {
+    auto context = gameplayAudioContext;
 
-  // Clear cache of AudioClip for current loading beatmap, only if it is a
-  // custom level.
-  if (auto levelID = sceneSetupData->beatmapLevel->levelID;
-      levelID.starts_with(u"custom_level")) {
-    // Get path of current loading Beatmap
-    const auto customLevel = SongCore::API::Loading::GetLevelByLevelID(
-        static_cast<std::string>(levelID));
-    auto songAudioClipPath =
-        ((FileSystemBeatmapLevelData *)customLevel->beatmapLevelData)
-            ->songAudioClipPath;
+    auto level = context ? context->beatmapLevel : nullptr;
+    auto levelId = level ? level->levelID : StringW(nullptr);
 
-    // Fetch Beatmap AudioClip cache key.
-    auto cacheKey = audioClipLoader->GetCacheKey(songAudioClipPath);
+    auto model = context ? context->_beatmapLevelsModel : nullptr;
+    auto levelLoader = model ? i2c::try_cast<BeatmapLevelLoader*>(reinterpret_cast<System::Object*>(model->levelLoader)) : nullptr;
+    auto levelCache = levelLoader ? levelLoader->_loadedBeatmapLevelDataCache : nullptr;
 
-    // Remove current Beatmap AudioClip from Cache to load a new one.
-    auto audioClipCache =
-        (ReferenceCountingCache_2<
-            int32_t, Task_1<::UnityW<::UnityEngine::AudioClip>> *> *)
-            audioClipLoader->_cache;
-    audioClipCache->_referencesCount->Remove(cacheKey);
-    audioClipCache->_items->Remove(cacheKey);
-  }
-
-  return LevelScenesTransitionSetupDataSO_BeforeScenesWillBeActivatedAsync(
-      self);
+    // Do we have cached gameplay data for this level? If so, we can skip the normal async load and return the cached task.
+    IBeatmapLevelData* cachedData = nullptr;
+    bool cachedGameplay = context && loader == context->_audioClipAsyncLoader && data == context->get_beatmapLevelData()
+        && levelId && levelId.starts_with(u"custom_level_") && levelCache
+        && levelCache->TryGetFromCache(levelId, by_ref(cachedData)) && cachedData == data;
+    if (!cachedGameplay) return SongAudio_LoadSong(loader, data);
+    // The state machine performs one song acquisition per resume. Nested/menu
+    // work after that acquisition must keep the original reference-count behavior.
+    gameplayAudioContext = nullptr;
+    
+    // Check if the level data is a FileSystemBeatmapLevelData, which is the type used for custom levels. 
+    // If it is, we can use the songAudioClipPath to get the cache key and check if we have a cached audio task for this level data.
+    auto fileData = i2c::try_cast<FileSystemBeatmapLevelData*>(reinterpret_cast<System::Object*>(data));
+    if (!fileData) return SongAudio_LoadSong(loader, data);
+    auto key = loader->GetCacheKey(fileData->songAudioClipPath);
+    auto cache = reinterpret_cast<ReferenceCountingCache_2<int32_t, SongAudioTask*>*>(loader->_cache);
+    
+    // Find existing task for this level data in the levelAudioRequests map.
+    // If we have a cached task and it's still valid, return it. Otherwise, load the song and store the new task in the map.
+    SongAudioTask* task = nullptr;
+    auto owned = levelAudioRequests.find(data);
+    if (owned != levelAudioRequests.end() && cache->TryGet(key, by_ref(task))
+        && task == owned->second && cache->GetReferenceCount(key) > 0) {
+        return task;
+    }
+    // We don't have a valid cached task, so we need to load the song and store the new task in the map.
+    task = SongAudio_LoadSong(loader, data);
+    if (task) levelAudioRequests[data] = task;
+    return task;
 }
 
 // we return our own levels repository to which we can add packs we please
@@ -162,6 +139,8 @@ MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapLevelsModel_CreateAllLoadedBeatmapLevelPacks, &
 // hook to ensure a beatmaps data is actually fully unloaded
 MAKE_AUTO_HOOK_MATCH(BeatmapLevelLoader_HandleItemWillBeRemovedFromCache, &BeatmapLevelLoader::HandleItemWillBeRemovedFromCache, void, BeatmapLevelLoader* self, StringW beatmapLevelId, IBeatmapLevelData* beatmapLevel) {
     DEBUG("BeatmapLevelLoader_HandleItemWillBeRemovedFromCache");
+    // Track the item being removed from the cache so we can remove it from our own cache as well
+    levelAudioRequests.erase(beatmapLevel);
     BeatmapLevelLoader_HandleItemWillBeRemovedFromCache(self, beatmapLevelId, beatmapLevel);
 
     if (beatmapLevelId.starts_with(u"custom_level_"))
@@ -242,19 +221,30 @@ MAKE_AUTO_ORIG_HOOK_MATCH(FileHelpers_GetEscapedURLForFilePath, &FileHelpers::Ge
     return fmt::format("file://{}", utf8::utf16to8(escape(filePath)));
 }
 
-// get the level data async
-// TODO: rip out this level data loading from the SongLoader/LevelLoader.cpp and implement it async here to improve level loading speed and not do redundant things here
+// Custom data is already parsed by SongCore. Register it in the game's bounded
+// level cache so eviction calls UnloadSong and balances the gameplay audio load.
+// Keep LRU access on the calling thread instead of a StartTask worker.
 MAKE_AUTO_ORIG_HOOK_MATCH(BeatmapLevelsModel_LoadBeatmapLevelDataAsync, &BeatmapLevelsModel::LoadBeatmapLevelDataAsync, Task_1<LoadBeatmapLevelDataResult>*, BeatmapLevelsModel* self, StringW levelID, GlobalNamespace::BeatmapLevelDataVersion beatmapLevelDataVersion, CancellationToken token) {
     if (levelID.starts_with(u"custom_level_")) {
-        return SongCore::StartTask<LoadBeatmapLevelDataResult>([=](SongCore::CancellationToken token){
-            auto errorType = System::Nullable_1(true, LoadBeatmapLevelDataResult_ErrorType::BeatmapLevelNotFoundInRepository);
-            static auto Error = LoadBeatmapLevelDataResult(errorType, nullptr);
-            auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
-            if (!level || token.IsCancellationRequested) return Error;
-            auto data = level->beatmapLevelData;
-            if (!data) return Error;
-            return LoadBeatmapLevelDataResult::Success(data);
-        }, std::forward<SongCore::CancellationToken>(token));
+        auto errorType = System::Nullable_1(true, LoadBeatmapLevelDataResult_ErrorType::BeatmapLevelNotFoundInRepository);
+        auto error = LoadBeatmapLevelDataResult(errorType, nullptr);
+        if (token.IsCancellationRequested) return Task_1<LoadBeatmapLevelDataResult>::FromResult(error);
+        
+        // If we have a cached level, return it. Otherwise, get the level from SongCore and add it to the cache.
+        auto loader = i2c::try_cast<BeatmapLevelLoader*>(reinterpret_cast<System::Object*>(self->levelLoader));
+        auto cache = loader ? loader->_loadedBeatmapLevelDataCache : nullptr;
+        IBeatmapLevelData* data = nullptr;
+        if (cache && cache->TryGetFromCache(levelID, by_ref(data)) && data) {
+            return Task_1<LoadBeatmapLevelDataResult>::FromResult(LoadBeatmapLevelDataResult::Success(data));
+        }
+
+        // Get the level from SongCore and add it to the cache if it exists. If it doesn't exist, return an error.
+        auto level = SongCore::API::Loading::GetLevelByLevelID(static_cast<std::string>(levelID));
+        data = level ? level->beatmapLevelData : nullptr;
+        if (!data) return Task_1<LoadBeatmapLevelDataResult>::FromResult(error);
+        if (cache) cache->Add(levelID, data);
+        else WARNING("Cannot register custom level {} in the game's cache: unsupported level loader",static_cast<std::string>(levelID));
+        return Task_1<LoadBeatmapLevelDataResult>::FromResult(LoadBeatmapLevelDataResult::Success(data));
     }
     return BeatmapLevelsModel_LoadBeatmapLevelDataAsync(self, levelID, beatmapLevelDataVersion, token);
 }
