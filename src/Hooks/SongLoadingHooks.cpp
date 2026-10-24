@@ -67,7 +67,8 @@ namespace {
 using SongAudioTask = Task_1<UnityW<UnityEngine::AudioClip>>;
 // Entries are erased with the level LRU. The LRU/cache owns the managed objects;
 // this table records identity only and never extends their lifetime.
-// This level-data object → the audio task we previously acquired for it
+// A loader-cache hit may belong only to a menu request. Track this level's own
+// acquisition so revisits reuse its reference and level eviction releases it once.
 std::unordered_map<IBeatmapLevelData*, SongAudioTask*> levelAudioRequests;
 thread_local GameplayCoreSceneSetupData* gameplayAudioContext = nullptr;
 struct GameplayAudioScope {
