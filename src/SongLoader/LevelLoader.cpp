@@ -14,6 +14,7 @@
 #include "Utils/WavRiff.hpp"
 #include "Utils/Cache.hpp"
 #include "Utils/Errors.hpp"
+#include "Utils/SaveDataVersion.hpp"
 
 #include "bsml/shared/Helpers/utilities.hpp"
 #include "GlobalNamespace/BeatmapDifficultySerializedMethods.hpp"
@@ -34,6 +35,8 @@
 #include "BeatmapLevelSaveDataVersion4/AudioSaveData.hpp"
 #include "Newtonsoft/Json/JsonConvert.hpp"
 #include "utf8.h"
+#include <array>
+#include <charconv>
 #include <cmath>
 #include <exception>
 #include <filesystem>
@@ -434,6 +437,27 @@ namespace SongCore::SongLoader {
         };
     }
 
+    static bool HasLegacyColorOverrides(StringW versionString) {
+        if (!versionString) return false;
+
+        const auto text = std::string(versionString);
+        const char* next = text.data();
+        const char* end = next + text.size();
+        std::array<int, 4> components{};
+        for (std::size_t i = 0; i < components.size(); ++i) {
+            const auto [separator, error] = std::from_chars(next, end, components[i]);
+            if (error != std::errc{} || components[i] < 0) return false;
+            if (separator == end) {
+                // The game enables both overrides when migrating pre-4.0.1 schemes.
+                const Version version{components[0], components[1], components[2]};
+                return i > 0 && version < Version{4, 0, 1};
+            }
+            if (*separator != '.') return false;
+            next = separator + 1;
+        }
+        return false;
+    }
+
     // V4
     // implementation of CustomLevelLoader.CreateBeatmapLevelDataFromV4
     std::pair<GlobalNamespace::FileSystemBeatmapLevelData*, LevelLoader::BeatmapBasicDataDict*> LevelLoader::GetBeatmapLevelAndBasicData(std::filesystem::path const& levelPath, std::string_view levelID, CustomJSONData::CustomBeatmapLevelSaveDataV4* saveData) {
@@ -461,7 +485,8 @@ namespace SongCore::SongLoader {
                 return UnityEngine::Color::get_black();
             return color.value();
         };
-        if (saveData->colorSchemes) {
+        if (saveData->colorSchemes && !saveData->colorSchemes.empty()) {
+            const bool legacyColorOverrides = HasLegacyColorOverrides(saveData->version);
             for (int i = 0; i < saveData->colorSchemes.size(); i++) {
                 auto colorScheme = saveData->colorSchemes[i];
                 auto name = colorScheme->colorSchemeName;
@@ -481,10 +506,10 @@ namespace SongCore::SongLoader {
                     nonLocalized,
                     name,
                     editable,
-                    true,
+                    legacyColorOverrides || colorScheme->overrideNotes,
                     saberAColor,
                     saberBColor,
-                    true,
+                    legacyColorOverrides || colorScheme->overrideLights,
                     envColor0,
                     envColor1,
                     {1, 1, 1, 1},
