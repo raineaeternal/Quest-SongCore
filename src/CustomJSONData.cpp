@@ -248,7 +248,11 @@ namespace SongCore::CustomJSONData {
 			auto characteristicDataItr = customDataItr->value.FindMember(u"characteristicData");
 			if (characteristicDataItr != customDataItr->value.MemberEnd() && characteristicDataItr->value.IsArray()) {
 				for (auto& data : characteristicDataItr->value.GetArray()) {
-					auto characteristicName = utf8::utf16to8(data[u"characteristic"].Get<std::u16string>());
+					if (!data.IsObject()) continue;
+					auto nameItr = data.FindMember(u"characteristic");
+					if (nameItr == data.MemberEnd() || !nameItr->value.IsString()) continue;
+
+					auto characteristicName = utf8::utf16to8(nameItr->value.Get<std::u16string>());
 					auto& characteristic = characteristicNameToBeatmapDetailsSet[characteristicName];
 					characteristic.DeserializeV4(data);
 				}
