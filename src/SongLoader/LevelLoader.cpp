@@ -453,7 +453,8 @@ namespace SongCore::SongLoader {
 
         auto colorSchemes = ListW<GlobalNamespace::ColorScheme*>::New();
         static auto ConvertHTMLStringToColor = [](StringW colorString) {
-            if (!colorString) return UnityEngine::Color{0.0f, 0.0f, 0.0f, 1.0f};
+            static constexpr UnityEngine::Color black{0.0f, 0.0f, 0.0f, 1.0f};
+            if (!colorString) return black;
             auto colorHtmlString = std::string(colorString);
             // if color does not start with # the library fails to parse the hex color. need to prepend that.
             // this is different from PC where it just assumes a hex string means hex color
