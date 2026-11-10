@@ -93,9 +93,9 @@ namespace SongCore::SongLoader {
             if (songPath.string().ends_with("autosaves")) continue;
 
             auto dataPath = songPath / "info.dat";
-            if (!std::filesystem::exists(dataPath)) {
+            if (!std::filesystem::is_regular_file(dataPath)) {
                 dataPath = songPath / "Info.dat";
-                if (!std::filesystem::exists(dataPath)) {
+                if (!std::filesystem::is_regular_file(dataPath)) {
                     WARNING("Possible song folder '{}' had no info.dat file! skipping...", songPath.string());
                     continue;
                 }
@@ -327,7 +327,7 @@ namespace SongCore::SongLoader {
                     static Version v4(4);
                     static auto GetSaveDataVersion = [](std::filesystem::path const& levelPath) {
                         std::filesystem::path infoPath = levelPath / "info.dat";
-                        if (!std::filesystem::exists(infoPath)) infoPath = levelPath / "Info.dat";
+                        if (!std::filesystem::is_regular_file(infoPath)) infoPath = levelPath / "Info.dat";
                         return VersionFromFilePath(infoPath);
                     };
 

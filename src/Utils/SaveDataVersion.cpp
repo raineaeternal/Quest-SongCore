@@ -30,7 +30,7 @@ namespace SongCore {
     }
 
     Version VersionFromFilePath(std::filesystem::path const& filePath) {
-        if (!std::filesystem::exists(filePath)) return Version::noVersion;
+        if (!std::filesystem::is_regular_file(filePath)) return Version::noVersion;
         std::ifstream file(filePath, std::ios::ate);
         auto len = std::min<std::size_t>(file.tellg(), 50);
         file.seekg(0, std::ios::beg);

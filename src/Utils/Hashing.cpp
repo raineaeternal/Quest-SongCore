@@ -21,9 +21,9 @@ namespace SongCore::Utils {
         }
 
         auto infoPath = levelPath / "info.dat";
-        if(!std::filesystem::exists(infoPath)) {
+        if(!std::filesystem::is_regular_file(infoPath)) {
             infoPath = levelPath / "Info.dat";
-            if(!std::filesystem::exists(infoPath)) return std::nullopt;
+            if(!std::filesystem::is_regular_file(infoPath)) return std::nullopt;
         }
 
         auto sha1Neon = SHA1_NEON();
@@ -35,7 +35,7 @@ namespace SongCore::Utils {
             if (!difficultyBeatmaps) continue;
             for(auto difficultyBeatmap : difficultyBeatmaps) {
                 auto diffPath = levelPath / static_cast<std::string>(difficultyBeatmap->beatmapFilename);
-                if(!std::filesystem::exists(diffPath)) {
+                if(!std::filesystem::is_regular_file(diffPath)) {
                     ERROR("GetCustomLevelHash File {} did not exist", diffPath.string());
                     continue;
                 }
@@ -64,13 +64,13 @@ namespace SongCore::Utils {
         }
 
         auto infoPath = levelPath / "info.dat";
-        if(!std::filesystem::exists(infoPath)) {
+        if(!std::filesystem::is_regular_file(infoPath)) {
             infoPath = levelPath / "Info.dat";
-            if(!std::filesystem::exists(infoPath)) return std::nullopt;
+            if(!std::filesystem::is_regular_file(infoPath)) return std::nullopt;
         }
 
         auto audioPath = levelPath / static_cast<std::string>(saveData->audio.audioDataFilename);
-        if(!std::filesystem::exists(audioPath)) {
+        if(!std::filesystem::is_regular_file(audioPath)) {
             return std::nullopt;
         }
 
@@ -82,15 +82,18 @@ namespace SongCore::Utils {
             if (!val) continue;
             
             auto diffPath = levelPath / static_cast<std::string>(val->beatmapDataFilename);
-            if(!std::filesystem::exists(diffPath)) {
+            if(!std::filesystem::is_regular_file(diffPath)) {
                 ERROR("GetCustomLevelHash File {} did not exist", diffPath.string());
                 continue;
             }
             sha1Neon.updateFile(diffPath);
 
-            auto lightPath = levelPath / static_cast<std::string>(val->lightshowDataFilename);
-            if(!std::filesystem::exists(lightPath)) {
-                ERROR("GetCustomLevelHash Lighting File {} did not exist", diffPath.string());
+            auto lightshowFilename = val->lightshowDataFilename;
+            if (!lightshowFilename || lightshowFilename.empty()) continue;
+
+            auto lightPath = levelPath / std::string(lightshowFilename);
+            if (!std::filesystem::is_regular_file(lightPath)) {
+                ERROR("GetCustomLevelHash Lighting File {} did not exist", lightPath.string());
                 continue;
             }
             sha1Neon.updateFile(lightPath);
