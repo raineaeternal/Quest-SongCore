@@ -287,7 +287,9 @@ namespace SongCore::SongLoader {
 
         float songDuration = GetLengthForLevel(levelPath, saveData);
 
-        auto previewMediaData = GetPreviewMediaData(levelPath, saveData->coverImageFilename, saveData->audio.songFilename);
+        auto previewFilename = saveData->songPreviewFilename;
+        if (!previewFilename || previewFilename.empty()) previewFilename = saveData->audio.songFilename;
+        auto previewMediaData = GetPreviewMediaData(levelPath, saveData->coverImageFilename, previewFilename);
         auto [beatmapLevelData, beatmapBasicData] = GetBeatmapLevelAndBasicData(levelPath, levelId, saveData);
 
         if(beatmapBasicData->Count == 0) {
