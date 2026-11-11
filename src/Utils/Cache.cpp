@@ -117,7 +117,7 @@ namespace SongCore::Utils {
 
     bool LoadSongInfoCache() {
         // if the file doesn't exist, load should fail
-        if (!std::filesystem::exists(_cachePath)) return false;
+        if (!std::filesystem::is_regular_file(_cachePath)) return false;
 
         bool foundEverything = true;
         auto text = utf8::utf16to8(ReadText(_cachePath));

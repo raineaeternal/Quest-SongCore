@@ -248,7 +248,11 @@ namespace SongCore::CustomJSONData {
 			auto characteristicDataItr = customDataItr->value.FindMember(u"characteristicData");
 			if (characteristicDataItr != customDataItr->value.MemberEnd() && characteristicDataItr->value.IsArray()) {
 				for (auto& data : characteristicDataItr->value.GetArray()) {
-					auto characteristicName = utf8::utf16to8(data[u"characteristic"].Get<std::u16string>());
+					if (!data.IsObject()) continue;
+					auto nameItr = data.FindMember(u"characteristic");
+					if (nameItr == data.MemberEnd() || !nameItr->value.IsString()) continue;
+
+					auto characteristicName = utf8::utf16to8(nameItr->value.Get<std::u16string>());
 					auto& characteristic = characteristicNameToBeatmapDetailsSet[characteristicName];
 					characteristic.DeserializeV4(data);
 				}
@@ -353,7 +357,7 @@ namespace SongCore::CustomJSONData {
 		auto arrayItr = customData.FindMember(valueName.data());
 		if (arrayItr == customData.MemberEnd() || !arrayItr->value.IsArray()) return;
 		for (auto& value : arrayItr->value.GetArray()) {
-			out.emplace_back(utf8::utf16to8(value.Get<std::u16string>()));
+			if (value.IsString()) out.emplace_back(utf8::utf16to8(value.Get<std::u16string>()));
 		}
 	}
 
@@ -364,21 +368,21 @@ namespace SongCore::CustomJSONData {
 
 	bool CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails::DeserializeV3(ValueUTF16 const& value) {
 		auto customDataItr = value.FindMember(u"_customData");
-		if (customDataItr == value.MemberEnd()) return false;
+		if (customDataItr == value.MemberEnd() || !customDataItr->value.IsObject()) return false;
 		auto& customData = customDataItr->value;
 		auto memberEnd = customData.MemberEnd();
 
 		auto difficultyLabelItr = customData.FindMember(u"_difficultyLabel");
-		if (difficultyLabelItr != memberEnd) customDiffLabel = utf8::utf16to8(difficultyLabelItr->value.Get<std::u16string>());
+		if (difficultyLabelItr != memberEnd && difficultyLabelItr->value.IsString()) customDiffLabel = utf8::utf16to8(difficultyLabelItr->value.Get<std::u16string>());
 
 		auto environmentTypeItr = customData.FindMember(u"_environmentType");
-		if (environmentTypeItr != memberEnd) environmentType = utf8::utf16to8(environmentTypeItr->value.Get<std::u16string>());
+		if (environmentTypeItr != memberEnd && environmentTypeItr->value.IsString()) environmentType = utf8::utf16to8(environmentTypeItr->value.Get<std::u16string>());
 
 		auto showRotationNoteSpawnLinesItr = customData.FindMember(u"_showRotationNoteSpawnLines");
-		if (showRotationNoteSpawnLinesItr != memberEnd) showRotationNoteSpawnLines = showRotationNoteSpawnLinesItr->value.GetBool();
+		if (showRotationNoteSpawnLinesItr != memberEnd && showRotationNoteSpawnLinesItr->value.IsBool()) showRotationNoteSpawnLines = showRotationNoteSpawnLinesItr->value.GetBool();
 
 		auto oneSaberItr = customData.FindMember(u"_oneSaber");
-		if (oneSaberItr != memberEnd) oneSaber = oneSaberItr->value.GetBool();
+		if (oneSaberItr != memberEnd && oneSaberItr->value.IsBool()) oneSaber = oneSaberItr->value.GetBool();
 
 		ParseSimpleStringArrayInto(customData, u"_requirements", requirements);
 		ParseSimpleStringArrayInto(customData, u"_suggestions", suggestions);
@@ -394,21 +398,21 @@ namespace SongCore::CustomJSONData {
 
 	bool CustomSaveDataInfo::BasicCustomDifficultyBeatmapDetails::DeserializeV4(ValueUTF16 const& value) {
 		auto customDataItr = value.FindMember(u"customData");
-		if (customDataItr == value.MemberEnd()) return false;
+		if (customDataItr == value.MemberEnd() || !customDataItr->value.IsObject()) return false;
 		auto& customData = customDataItr->value;
 		auto memberEnd = customData.MemberEnd();
 
 		auto difficultyLabelItr = customData.FindMember(u"difficultyLabel");
-		if (difficultyLabelItr != memberEnd) customDiffLabel = utf8::utf16to8(difficultyLabelItr->value.Get<std::u16string>());
+		if (difficultyLabelItr != memberEnd && difficultyLabelItr->value.IsString()) customDiffLabel = utf8::utf16to8(difficultyLabelItr->value.Get<std::u16string>());
 
 		auto environmentTypeItr = customData.FindMember(u"environmentType");
-		if (environmentTypeItr != memberEnd) environmentType = utf8::utf16to8(environmentTypeItr->value.Get<std::u16string>());
+		if (environmentTypeItr != memberEnd && environmentTypeItr->value.IsString()) environmentType = utf8::utf16to8(environmentTypeItr->value.Get<std::u16string>());
 
 		auto showRotationNoteSpawnLinesItr = customData.FindMember(u"showRotationNoteSpawnLines");
-		if (showRotationNoteSpawnLinesItr != memberEnd) showRotationNoteSpawnLines = showRotationNoteSpawnLinesItr->value.GetBool();
+		if (showRotationNoteSpawnLinesItr != memberEnd && showRotationNoteSpawnLinesItr->value.IsBool()) showRotationNoteSpawnLines = showRotationNoteSpawnLinesItr->value.GetBool();
 
 		auto oneSaberItr = customData.FindMember(u"oneSaber");
-		if (oneSaberItr != memberEnd) oneSaber = oneSaberItr->value.GetBool();
+		if (oneSaberItr != memberEnd && oneSaberItr->value.IsBool()) oneSaber = oneSaberItr->value.GetBool();
 
 		ParseSimpleStringArrayInto(customData, u"requirements", requirements);
 		ParseSimpleStringArrayInto(customData, u"suggestions", suggestions);

@@ -59,7 +59,7 @@ namespace SongCore::Utils {
     }
 
     std::u16string ReadText(std::filesystem::path path) {
-        if(!std::filesystem::exists(path))
+        if(!std::filesystem::is_regular_file(path))
             return u"";
         std::basic_ifstream<char16_t> fileStream(path, std::ifstream::in);
         if(!fileStream.is_open())

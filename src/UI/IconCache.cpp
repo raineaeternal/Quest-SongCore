@@ -66,7 +66,7 @@ namespace SongCore::UI {
         }
 
         // wasn't loaded -> load
-        if (std::filesystem::exists(path)) {
+        if (std::filesystem::is_regular_file(path)) {
             std::ifstream in(path, std::ios::in | std::ios::binary | std::ios::ate);
 
             il2cpp_array_size_t len = in.tellg();
