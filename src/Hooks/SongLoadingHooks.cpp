@@ -389,7 +389,7 @@ System::Version* TryGetBeatmapVersion(std::u16string_view span) {
     auto versionSpan = span.substr(0, closingQuoteIndex);
 
     System::Version* version = nullptr;
-    if (System::Version::TryParse(StringW(versionSpan), byref(version))) {
+    if (System::Version::TryParse(StringW(versionSpan), version)) {
         return version;
     }
 
