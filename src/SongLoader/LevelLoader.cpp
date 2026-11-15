@@ -999,6 +999,40 @@ namespace SongCore::SongLoader {
             return nullptr;
         }
 
+        // The game has already parsed these colors, but defaults missing alpha to 0.
+        // Grouped lights multiply brightness by alpha, leaving RGB-only colors unlit.
+        // Use the original JSON to distinguish missing alpha from an intentional 0.
+        auto schemesItr = doc.FindMember(u"_colorSchemes");
+        if (saveData->colorSchemes && schemesItr != doc.MemberEnd() && schemesItr->value.IsArray()) {
+            auto const& schemesJson = schemesItr->value;
+            // Match JSON entries to saved schemes by index, staying within both arrays.
+            for (rapidjson::SizeType i = 0; i < schemesJson.Size() && i < saveData->colorSchemes.size(); ++i) {
+                auto entry = saveData->colorSchemes[i];
+                if (!entry || !entry->colorScheme || !schemesJson[i].IsObject()) continue;
+                // Color fields are nested under _colorSchemes[i].colorScheme.
+                auto schemeItr = schemesJson[i].FindMember(u"colorScheme");
+                if (schemeItr == schemesJson[i].MemberEnd() || !schemeItr->value.IsObject()) continue;
+                auto const& json = schemeItr->value;
+                auto defaultMissingAlpha = [&json](char16_t const* name, UnityEngine::Color& color) {
+                    auto member = json.FindMember(name);
+                    // Match PC SongCore's default of 1 only for a color object without "a".
+                    // Keep explicit alpha values and absent/non-object colors unchanged.
+                    if (member != json.MemberEnd() && member->value.IsObject() && !member->value.HasMember(u"a")) {
+                        color.a = 1.0f;
+                    }
+                };
+                // customSaveData shares these scheme objects, so update their colors in place.
+                auto scheme = entry->colorScheme;
+                defaultMissingAlpha(u"saberAColor", scheme->saberAColor);
+                defaultMissingAlpha(u"saberBColor", scheme->saberBColor);
+                defaultMissingAlpha(u"environmentColor0", scheme->environmentColor0);
+                defaultMissingAlpha(u"environmentColor1", scheme->environmentColor1);
+                defaultMissingAlpha(u"environmentColor0Boost", scheme->environmentColor0Boost);
+                defaultMissingAlpha(u"environmentColor1Boost", scheme->environmentColor1Boost);
+                defaultMissingAlpha(u"obstaclesColor", scheme->obstaclesColor);
+            }
+        }
+
         auto dataItr = doc.FindMember(u"_customData");
         if (dataItr != doc.MemberEnd()) {
             customSaveData->_customSaveDataInfo->customData = dataItr->value;
