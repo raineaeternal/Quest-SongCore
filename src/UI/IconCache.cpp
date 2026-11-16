@@ -8,7 +8,7 @@
 DEFINE_TYPE(SongCore::UI, IconCache);
 
 #define GetIconImpl(fieldname, assetname) do { \
-        if (!fieldname) fieldname = BSML::Utilities::LoadSpriteRaw(IncludedAssets::Resources::assetname##_png); \
+        if (!fieldname) fieldname = BSML::Utilities::LoadSpriteRaw(ArrayW<uint8_t>(IncludedAssets::Resources::assetname##_png)); \
         return fieldname; \
 } while(0)
 

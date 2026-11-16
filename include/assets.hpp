@@ -1,110 +1,123 @@
 #pragma once
 
-#include "metacore/shared/assets.hpp"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++11-narrowing"
+#pragma clang diagnostic ignored "-Wc23-extensions"
 
-#define DECLARE_ASSET(name, binary)       \
-    const IncludedAsset name {            \
-        Externs::_binary_##binary##_start, \
-        Externs::_binary_##binary##_end    \
-    };
+#include "beatsaber-hook/shared/arrayw.hpp"
 
-#define DECLARE_ASSET_NS(namespaze, name, binary) \
-    namespace namespaze { DECLARE_ASSET(name, binary) }
+#include <cstdint>
+#include <span>
+#include <string_view>
 
 namespace IncludedAssets {
-    namespace Externs {
-        extern "C" uint8_t _binary_Resources_Colors_png_start[];
-        extern "C" uint8_t _binary_Resources_Colors_png_end[];
-        extern "C" uint8_t _binary_Resources_CustomLevelsCover_png_start[];
-        extern "C" uint8_t _binary_Resources_CustomLevelsCover_png_end[];
-        extern "C" uint8_t _binary_Resources_CustomLevelsCoverEvil_png_start[];
-        extern "C" uint8_t _binary_Resources_CustomLevelsCoverEvil_png_end[];
-        extern "C" uint8_t _binary_Resources_CustomWIPLevelsCover_png_start[];
-        extern "C" uint8_t _binary_Resources_CustomWIPLevelsCover_png_end[];
-        extern "C" uint8_t _binary_Resources_DeleteIcon_png_start[];
-        extern "C" uint8_t _binary_Resources_DeleteIcon_png_end[];
-        extern "C" uint8_t _binary_Resources_Environment_png_start[];
-        extern "C" uint8_t _binary_Resources_Environment_png_end[];
-        extern "C" uint8_t _binary_Resources_ExtraDiffsIcon_png_start[];
-        extern "C" uint8_t _binary_Resources_ExtraDiffsIcon_png_end[];
-        extern "C" uint8_t _binary_Resources_FolderIcon_png_start[];
-        extern "C" uint8_t _binary_Resources_FolderIcon_png_end[];
-        extern "C" uint8_t _binary_Resources_GreenCheck_png_start[];
-        extern "C" uint8_t _binary_Resources_GreenCheck_png_end[];
-        extern "C" uint8_t _binary_Resources_Info_png_start[];
-        extern "C" uint8_t _binary_Resources_Info_png_end[];
-        extern "C" uint8_t _binary_Resources_Lawless_png_start[];
-        extern "C" uint8_t _binary_Resources_Lawless_png_end[];
-        extern "C" uint8_t _binary_Resources_Lightshow_png_start[];
-        extern "C" uint8_t _binary_Resources_Lightshow_png_end[];
-        extern "C" uint8_t _binary_Resources_MissingChar_png_start[];
-        extern "C" uint8_t _binary_Resources_MissingChar_png_end[];
-        extern "C" uint8_t _binary_Resources_OneSaber_png_start[];
-        extern "C" uint8_t _binary_Resources_OneSaber_png_end[];
-        extern "C" uint8_t _binary_Resources_RedX_png_start[];
-        extern "C" uint8_t _binary_Resources_RedX_png_end[];
-        extern "C" uint8_t _binary_Resources_Standard_png_start[];
-        extern "C" uint8_t _binary_Resources_Standard_png_end[];
-        extern "C" uint8_t _binary_Resources_Warning_png_start[];
-        extern "C" uint8_t _binary_Resources_Warning_png_end[];
-        extern "C" uint8_t _binary_Resources_YellowCheck_png_start[];
-        extern "C" uint8_t _binary_Resources_YellowCheck_png_end[];
-        extern "C" uint8_t _binary_Resources_YellowX_png_start[];
-        extern "C" uint8_t _binary_Resources_YellowX_png_end[];
-        extern "C" uint8_t _binary_Resources_pixel_png_start[];
-        extern "C" uint8_t _binary_Resources_pixel_png_end[];
-        extern "C" uint8_t _binary_colors_bsml_start[];
-        extern "C" uint8_t _binary_colors_bsml_end[];
-        extern "C" uint8_t _binary_deletemodal_bsml_start[];
-        extern "C" uint8_t _binary_deletemodal_bsml_end[];
-        extern "C" uint8_t _binary_requirements_bsml_start[];
-        extern "C" uint8_t _binary_requirements_bsml_end[];
+    namespace raw {
+        // --- text assets (null-suffixed) ---
+        inline constexpr unsigned char colors_bsml[] = {
+            #embed "../assets/colors.bsml" suffix(, 0)
+        };
+        inline constexpr unsigned char deletemodal_bsml[] = {
+            #embed "../assets/deletemodal.bsml" suffix(, 0)
+        };
+        inline constexpr unsigned char requirements_bsml[] = {
+            #embed "../assets/requirements.bsml" suffix(, 0)
+        };
+
+        // --- image assets ---
+        inline constexpr uint8_t Colors_png[] = {
+            #embed "../assets/Resources/Colors.png"
+        };
+        inline constexpr uint8_t CustomLevelsCover_png[] = {
+            #embed "../assets/Resources/CustomLevelsCover.png"
+        };
+        inline constexpr uint8_t CustomLevelsCoverEvil_png[] = {
+            #embed "../assets/Resources/CustomLevelsCoverEvil.png"
+        };
+        inline constexpr uint8_t CustomWIPLevelsCover_png[] = {
+            #embed "../assets/Resources/CustomWIPLevelsCover.png"
+        };
+        inline constexpr uint8_t DeleteIcon_png[] = {
+            #embed "../assets/Resources/DeleteIcon.png"
+        };
+        inline constexpr uint8_t Environment_png[] = {
+            #embed "../assets/Resources/Environment.png"
+        };
+        inline constexpr uint8_t ExtraDiffsIcon_png[] = {
+            #embed "../assets/Resources/ExtraDiffsIcon.png"
+        };
+        inline constexpr uint8_t FolderIcon_png[] = {
+            #embed "../assets/Resources/FolderIcon.png"
+        };
+        inline constexpr uint8_t GreenCheck_png[] = {
+            #embed "../assets/Resources/GreenCheck.png"
+        };
+        inline constexpr uint8_t Info_png[] = {
+            #embed "../assets/Resources/Info.png"
+        };
+        inline constexpr uint8_t Lawless_png[] = {
+            #embed "../assets/Resources/Lawless.png"
+        };
+        inline constexpr uint8_t Lightshow_png[] = {
+            #embed "../assets/Resources/Lightshow.png"
+        };
+        inline constexpr uint8_t MissingChar_png[] = {
+            #embed "../assets/Resources/MissingChar.png"
+        };
+        inline constexpr uint8_t OneSaber_png[] = {
+            #embed "../assets/Resources/OneSaber.png"
+        };
+        inline constexpr uint8_t RedX_png[] = {
+            #embed "../assets/Resources/RedX.png"
+        };
+        inline constexpr uint8_t Standard_png[] = {
+            #embed "../assets/Resources/Standard.png"
+        };
+        inline constexpr uint8_t Warning_png[] = {
+            #embed "../assets/Resources/Warning.png"
+        };
+        inline constexpr uint8_t YellowCheck_png[] = {
+            #embed "../assets/Resources/YellowCheck.png"
+        };
+        inline constexpr uint8_t YellowX_png[] = {
+            #embed "../assets/Resources/YellowX.png"
+        };
+        inline constexpr uint8_t pixel_png[] = {
+            #embed "../assets/Resources/pixel.png"
+        };
     }
 
-    // Resources/Colors.png
-    DECLARE_ASSET_NS(Resources, Colors_png, Resources_Colors_png);
-    // Resources/CustomLevelsCover.png
-    DECLARE_ASSET_NS(Resources, CustomLevelsCover_png, Resources_CustomLevelsCover_png);
-    // Resources/CustomLevelsCoverEvil.png
-    DECLARE_ASSET_NS(Resources, CustomLevelsCoverEvil_png, Resources_CustomLevelsCoverEvil_png);
-    // Resources/CustomWIPLevelsCover.png
-    DECLARE_ASSET_NS(Resources, CustomWIPLevelsCover_png, Resources_CustomWIPLevelsCover_png);
-    // Resources/DeleteIcon.png
-    DECLARE_ASSET_NS(Resources, DeleteIcon_png, Resources_DeleteIcon_png);
-    // Resources/Environment.png
-    DECLARE_ASSET_NS(Resources, Environment_png, Resources_Environment_png);
-    // Resources/ExtraDiffsIcon.png
-    DECLARE_ASSET_NS(Resources, ExtraDiffsIcon_png, Resources_ExtraDiffsIcon_png);
-    // Resources/FolderIcon.png
-    DECLARE_ASSET_NS(Resources, FolderIcon_png, Resources_FolderIcon_png);
-    // Resources/GreenCheck.png
-    DECLARE_ASSET_NS(Resources, GreenCheck_png, Resources_GreenCheck_png);
-    // Resources/Info.png
-    DECLARE_ASSET_NS(Resources, Info_png, Resources_Info_png);
-    // Resources/Lawless.png
-    DECLARE_ASSET_NS(Resources, Lawless_png, Resources_Lawless_png);
-    // Resources/Lightshow.png
-    DECLARE_ASSET_NS(Resources, Lightshow_png, Resources_Lightshow_png);
-    // Resources/MissingChar.png
-    DECLARE_ASSET_NS(Resources, MissingChar_png, Resources_MissingChar_png);
-    // Resources/OneSaber.png
-    DECLARE_ASSET_NS(Resources, OneSaber_png, Resources_OneSaber_png);
-    // Resources/RedX.png
-    DECLARE_ASSET_NS(Resources, RedX_png, Resources_RedX_png);
-    // Resources/Standard.png
-    DECLARE_ASSET_NS(Resources, Standard_png, Resources_Standard_png);
-    // Resources/Warning.png
-    DECLARE_ASSET_NS(Resources, Warning_png, Resources_Warning_png);
-    // Resources/YellowCheck.png
-    DECLARE_ASSET_NS(Resources, YellowCheck_png, Resources_YellowCheck_png);
-    // Resources/YellowX.png
-    DECLARE_ASSET_NS(Resources, YellowX_png, Resources_YellowX_png);
-    // Resources/pixel.png
-    DECLARE_ASSET_NS(Resources, pixel_png, Resources_pixel_png);
-    // colors.bsml
-    DECLARE_ASSET(colors_bsml, colors_bsml);
-    // deletemodal.bsml
-    DECLARE_ASSET(deletemodal_bsml, deletemodal_bsml);
-    // requirements.bsml
-    DECLARE_ASSET(requirements_bsml, requirements_bsml);
+#pragma clang diagnostic pop
+
+    // helper: view over a null-suffixed raw text array, terminator excluded
+    template <std::size_t N>
+    inline std::string_view text(const unsigned char (&arr)[N]) {
+        return {reinterpret_cast<const char*>(arr), N - 1};
+    }
+
+    inline std::string_view const colors_bsml = text(raw::colors_bsml);
+    inline std::string_view const deletemodal_bsml = text(raw::deletemodal_bsml);
+    inline std::string_view const requirements_bsml = text(raw::requirements_bsml);
+
+    namespace Resources {
+        inline constexpr std::span<const uint8_t> Colors_png{raw::Colors_png};
+        inline constexpr std::span<const uint8_t> CustomLevelsCover_png{raw::CustomLevelsCover_png};
+        inline constexpr std::span<const uint8_t> CustomLevelsCoverEvil_png{raw::CustomLevelsCoverEvil_png};
+        inline constexpr std::span<const uint8_t> CustomWIPLevelsCover_png{raw::CustomWIPLevelsCover_png};
+        inline constexpr std::span<const uint8_t> DeleteIcon_png{raw::DeleteIcon_png};
+        inline constexpr std::span<const uint8_t> Environment_png{raw::Environment_png};
+        inline constexpr std::span<const uint8_t> ExtraDiffsIcon_png{raw::ExtraDiffsIcon_png};
+        inline constexpr std::span<const uint8_t> FolderIcon_png{raw::FolderIcon_png};
+        inline constexpr std::span<const uint8_t> GreenCheck_png{raw::GreenCheck_png};
+        inline constexpr std::span<const uint8_t> Info_png{raw::Info_png};
+        inline constexpr std::span<const uint8_t> Lawless_png{raw::Lawless_png};
+        inline constexpr std::span<const uint8_t> Lightshow_png{raw::Lightshow_png};
+        inline constexpr std::span<const uint8_t> MissingChar_png{raw::MissingChar_png};
+        inline constexpr std::span<const uint8_t> OneSaber_png{raw::OneSaber_png};
+        inline constexpr std::span<const uint8_t> RedX_png{raw::RedX_png};
+        inline constexpr std::span<const uint8_t> Standard_png{raw::Standard_png};
+        inline constexpr std::span<const uint8_t> Warning_png{raw::Warning_png};
+        inline constexpr std::span<const uint8_t> YellowCheck_png{raw::YellowCheck_png};
+        inline constexpr std::span<const uint8_t> YellowX_png{raw::YellowX_png};
+        inline constexpr std::span<const uint8_t> pixel_png{raw::pixel_png};
+    }
 }

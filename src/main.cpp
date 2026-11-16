@@ -106,7 +106,7 @@ SONGCORE_EXPORT_FUNC void late_load() {
 
 void RegisterDefaultCharacteristics() {
     SongCore::API::Characteristics::CharacteristicInfo missingCharacteristic(
-        BSML::Lite::ArrayToSprite(IncludedAssets::Resources::MissingChar_png),
+        BSML::Lite::ArrayToSprite(ArrayW<uint8_t>(IncludedAssets::Resources::MissingChar_png)),
         "Missing Characteristic",
         "Missing Characteristic",
         "MissingCharacteristic",
@@ -117,7 +117,7 @@ void RegisterDefaultCharacteristics() {
     );
 
     SongCore::API::Characteristics::CharacteristicInfo lightshow(
-        BSML::Lite::ArrayToSprite(IncludedAssets::Resources::Lightshow_png),
+        BSML::Lite::ArrayToSprite(ArrayW<uint8_t>(IncludedAssets::Resources::Lightshow_png)),
         "Lightshow",
         "Lightshow",
         "Lightshow",
@@ -128,7 +128,7 @@ void RegisterDefaultCharacteristics() {
     );
 
     SongCore::API::Characteristics::CharacteristicInfo lawless(
-        BSML::Lite::ArrayToSprite(IncludedAssets::Resources::Lawless_png),
+        BSML::Lite::ArrayToSprite(ArrayW<uint8_t>(IncludedAssets::Resources::Lawless_png)),
         "Lawless",
         "Lawless - Anything Goes",
         "Lawless",

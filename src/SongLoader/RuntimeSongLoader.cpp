@@ -54,8 +54,8 @@ namespace SongCore::SongLoader {
         auto evilTime = (localTime.tm_mday == 1 && localTime.tm_mon == 3);
         bool doEvil = evilTime || ((rand() % 20) == 0);
 
-        _customLevelPack = CustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", BSML::Utilities::LoadSpriteRaw(doEvil ? IncludedAssets::Resources::CustomLevelsCoverEvil_png : IncludedAssets::Resources::CustomLevelsCover_png));
-        _customWIPLevelPack = CustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", BSML::Utilities::LoadSpriteRaw(IncludedAssets::Resources::CustomWIPLevelsCover_png));
+        _customLevelPack = CustomLevelPack::New(fmt::format("{}CustomLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom Levels", BSML::Utilities::LoadSpriteRaw(ArrayW<uint8_t>(doEvil ? IncludedAssets::Resources::CustomLevelsCoverEvil_png : IncludedAssets::Resources::CustomLevelsCover_png)));
+        _customWIPLevelPack = CustomLevelPack::New(fmt::format("{}CustomWIPLevels", CUSTOM_LEVEL_PACK_PREFIX_ID), "Custom WIP Levels", BSML::Utilities::LoadSpriteRaw(ArrayW<uint8_t>(IncludedAssets::Resources::CustomWIPLevelsCover_png)));
         _customBeatmapLevelsRepository = CustomBeatmapLevelsRepository::New_ctor();
 
         _customLevels = SongDict::New_ctor();
